@@ -1,0 +1,22 @@
+{
+	"name": "shooter_test",
+	"version": "0.1.0",
+	"description": "gaming",
+	"main": "index.html",
+	"scripts": {
+		"start": "parcel index.html --open",
+		"build": "parcel build index.html",
+		"deploy": "npm run build && gh-pages -d dist"
+	},
+	"dependencies": {
+		"@types/p5": "^1.3.3",
+		"p5": "^1.3.3"
+	},
+	"devDependencies": {
+		"gh-pages": "^3.2.3",
+		"parcel-bundler": "^1.6.1",
+		"typescript": "^4.5.4"
+	},
+	"author": "mantevian",
+	"license": "ISC"
+}
