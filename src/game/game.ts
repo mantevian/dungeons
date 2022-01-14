@@ -1,5 +1,6 @@
 import p5 from "p5";
 import Player from "../entity/player";
+import Random from "../util/random";
 import Vec2 from "../util/vec2";
 import Renderer from "./renderer";
 import RoomManager from "./room_manager";
@@ -9,12 +10,16 @@ export default class Game {
 	readonly renderer: Renderer;
 	private time: number;
 	readonly player: Player;
+	readonly random: Random;
 
 	constructor(p5: p5) {
-		this.room_manager = new RoomManager();
+		this.random = new Random();
+		this.room_manager = new RoomManager(this);
 		this.renderer = new Renderer(this, p5);
 		this.time = 0;
-		this.player = new Player();
+		this.player = new Player(this);
+		this.player.set_position(new Vec2(10, 10));
+		
 
 		window.addEventListener('keydown', (e: KeyboardEvent) => this.controls(e));
 	}
@@ -41,6 +46,8 @@ export default class Game {
 
 	/** The main tick function for this Game */
 	tick(): void {
+		this.room_manager.enter(new Vec2(Math.floor(this.player.position.x / 21), Math.floor(this.player.position.y / 21)));
+		
 		this.room_manager.current_room.entities.tick();
 		this.time++;
 

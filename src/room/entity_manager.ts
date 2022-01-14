@@ -1,11 +1,25 @@
 import Entity from "../entity/entity";
 import { v4 as uuid } from "uuid";
+import Room from "./room";
+import Random from "../util/random";
+import BasicMob from "../entity/basic_mob";
+import Vec2 from "../util/vec2";
 
 export default class EntityManager {
+	readonly room: Room;
 	private entities: Map<string, Entity>;
+	readonly random: Random;
 
-	constructor() {
+	constructor(room: Room) {
+		this.room = room;
 		this.entities = new Map<string, Entity>();
+		this.random = new Random();
+
+		for (let i = 0; i < this.random.next_int_ranged(0, 2); i++) {
+			let mob = new BasicMob();
+			mob.set_position(new Vec2(this.random.next_int_ranged(2, 18), this.random.next_int_ranged(2, 18)));
+			this.spawn(mob);
+		}
 	}
 
 	/** Get an Entity by a uuid */
@@ -20,6 +34,7 @@ export default class EntityManager {
 
 	/** Add a new Entity */
 	spawn(entity: Entity): void {
+		entity.manager = this;
 		this.entities.set(uuid(), entity);
 	}
 

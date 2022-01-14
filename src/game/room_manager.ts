@@ -1,29 +1,40 @@
 import Room from "../room/room";
 import Vec2 from "../util/vec2";
+import Game from "./game";
 
 export default class RoomManager {
-	private rooms: Map<Vec2, Room>;
+	readonly game: Game;
+	private rooms: Map<string, Room>;
 	current_room: Room;
 
-	constructor() {
-		this.rooms = new Map<Vec2, Room>();
+	constructor(game: Game) {
+		this.game = game;
+		this.rooms = new Map<string, Room>();
 
-		let room = new Room();
-		this.set(Vec2.zero(), room);
-		this.current_room = room;
+		for (let i = -2; i <= 2; i++)
+			for (let j = -2; j <= 2; j++) {
+				this.set(new Room(new Vec2(i, j), this));
+			}
+		
+		this.enter(Vec2.zero());
 	}
 
 	/** Get a Room by position */
 	get(position: Vec2): Room {
-		return this.rooms.get(position);
+		return this.rooms.get(position.toString());
 	}
 
 	/** Set a new Room */
-	set(position: Vec2, room: Room): void {
-		this.rooms.set(position, room);
+	set(room: Room): void {
+		this.rooms.set(room.position.toString(), room);
 	}
 
 	enter(position: Vec2): void {
 		this.current_room = this.get(position);
+	}
+
+	passable(position: Vec2): boolean {
+		let room = new Vec2(Math.floor(position.x / 21), Math.floor(position.y / 21));
+		return this.get(room).tiles.passable(position.modulus_room());
 	}
 }

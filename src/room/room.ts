@@ -1,12 +1,20 @@
+import RoomManager from "../game/room_manager";
+import Vec2 from "../util/vec2";
 import EntityManager from "./entity_manager";
 import TileManager from "./tile_manager";
 
 export default class Room {
-	tiles: TileManager;
-	entities: EntityManager;
+	manager: RoomManager;
+	readonly position: Vec2;
 
-	constructor() {
-		this.tiles = new TileManager();
-		this.entities = new EntityManager();
+	readonly tiles: TileManager;
+	readonly entities: EntityManager;
+
+	constructor(position: Vec2, manager: RoomManager) {
+		this.position = position;
+		this.manager = manager;
+		this.tiles = new TileManager(this);
+		this.entities = new EntityManager(this);
+		
 	}
 }
