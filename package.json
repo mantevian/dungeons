@@ -1,16 +1,17 @@
 {
-	"name": "shooter_test",
+	"name": "dungeons",
 	"version": "0.1.0",
 	"description": "gaming",
 	"main": "index.html",
 	"scripts": {
 		"start": "parcel index.html --open",
-		"build": "parcel build index.html",
+		"build": "parcel build index.html --public-url ./",
 		"deploy": "npm run build && gh-pages -d dist"
 	},
 	"dependencies": {
 		"@types/p5": "^1.3.3",
-		"p5": "^1.3.3"
+		"p5": "^1.3.3",
+		"uuidv4": "^6.2.12"
 	},
 	"devDependencies": {
 		"gh-pages": "^3.2.3",

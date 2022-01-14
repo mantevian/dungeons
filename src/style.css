@@ -2,16 +2,11 @@
 
 :root {
     --bg_main: #252135;
-    --bg_light: #373257;
-    --bg_bottom: #6e5f37;
-
     --box_bg: #443b777e;
 
     --accent: #5dd878;
     --accent_darker: #42a858;
     --accent_dark: #004422;
-
-    --canvas_bg: #27253a;
 
     --white: #f1efff;
     --light_gray: #ccdddd;
@@ -26,6 +21,7 @@ body {
     font-family: 'Montserrat';
     font-size: 16px;
     color: var(--white);
+	background: var(--bg_main);
 }
 
 h1 {
@@ -42,13 +38,15 @@ a:visited {
     color: var(--accent)
 }
 
+#canvas {
+	background: var(--bg_main);
+}
+
 .p5Canvas {
 	display: block;
-    background-color: var(--canvas_bg);
     border-radius: 10px;
 	margin-left: auto;
 	margin-right: auto;
-	
 }
 
 .go_back_button {
@@ -57,7 +55,4 @@ a:visited {
     border-radius: 10px;
     padding: 10px 20px 10px 20px;
     margin: 10px 10px 10px 10px;
-    position: absolute;
-    top: 10px;
-    left: 10px;
 }
