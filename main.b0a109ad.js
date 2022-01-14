@@ -28912,8 +28912,27 @@ var Vec2 = /*#__PURE__*/function () {
   }, {
     key: "add",
     value: function add(vec) {
-      this.x += vec.x;
-      this.y += vec.y;
+      return new Vec2(this.x + vec.x, this.y + vec.y);
+    }
+  }, {
+    key: "toString",
+    value: function toString() {
+      return "".concat(this.x, ",").concat(this.y);
+    }
+  }, {
+    key: "modulus_room",
+    value: function modulus_room() {
+      return new Vec2(this.x >= 0 ? this.x % 21 : (21 - Math.abs(this.x) % 21) % 21, this.y >= 0 ? this.y % 21 : (21 - Math.abs(this.y) % 21) % 21);
+    }
+  }, {
+    key: "to",
+    value: function to(vec) {
+      return new Vec2(vec.x - this.x, vec.y - this.y);
+    }
+  }, {
+    key: "step_to",
+    value: function step_to(vec) {
+      return Vec2.step(this.to(vec));
     }
   }], [{
     key: "zero",
@@ -28938,6 +28957,21 @@ var Vec2 = /*#__PURE__*/function () {
     key: "one",
     value: function one() {
       return new Vec2(1, 1);
+    }
+  }, {
+    key: "parse",
+    value: function parse(str) {
+      return new Vec2(parseInt(str.split(',')[0]), parseInt(str.split(',')[1]));
+    }
+  }, {
+    key: "step",
+    value: function step(vec) {
+      var new_vec = vec;
+      if (new_vec.x > 0) new_vec.x = 1;
+      if (new_vec.x < 0) new_vec.x = -1;
+      if (new_vec.y > 0) new_vec.y = 1;
+      if (new_vec.y < 0) new_vec.y = -1;
+      return new_vec;
     }
   }]);
 
@@ -28976,6 +29010,7 @@ var Entity = /*#__PURE__*/function () {
     this.size = new vec2_1.default(1, 1);
     this.color = color_1.default.RGB(255, 255, 255);
     this.corner_radius = 0;
+    this.lifetime = 0;
   }
   /** Force position this Entity */
 
@@ -28988,29 +29023,109 @@ var Entity = /*#__PURE__*/function () {
   }, {
     key: "move",
     value: function move(vec) {
-      this.position.add(vec);
+      var new_position = this.position.add(vec);
+      if (this.manager.room.tiles.passable(new_position)) this.set_position(new_position);
     }
     /** Tick this Entity */
 
   }, {
     key: "tick",
-    value: function tick() {}
+    value: function tick() {
+      this.lifetime++;
+    }
   }]);
 
   return Entity;
 }();
 
 exports.default = Entity;
-},{"../util/color":"src/util/color.ts","../util/vec2":"src/util/vec2.ts"}],"src/entity/player.ts":[function(require,module,exports) {
+},{"../util/color":"src/util/color.ts","../util/vec2":"src/util/vec2.ts"}],"src/entity/basic_mob.ts":[function(require,module,exports) {
 "use strict";
 
 function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
 
 function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); Object.defineProperty(Constructor, "prototype", { writable: false }); return Constructor; }
 
+function _get() { if (typeof Reflect !== "undefined" && Reflect.get) { _get = Reflect.get; } else { _get = function _get(target, property, receiver) { var base = _superPropBase(target, property); if (!base) return; var desc = Object.getOwnPropertyDescriptor(base, property); if (desc.get) { return desc.get.call(arguments.length < 3 ? target : receiver); } return desc.value; }; } return _get.apply(this, arguments); }
+
+function _superPropBase(object, property) { while (!Object.prototype.hasOwnProperty.call(object, property)) { object = _getPrototypeOf(object); if (object === null) break; } return object; }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); Object.defineProperty(subClass, "prototype", { writable: false }); if (superClass) _setPrototypeOf(subClass, superClass); }
+
+function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
+
+function _createSuper(Derived) { var hasNativeReflectConstruct = _isNativeReflectConstruct(); return function _createSuperInternal() { var Super = _getPrototypeOf(Derived), result; if (hasNativeReflectConstruct) { var NewTarget = _getPrototypeOf(this).constructor; result = Reflect.construct(Super, arguments, NewTarget); } else { result = Super.apply(this, arguments); } return _possibleConstructorReturn(this, result); }; }
+
+function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } else if (call !== void 0) { throw new TypeError("Derived constructors may only return object or undefined"); } return _assertThisInitialized(self); }
+
+function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
+
+function _isNativeReflectConstruct() { if (typeof Reflect === "undefined" || !Reflect.construct) return false; if (Reflect.construct.sham) return false; if (typeof Proxy === "function") return true; try { Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function () {})); return true; } catch (e) { return false; } }
+
+function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
+
+var __importDefault = this && this.__importDefault || function (mod) {
+  return mod && mod.__esModule ? mod : {
+    "default": mod
+  };
+};
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var color_1 = __importDefault(require("../util/color"));
+
+var entity_1 = __importDefault(require("./entity"));
+
+var BasicMob = /*#__PURE__*/function (_entity_1$default) {
+  _inherits(BasicMob, _entity_1$default);
+
+  var _super = _createSuper(BasicMob);
+
+  function BasicMob() {
+    var _this;
+
+    _classCallCheck(this, BasicMob);
+
+    _this = _super.call(this);
+    _this.color = color_1.default.RGB(255, 80, 30);
+    _this.corner_radius = 0.2;
+    return _this;
+  }
+
+  _createClass(BasicMob, [{
+    key: "tick",
+    value: function tick() {
+      _get(_getPrototypeOf(BasicMob.prototype), "tick", this).call(this);
+
+      if (this.lifetime % 30 == 0) {
+        var v = this.position.step_to(this.manager.room.manager.game.player.position.modulus_room());
+        if (this.manager.random.next_float() < 0.2) v.x = 0;
+        if (this.manager.random.next_float() < 0.2) v.y = 0;
+        this.move(v);
+      }
+    }
+  }]);
+
+  return BasicMob;
+}(entity_1.default);
+
+exports.default = BasicMob;
+},{"../util/color":"src/util/color.ts","./entity":"src/entity/entity.ts"}],"src/entity/player.ts":[function(require,module,exports) {
+"use strict";
+
+function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
+
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); Object.defineProperty(Constructor, "prototype", { writable: false }); return Constructor; }
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); Object.defineProperty(subClass, "prototype", { writable: false }); if (superClass) _setPrototypeOf(subClass, superClass); }
 
@@ -29047,23 +29162,116 @@ var Player = /*#__PURE__*/function (_entity_1$default) {
 
   var _super = _createSuper(Player);
 
-  function Player() {
+  function Player(game) {
     var _this;
 
     _classCallCheck(this, Player);
 
     _this = _super.call(this);
+    _this.game = game;
     _this.size = new vec2_1.default(1, 1);
     _this.color = color_1.default.RGB(40, 255, 40);
     _this.corner_radius = 0.4;
     return _this;
   }
 
-  return _createClass(Player);
+  _createClass(Player, [{
+    key: "move",
+    value: function move(vec) {
+      var new_position = this.position.add(vec);
+      if (this.game.room_manager.passable(new_position)) this.set_position(new_position);
+    }
+  }]);
+
+  return Player;
 }(entity_1.default);
 
 exports.default = Player;
-},{"../util/color":"src/util/color.ts","../util/vec2":"src/util/vec2.ts","./entity":"src/entity/entity.ts"}],"src/game/renderer.ts":[function(require,module,exports) {
+},{"../util/color":"src/util/color.ts","../util/vec2":"src/util/vec2.ts","./entity":"src/entity/entity.ts"}],"src/util/random.ts":[function(require,module,exports) {
+"use strict";
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); Object.defineProperty(Constructor, "prototype", { writable: false }); return Constructor; }
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var Random = /*#__PURE__*/function () {
+  function Random(seed) {
+    _classCallCheck(this, Random);
+
+    this.m = Math.pow(2, 31) - 1;
+    this.a = 1103515245;
+    this.c = 12345;
+    if (!seed) seed = Math.floor(Math.random() * this.m);
+    this.seed = seed;
+    this.state = seed;
+  }
+
+  _createClass(Random, [{
+    key: "next_int",
+    value: function next_int() {
+      this.state = (this.a * this.state + this.c) % this.m;
+      return this.state;
+    }
+  }, {
+    key: "next_float",
+    value: function next_float() {
+      return this.next_int() / this.m;
+    }
+  }, {
+    key: "next_int_ranged",
+    value: function next_int_ranged(start, end) {
+      var range = end - start + 1;
+      var random_under_1 = this.next_int() / this.m;
+      return start + Math.floor(random_under_1 * range);
+    }
+  }, {
+    key: "next_float_ranged",
+    value: function next_float_ranged(start, end) {
+      var range = end - start;
+      return start + this.next_float() * range;
+    }
+  }, {
+    key: "choice",
+    value: function choice(array) {
+      return array[this.next_int_ranged(0, array.length - 1)];
+    }
+  }, {
+    key: "next_sign",
+    value: function next_sign() {
+      return this.choice([1, -1]);
+    }
+  }, {
+    key: "weighted_random",
+    value: function weighted_random(arr) {
+      var entries = [];
+      var accumulated_weight = 0;
+
+      for (var i = 0; i < arr.length; i++) {
+        accumulated_weight += arr[i].weight;
+        entries.push({
+          item: arr[i].item,
+          accumulated_weight: accumulated_weight
+        });
+      }
+
+      for (var i = 0; i < arr.length; i++) {
+        var r = this.next_float() * accumulated_weight;
+        if (entries[i].accumulated_weight >= r) return entries[i].item;
+      }
+    }
+  }]);
+
+  return Random;
+}();
+
+exports.default = Random;
+},{}],"src/game/renderer.ts":[function(require,module,exports) {
 "use strict";
 
 function _createForOfIteratorHelper(o, allowArrayLike) { var it = typeof Symbol !== "undefined" && o[Symbol.iterator] || o["@@iterator"]; if (!it) { if (Array.isArray(o) || (it = _unsupportedIterableToArray(o)) || allowArrayLike && o && typeof o.length === "number") { if (it) o = it; var i = 0; var F = function F() {}; return { s: F, n: function n() { if (i >= o.length) return { done: true }; return { done: false, value: o[i++] }; }, e: function e(_e) { throw _e; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var normalCompletion = true, didErr = false, err; return { s: function s() { it = it.call(o); }, n: function n() { var step = it.next(); normalCompletion = step.done; return step; }, e: function e(_e2) { didErr = true; err = _e2; }, f: function f() { try { if (!normalCompletion && it.return != null) it.return(); } finally { if (didErr) throw err; } } }; }
@@ -29110,7 +29318,7 @@ var Renderer = /*#__PURE__*/function () {
       try {
         for (_iterator.s(); !(_step = _iterator.n()).done;) {
           var entry = _step.value;
-          this.tile(entry[0], vec2_1.default.one(), entry[1].color, 0.15);
+          this.tile(vec2_1.default.parse(entry[0]), vec2_1.default.one(), entry[1].color, 0.15);
         }
       } catch (err) {
         _iterator.e(err);
@@ -29133,13 +29341,13 @@ var Renderer = /*#__PURE__*/function () {
       }
 
       var player = this.game.player;
-      this.tile(player.position, player.size, player.color, player.corner_radius);
+      this.tile(player.position.modulus_room(), player.size, player.color, player.corner_radius);
     }
   }, {
     key: "tile",
     value: function tile(position, size, color, corner_radius) {
       this.p5.fill(color.red, color.green, color.blue, color.alpha);
-      this.p5.rect(position.x * this.scale + 300, position.y * this.scale + 300, size.x * this.scale, size.y * this.scale, corner_radius * this.scale);
+      this.p5.rect(position.x * this.scale, position.y * this.scale, size.x * this.scale, size.y * this.scale, corner_radius * this.scale);
     }
   }]);
 
@@ -29386,17 +29594,37 @@ function _defineProperties(target, props) { for (var i = 0; i < props.length; i+
 
 function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); Object.defineProperty(Constructor, "prototype", { writable: false }); return Constructor; }
 
+var __importDefault = this && this.__importDefault || function (mod) {
+  return mod && mod.__esModule ? mod : {
+    "default": mod
+  };
+};
+
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
 var uuid_1 = require("uuid");
 
+var random_1 = __importDefault(require("../util/random"));
+
+var basic_mob_1 = __importDefault(require("../entity/basic_mob"));
+
+var vec2_1 = __importDefault(require("../util/vec2"));
+
 var EntityManager = /*#__PURE__*/function () {
-  function EntityManager() {
+  function EntityManager(room) {
     _classCallCheck(this, EntityManager);
 
+    this.room = room;
     this.entities = new Map();
+    this.random = new random_1.default();
+
+    for (var i = 0; i < this.random.next_int_ranged(0, 2); i++) {
+      var mob = new basic_mob_1.default();
+      mob.set_position(new vec2_1.default(this.random.next_int_ranged(2, 18), this.random.next_int_ranged(2, 18)));
+      this.spawn(mob);
+    }
   }
   /** Get an Entity by a uuid */
 
@@ -29420,6 +29648,7 @@ var EntityManager = /*#__PURE__*/function () {
   }, {
     key: "spawn",
     value: function spawn(entity) {
+      entity.manager = this;
       this.entities.set((0, uuid_1.v4)(), entity);
     }
     /** Remove an Entity by a uuid */
@@ -29489,7 +29718,7 @@ var EntityManager = /*#__PURE__*/function () {
 }();
 
 exports.default = EntityManager;
-},{"uuid":"node_modules/uuid/index.js"}],"src/tile/tile.ts":[function(require,module,exports) {
+},{"uuid":"node_modules/uuid/index.js","../util/random":"src/util/random.ts","../entity/basic_mob":"src/entity/basic_mob.ts","../util/vec2":"src/util/vec2.ts"}],"src/tile/tile.ts":[function(require,module,exports) {
 "use strict";
 
 function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
@@ -29510,14 +29739,75 @@ Object.defineProperty(exports, "__esModule", {
 
 var color_1 = __importDefault(require("../util/color"));
 
-var Tile = /*#__PURE__*/_createClass(function Tile() {
+var Tile = /*#__PURE__*/_createClass(function Tile(position) {
   _classCallCheck(this, Tile);
 
+  this.position = position;
   this.color = color_1.default.RGB(20, 30, 100);
+  this.solid = false;
 });
 
 exports.default = Tile;
-},{"../util/color":"src/util/color.ts"}],"src/room/tile_manager.ts":[function(require,module,exports) {
+},{"../util/color":"src/util/color.ts"}],"src/tile/wall.ts":[function(require,module,exports) {
+"use strict";
+
+function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
+
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); Object.defineProperty(Constructor, "prototype", { writable: false }); return Constructor; }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); Object.defineProperty(subClass, "prototype", { writable: false }); if (superClass) _setPrototypeOf(subClass, superClass); }
+
+function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
+
+function _createSuper(Derived) { var hasNativeReflectConstruct = _isNativeReflectConstruct(); return function _createSuperInternal() { var Super = _getPrototypeOf(Derived), result; if (hasNativeReflectConstruct) { var NewTarget = _getPrototypeOf(this).constructor; result = Reflect.construct(Super, arguments, NewTarget); } else { result = Super.apply(this, arguments); } return _possibleConstructorReturn(this, result); }; }
+
+function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } else if (call !== void 0) { throw new TypeError("Derived constructors may only return object or undefined"); } return _assertThisInitialized(self); }
+
+function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
+
+function _isNativeReflectConstruct() { if (typeof Reflect === "undefined" || !Reflect.construct) return false; if (Reflect.construct.sham) return false; if (typeof Proxy === "function") return true; try { Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function () {})); return true; } catch (e) { return false; } }
+
+function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
+
+var __importDefault = this && this.__importDefault || function (mod) {
+  return mod && mod.__esModule ? mod : {
+    "default": mod
+  };
+};
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var color_1 = __importDefault(require("../util/color"));
+
+var tile_1 = __importDefault(require("./tile"));
+
+var Wall = /*#__PURE__*/function (_tile_1$default) {
+  _inherits(Wall, _tile_1$default);
+
+  var _super = _createSuper(Wall);
+
+  function Wall(position) {
+    var _this;
+
+    _classCallCheck(this, Wall);
+
+    _this = _super.call(this, position);
+    _this.color = color_1.default.RGB(40, 80, 160);
+    _this.solid = true;
+    return _this;
+  }
+
+  return _createClass(Wall);
+}(tile_1.default);
+
+exports.default = Wall;
+},{"../util/color":"src/util/color.ts","./tile":"src/tile/tile.ts"}],"src/room/tile_manager.ts":[function(require,module,exports) {
 "use strict";
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -29538,41 +29828,66 @@ Object.defineProperty(exports, "__esModule", {
 
 var tile_1 = __importDefault(require("../tile/tile"));
 
+var wall_1 = __importDefault(require("../tile/wall"));
+
 var vec2_1 = __importDefault(require("../util/vec2"));
 
 var TileManager = /*#__PURE__*/function () {
-  function TileManager() {
+  function TileManager(room) {
     _classCallCheck(this, TileManager);
 
+    this.room = room;
     this.tiles = new Map();
 
-    for (var i = -10; i <= 10; i++) {
-      for (var j = -10; j <= 10; j++) {
-        this.tiles.set(new vec2_1.default(i, j), new tile_1.default());
+    for (var i = 0; i < 21; i++) {
+      for (var j = 0; j < 21; j++) {
+        this.clear(new vec2_1.default(i, j));
       }
     }
-  }
-  /** Get a Tile at a position */
 
+    for (var _i = 0; _i < 21; _i++) {
+      this.set(new wall_1.default(new vec2_1.default(_i, 0)));
+      this.set(new wall_1.default(new vec2_1.default(0, _i)));
+      this.set(new wall_1.default(new vec2_1.default(_i, 20)));
+      this.set(new wall_1.default(new vec2_1.default(20, _i)));
+    }
+
+    for (var _i2 = 0; _i2 < 20; _i2++) {
+      this.set(new wall_1.default(new vec2_1.default(this.room.manager.game.random.next_int_ranged(2, 18), this.room.manager.game.random.next_int_ranged(2, 18))));
+    }
+
+    if (this.room.position.x > -2) this.clear(new vec2_1.default(0, 10));
+    if (this.room.position.y > -2) this.clear(new vec2_1.default(10, 0));
+    if (this.room.position.x < 2) this.clear(new vec2_1.default(20, 10));
+    if (this.room.position.y < 2) this.clear(new vec2_1.default(10, 20));
+  }
 
   _createClass(TileManager, [{
+    key: "passable",
+    value: function passable(position) {
+      return !this.get(position) || !this.get(position).solid;
+    }
+    /** Get a Tile at a position */
+
+  }, {
     key: "get",
     value: function get(position) {
-      return this.tiles.get(position);
+      return this.tiles.get(position.toString());
     }
     /** Set a new Tile */
 
   }, {
     key: "set",
-    value: function set(position, tile) {
-      this.tiles.set(position, tile);
+    value: function set(tile) {
+      tile.manager = this;
+      this.tiles.set(tile.position.toString(), tile);
     }
     /** Remove a tile by its position */
 
   }, {
-    key: "remove",
-    value: function remove(position) {
-      this.tiles.delete(position);
+    key: "clear",
+    value: function clear(position) {
+      this.set(new tile_1.default(position));
     }
     /** Return the map */
 
@@ -29587,7 +29902,7 @@ var TileManager = /*#__PURE__*/function () {
 }();
 
 exports.default = TileManager;
-},{"../tile/tile":"src/tile/tile.ts","../util/vec2":"src/util/vec2.ts"}],"src/room/room.ts":[function(require,module,exports) {
+},{"../tile/tile":"src/tile/tile.ts","../tile/wall":"src/tile/wall.ts","../util/vec2":"src/util/vec2.ts"}],"src/room/room.ts":[function(require,module,exports) {
 "use strict";
 
 function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
@@ -29610,11 +29925,13 @@ var entity_manager_1 = __importDefault(require("./entity_manager"));
 
 var tile_manager_1 = __importDefault(require("./tile_manager"));
 
-var Room = /*#__PURE__*/_createClass(function Room() {
+var Room = /*#__PURE__*/_createClass(function Room(position, manager) {
   _classCallCheck(this, Room);
 
-  this.tiles = new tile_manager_1.default();
-  this.entities = new entity_manager_1.default();
+  this.position = position;
+  this.manager = manager;
+  this.tiles = new tile_manager_1.default(this);
+  this.entities = new entity_manager_1.default(this);
 });
 
 exports.default = Room;
@@ -29642,13 +29959,19 @@ var room_1 = __importDefault(require("../room/room"));
 var vec2_1 = __importDefault(require("../util/vec2"));
 
 var RoomManager = /*#__PURE__*/function () {
-  function RoomManager() {
+  function RoomManager(game) {
     _classCallCheck(this, RoomManager);
 
+    this.game = game;
     this.rooms = new Map();
-    var room = new room_1.default();
-    this.set(vec2_1.default.zero(), room);
-    this.current_room = room;
+
+    for (var i = -2; i <= 2; i++) {
+      for (var j = -2; j <= 2; j++) {
+        this.set(new room_1.default(new vec2_1.default(i, j), this));
+      }
+    }
+
+    this.enter(vec2_1.default.zero());
   }
   /** Get a Room by position */
 
@@ -29656,19 +29979,25 @@ var RoomManager = /*#__PURE__*/function () {
   _createClass(RoomManager, [{
     key: "get",
     value: function get(position) {
-      return this.rooms.get(position);
+      return this.rooms.get(position.toString());
     }
     /** Set a new Room */
 
   }, {
     key: "set",
-    value: function set(position, room) {
-      this.rooms.set(position, room);
+    value: function set(room) {
+      this.rooms.set(room.position.toString(), room);
     }
   }, {
     key: "enter",
     value: function enter(position) {
       this.current_room = this.get(position);
+    }
+  }, {
+    key: "passable",
+    value: function passable(position) {
+      var room = new vec2_1.default(Math.floor(position.x / 21), Math.floor(position.y / 21));
+      return this.get(room).tiles.passable(position.modulus_room());
     }
   }]);
 
@@ -29697,6 +30026,8 @@ Object.defineProperty(exports, "__esModule", {
 
 var player_1 = __importDefault(require("../entity/player"));
 
+var random_1 = __importDefault(require("../util/random"));
+
 var vec2_1 = __importDefault(require("../util/vec2"));
 
 var renderer_1 = __importDefault(require("./renderer"));
@@ -29709,10 +30040,12 @@ var Game = /*#__PURE__*/function () {
 
     _classCallCheck(this, Game);
 
-    this.room_manager = new room_manager_1.default();
+    this.random = new random_1.default();
+    this.room_manager = new room_manager_1.default(this);
     this.renderer = new renderer_1.default(this, p5);
     this.time = 0;
-    this.player = new player_1.default();
+    this.player = new player_1.default(this);
+    this.player.set_position(new vec2_1.default(10, 10));
     window.addEventListener('keydown', function (e) {
       return _this.controls(e);
     });
@@ -29744,6 +30077,7 @@ var Game = /*#__PURE__*/function () {
   }, {
     key: "tick",
     value: function tick() {
+      this.room_manager.enter(new vec2_1.default(Math.floor(this.player.position.x / 21), Math.floor(this.player.position.y / 21)));
       this.room_manager.current_room.entities.tick();
       this.time++;
       this.renderer.render();
@@ -29761,7 +30095,7 @@ var Game = /*#__PURE__*/function () {
 }();
 
 exports.default = Game;
-},{"../entity/player":"src/entity/player.ts","../util/vec2":"src/util/vec2.ts","./renderer":"src/game/renderer.ts","./room_manager":"src/game/room_manager.ts"}],"src/main.ts":[function(require,module,exports) {
+},{"../entity/player":"src/entity/player.ts","../util/random":"src/util/random.ts","../util/vec2":"src/util/vec2.ts","./renderer":"src/game/renderer.ts","./room_manager":"src/game/room_manager.ts"}],"src/main.ts":[function(require,module,exports) {
 "use strict";
 
 var __importDefault = this && this.__importDefault || function (mod) {
@@ -29776,7 +30110,7 @@ Object.defineProperty(exports, "__esModule", {
 
 var p5_1 = __importDefault(require("p5"));
 
-var entity_1 = __importDefault(require("./entity/entity"));
+var basic_mob_1 = __importDefault(require("./entity/basic_mob"));
 
 var game_1 = __importDefault(require("./game/game"));
 
@@ -29788,20 +30122,20 @@ var sketch = function sketch(p5) {
   p5.setup = function () {
     var canvas = p5.createCanvas(630, 630);
     canvas.parent('canvas');
+    var entity = new basic_mob_1.default();
+    entity.set_position(new vec2_1.default(5, 5));
+    game.room_manager.current_room.entities.spawn(entity);
   };
 
   p5.draw = function () {
     p5.background('black');
     p5.fill('white');
-    var entity = new entity_1.default();
-    entity.set_position(new vec2_1.default(5, 0));
-    game.room_manager.current_room.entities.spawn(entity);
     game.tick();
   };
 };
 
 new p5_1.default(sketch);
-},{"p5":"node_modules/p5/lib/p5.min.js","./entity/entity":"src/entity/entity.ts","./game/game":"src/game/game.ts","./util/vec2":"src/util/vec2.ts"}],"node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
+},{"p5":"node_modules/p5/lib/p5.min.js","./entity/basic_mob":"src/entity/basic_mob.ts","./game/game":"src/game/game.ts","./util/vec2":"src/util/vec2.ts"}],"node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 var OldModule = module.bundle.Module;
@@ -29829,7 +30163,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "49595" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "56071" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
