@@ -1,3 +1,4 @@
+import Renderer from "../game/renderer";
 import TileManager from "../room/tile_manager";
 import Color from "../util/color";
 import Vec2 from "../util/vec2";
@@ -11,8 +12,16 @@ export default class Tile {
 
 	constructor(position: Vec2) {
 		this.position = position;
-		this.color = Color.RGB(20, 30, 100);
+		this.color = Color.RGB(56, 49, 86);
 
 		this.solid = false;
+	}
+
+	tick(): void {
+		this.render();
+	}
+
+	render(): void {
+		Renderer.rect(this.position, new Vec2(1, 1), this.color, 0.1);
 	}
 }

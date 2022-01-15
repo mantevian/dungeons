@@ -6,7 +6,7 @@ export default class Wall extends Tile {
 	constructor(position: Vec2) {
 		super(position);
 
-		this.color = Color.RGB(40, 80, 160);
+		this.color = Color.RGB(92, 75, 170);
 		this.solid = true;
 	}
 }

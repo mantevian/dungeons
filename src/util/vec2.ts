@@ -1,3 +1,5 @@
+import Game from "../game/game";
+
 export default class Vec2 {
 	x: number;
 	y: number;
@@ -42,6 +44,14 @@ export default class Vec2 {
 		return new Vec2(this.x + vec.x, this.y + vec.y);
 	}
 
+	subtract(vec: Vec2): Vec2 {
+		return new Vec2(this.x - vec.x, this.y - vec.y);
+	}
+
+	multiply(n: number): Vec2 {
+		return new Vec2(this.x * n, this.y * n);
+	}
+
 	toString(): string {
 		return `${this.x},${this.y}`
 	}
@@ -51,7 +61,8 @@ export default class Vec2 {
 	}
 
 	modulus_room(): Vec2 {
-		return new Vec2(this.x >= 0 ? this.x % 21 : (21 - Math.abs(this.x) % 21) % 21, this.y >= 0 ? this.y % 21 : (21 - Math.abs(this.y) % 21) % 21);
+		let w = Game.width;
+		return new Vec2(this.x >= 0 ? this.x % w : (w - Math.abs(this.x) % w) % w, this.y >= 0 ? this.y % w : (w - Math.abs(this.y) % w) % w);
 	}
 
 	to(vec: Vec2) {
@@ -78,5 +89,14 @@ export default class Vec2 {
 			new_vec.y = -1;
 		
 		return new_vec;
+	}
+
+	static from_angle(angle: number): Vec2 {
+		let r = 0.0174533;
+		return new Vec2(Math.cos(angle * r), Math.sin(angle * r));
+	}
+
+	round(): Vec2 {
+		return new Vec2(Math.round(this.x), Math.round(this.y));
 	}
 }

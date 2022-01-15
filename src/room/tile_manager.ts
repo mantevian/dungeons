@@ -1,3 +1,4 @@
+import Game from "../game/game";
 import Tile from "../tile/tile";
 import Wall from "../tile/wall";
 import Vec2 from "../util/vec2";
@@ -11,36 +12,40 @@ export default class TileManager {
 		this.room = room;
 		this.tiles = new Map<string, Tile>();
 
-		for (let i = 0; i < 21; i++)
-			for (let j = 0; j < 21; j++) {
+		let w = Game.width;
+		let c = Math.floor(w / 2);
+
+		for (let i = 0; i < w; i++)
+			for (let j = 0; j < w; j++) {
 				this.clear(new Vec2(i, j));
 			}
 
-		for (let i = 0; i < 21; i++) {
+		for (let i = 0; i < w; i++) {
 			this.set(new Wall(new Vec2(i, 0)));
 			this.set(new Wall(new Vec2(0, i)));
-			this.set(new Wall(new Vec2(i, 20)));
-			this.set(new Wall(new Vec2(20, i)));
+			this.set(new Wall(new Vec2(i, w - 1)));
+			this.set(new Wall(new Vec2(w - 1, i)));
 		}
 
 		for (let i = 0; i < 20; i++)
-			this.set(new Wall(new Vec2(this.room.manager.game.random.next_int_ranged(2, 18), this.room.manager.game.random.next_int_ranged(2, 18))));
+			this.set(new Wall(new Vec2(this.room.manager.game.random.next_int_ranged(2, w - 3), this.room.manager.game.random.next_int_ranged(2, w - 3))));
 
 		if (this.room.position.x > -2)
-			this.clear(new Vec2(0, 10));
+			this.clear(new Vec2(0, c));
 
 		if (this.room.position.y > -2)
-			this.clear(new Vec2(10, 0));
+			this.clear(new Vec2(c, 0));
 
 		if (this.room.position.x < 2)
-			this.clear(new Vec2(20, 10));
+			this.clear(new Vec2(w - 1, c));
 
 		if (this.room.position.y < 2)
-			this.clear(new Vec2(10, 20));
+			this.clear(new Vec2(c, w - 1));
 	}
 
-	passable(position: Vec2): boolean {
-		return !this.get(position) || !this.get(position).solid;
+	tick(): void {
+		for (let tile of this.tiles.values())
+			tile.tick();
 	}
 
 	/** Get a Tile at a position */

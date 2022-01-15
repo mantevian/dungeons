@@ -7,51 +7,70 @@ import RoomManager from "./room_manager";
 
 export default class Game {
 	readonly room_manager: RoomManager;
-	readonly renderer: Renderer;
 	private time: number;
 	readonly player: Player;
 	readonly random: Random;
 
+	static readonly width = 15;
+	static readonly center = Math.floor(this.width / 2);
+
+	keys_down: Map<string, number>;
+
+	mouse_pos: Vec2;
+
 	constructor(p5: p5) {
 		this.random = new Random();
 		this.room_manager = new RoomManager(this);
-		this.renderer = new Renderer(this, p5);
 		this.time = 0;
 		this.player = new Player(this);
-		this.player.set_position(new Vec2(10, 10));
-		
+		this.player.set_position(new Vec2(Game.center, Game.center));
+		this.mouse_pos = Vec2.zero();
 
-		window.addEventListener('keydown', (e: KeyboardEvent) => this.controls(e));
+		Renderer.game = this;
+		Renderer.p5 = p5;
+		Renderer.scale = 600 / Game.width;
+
+		this.keys_down = new Map<string, number>();
+
+		window.addEventListener('keydown', (e: KeyboardEvent) => this.keydown(e));
+		window.addEventListener('keyup', (e: KeyboardEvent) => this.keyup(e));
+		window.addEventListener('mousedown', (e: MouseEvent) => this.mousedown(e));
+		document.getElementById('defaultCanvas0').addEventListener('mousemove', (e: MouseEvent) => this.mousemove(e));
 	}
 
-	controls(e: KeyboardEvent): void {
-		switch (e.code) {
-			case 'KeyW':
-				this.player.move(new Vec2(0, -1));
-				break;
-			
-			case 'KeyA':
-				this.player.move(new Vec2(-1, 0));
-				break;
-			
-			case 'KeyS':
-				this.player.move(new Vec2(0, 1));
-				break;
-			
-			case 'KeyD':
-				this.player.move(new Vec2(1, 0));
-				break;
-		}
+	keydown(e: KeyboardEvent): void {
+		this.keys_down.set(e.code, -1);
+		this.player.keydown(this.keys_down);
+	}
+
+	keyup(e: KeyboardEvent): void {
+		this.keys_down.set(e.code, 2);
+		this.player.keyup(e);
+	}
+
+	mousedown(e: MouseEvent): void {
+		this.player.mousedown(e);
+	}
+
+	mousemove(e: MouseEvent): void {
+		let canvas = document.getElementById('defaultCanvas0');
+		this.mouse_pos = new Vec2(e.x - canvas.offsetLeft, e.y - canvas.offsetTop);
 	}
 
 	/** The main tick function for this Game */
 	tick(): void {
-		this.room_manager.enter(new Vec2(Math.floor(this.player.position.x / 21), Math.floor(this.player.position.y / 21)));
-		
-		this.room_manager.current_room.entities.tick();
+		this.room_manager.enter(new Vec2(Math.floor(this.player.position.x / Game.width), Math.floor(this.player.position.y / Game.width)));
+
+		this.room_manager.tick();
+		this.player.tick();
+		this.player.look(this.mouse_pos);
 		this.time++;
 
-		this.renderer.render();
+		for (let key of this.keys_down)
+			if (key[1] > 0)
+				this.keys_down.set(key[0], key[1] - 1);
+			else if (key[1] != -1)
+				this.keys_down.delete(key[0]);
 	}
 
 	/** The amount of ticks since this Game's start */
