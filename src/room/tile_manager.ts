@@ -1,16 +1,19 @@
 import Game from "../game/game";
 import Tile from "../tile/tile";
 import Wall from "../tile/wall";
+import Random from "../util/random";
 import Vec2 from "../util/vec2";
 import Room from "./room";
 
 export default class TileManager {
 	readonly room: Room;
 	private tiles: Map<string, Tile>;
+	readonly random: Random;
 
 	constructor(room: Room) {
 		this.room = room;
 		this.tiles = new Map<string, Tile>();
+		this.random = new Random();
 
 		let w = Game.width;
 		let c = Math.floor(w / 2);
@@ -27,7 +30,7 @@ export default class TileManager {
 			this.set(new Wall(new Vec2(w - 1, i)));
 		}
 
-		for (let i = 0; i < 20; i++)
+		for (let i = 0; i < this.random.next_int_ranged(8 + 3 * Math.abs(this.room.position.x) * Math.abs(this.room.position.y), 12 + 8 * Math.abs(this.room.position.x) * Math.abs(this.room.position.y)); i++)
 			this.set(new Wall(new Vec2(this.room.manager.game.random.next_int_ranged(2, w - 3), this.room.manager.game.random.next_int_ranged(2, w - 3))));
 
 		if (this.room.position.x > -2)
@@ -67,5 +70,18 @@ export default class TileManager {
 	/** Return the map */
 	map(): Map<string, Tile> {
 		return this.tiles;
+	}
+
+	solid(position: Vec2): boolean {
+		return this.get(position) && this.get(position).solid;
+	}
+
+	passable(position: Vec2, size: Vec2): boolean {
+		let left_up = new Vec2(Math.floor(position.x - size.x * 0.5), Math.floor(position.y - size.y * 0.5));
+		let right_up = new Vec2(Math.floor(position.x + size.x * 0.5), Math.floor(position.y - size.y * 0.5));
+		let right_down = new Vec2(Math.floor(position.x + size.x * 0.5), Math.floor(position.y + size.y * 0.5));
+		let left_down = new Vec2(Math.floor(position.x - size.x * 0.5), Math.floor(position.y + size.y * 0.5));
+
+		return !this.solid(left_up) && !this.solid(right_up) && !this.solid(right_down) && !this.solid(left_down);
 	}
 }

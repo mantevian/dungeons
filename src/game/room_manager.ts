@@ -37,9 +37,9 @@ export default class RoomManager {
 		this.current_room = this.get(position);
 	}
 
-	passable(position: Vec2): boolean {
+	passable(position: Vec2, size: Vec2): boolean {
 		let w = Game.width;
 		let room = new Vec2(Math.floor(position.x / w), Math.floor(position.y / w));
-		return this.get(room).passable(position.modulus_room());
+		return this.get(room).tiles.passable(position.modulus_room(), size);
 	}
 }

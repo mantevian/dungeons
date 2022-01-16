@@ -12,7 +12,7 @@ export default class Game {
 	readonly random: Random;
 
 	static readonly width = 15;
-	static readonly center = Math.floor(this.width / 2);
+	static readonly center = this.width / 2;
 
 	keys_down: Map<string, number>;
 
@@ -60,10 +60,10 @@ export default class Game {
 	/** The main tick function for this Game */
 	tick(): void {
 		this.room_manager.enter(new Vec2(Math.floor(this.player.position.x / Game.width), Math.floor(this.player.position.y / Game.width)));
-
+		this.player.manager = this.room_manager.current_room.entities;
 		this.room_manager.tick();
-		this.player.tick();
 		this.player.look(this.mouse_pos);
+		this.player.tick();
 		this.time++;
 
 		for (let key of this.keys_down)
@@ -71,6 +71,14 @@ export default class Game {
 				this.keys_down.set(key[0], key[1] - 1);
 			else if (key[1] != -1)
 				this.keys_down.delete(key[0]);
+	}
+
+	stop(): void {
+		Renderer.p5.background(37, 33, 53);
+		Renderer.p5.textSize(30);
+		Renderer.p5.fill('white');
+		Renderer.p5.text('You died! Refresh to restart', 100, 200);
+		Renderer.p5.noLoop();
 	}
 
 	/** The amount of ticks since this Game's start */

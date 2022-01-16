@@ -40,13 +40,17 @@ a:visited {
 
 #canvas {
 	background: var(--bg_main);
+	display: flex;
+	justify-content: center;
+}
+
+#info {
+	min-width: 300px;
 }
 
 .p5Canvas {
-	display: block;
     border-radius: 10px;
-	margin-left: auto;
-	margin-right: auto;
+	margin-right: 10px;
 }
 
 .go_back_button {

@@ -22,6 +22,6 @@ export default class Tile {
 	}
 
 	render(): void {
-		Renderer.rect(this.position, new Vec2(1, 1), this.color, 0.1);
+		Renderer.rect(this.position.add(new Vec2(0.5, 0.5)), Vec2.one(), this.color, 0.1);
 	}
 }

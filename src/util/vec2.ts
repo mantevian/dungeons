@@ -52,6 +52,10 @@ export default class Vec2 {
 		return new Vec2(this.x * n, this.y * n);
 	}
 
+	multiply_vector(vec: Vec2): Vec2 {
+		return new Vec2(this.x * vec.x, this.y * vec.y);
+	}
+
 	toString(): string {
 		return `${this.x},${this.y}`
 	}
@@ -92,11 +96,22 @@ export default class Vec2 {
 	}
 
 	static from_angle(angle: number): Vec2 {
-		let r = 0.0174533;
-		return new Vec2(Math.cos(angle * r), Math.sin(angle * r));
+		return new Vec2(Math.cos(angle * Math.PI / 180), Math.sin(angle * Math.PI / 180));
 	}
 
 	round(): Vec2 {
 		return new Vec2(Math.round(this.x), Math.round(this.y));
+	}
+
+	length(): number {
+		return Math.sqrt(this.x * this.x + this.y * this.y);
+	}
+
+	normalize(): Vec2 {
+		return new Vec2(this.x / this.length(), this.y / this.length());
+	}
+
+	equals(vec: Vec2): boolean {
+		return this.x == vec.x && this.y == vec.y;
 	}
 }

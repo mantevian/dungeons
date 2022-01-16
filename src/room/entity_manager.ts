@@ -1,9 +1,10 @@
 import Entity from "../entity/entity";
 import Room from "./room";
 import Random from "../util/random";
-import BasicMob from "../entity/basic_mob";
+import Mob from "../entity/mob";
 import Vec2 from "../util/vec2";
 import Game from "../game/game";
+import Projectile from "../entity/projectile";
 
 export default class EntityManager {
 	readonly room: Room;
@@ -15,10 +16,10 @@ export default class EntityManager {
 		this.entities = new Map<string, Entity>();
 		this.random = new Random();
 
-		for (let i = 0; i < this.random.next_int_ranged(0, 3); i++) {
-			let mob = new BasicMob();
+		for (let i = 0; i < this.random.next_int_ranged(0, Math.abs(this.room.position.x) + Math.abs(this.room.position.y)); i++) {
+			let mob = new Mob();
 			let w = Game.width;
-			mob.set_position(new Vec2(this.random.next_int_ranged(2, w - 3), this.random.next_int_ranged(2, w - 3)));
+			mob.set_position(new Vec2(this.random.next_int_ranged(2, w - 3) + 0.5, this.random.next_int_ranged(2, w - 3) + 0.5));
 			this.spawn(mob);
 		}
 	}
@@ -37,6 +38,12 @@ export default class EntityManager {
 	spawn(entity: Entity): void {
 		entity.manager = this;
 		this.entities.set(entity.uuid, entity);
+	}
+
+	spawn_projectile(position: Vec2, projectile: Projectile, angle: number, speed: number): void {
+		projectile.set_position(position.modulus_room());
+		projectile.velocity = Vec2.from_angle(angle).multiply(speed);
+		this.spawn(projectile);
 	}
 
 	/** Remove an Entity by a uuid */
@@ -69,5 +76,9 @@ export default class EntityManager {
 	tick(): void {
 		for (let entity of this.array())
 			entity.tick();
+	}
+
+	with_player(): Array<Entity> {
+		return [...this.entities.values(), this.room.manager.game.player];
 	}
 }

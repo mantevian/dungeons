@@ -15,6 +15,10 @@ export default class Color {
 		return new Color(red, green, blue);
 	}
 
+	static RGBA(red: number, green: number, blue: number, alpha: number) {
+		return new Color(red, green, blue, alpha);
+	}
+
 	set_red(red: number): void {
 		this.red = Math.floor(Math.max(Math.min(red, 255), 0));
 	}
