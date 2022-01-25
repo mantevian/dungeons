@@ -4,6 +4,9 @@ import Vec2 from "../util/vec2";
 import LivingEntity from "./living_entity";
 
 export default class Mob extends LivingEntity {
+	path: Array<Vec2>;
+	current_path_progress: number;
+
 	constructor() {
 		super();
 
@@ -11,8 +14,12 @@ export default class Mob extends LivingEntity {
 		this.size = new Vec2(0.7, 0.7);
 		this.corner_radius = 0.15;
 
-		this.max_health = 12;
-		this.attack_damage = 3;
+		this.max_health = 35;
+		this.start_prepare_attack = 30;
+		this.attack_damage = 6;
+
+		this.path = new Array<Vec2>();
+		this.current_path_progress = 0;
 	}
 
 	tick(): void {
@@ -21,13 +28,21 @@ export default class Mob extends LivingEntity {
 		this.look(Renderer.canvas_coords(this.manager.room.manager.game.player.room_pos()));
 
 		if (this.lifetime % 50 == 0) {
-			let v = this.position.step_to(this.manager.room.manager.game.player.room_pos().add(new Vec2(this.manager.random.next_int_ranged(-2, 2), this.manager.random.next_int_ranged(-2, 2))));
+			if (this.current_path_progress == 0) {
+				this.path = this.manager.room.tiles.find_path(this.room_pos(), this.manager.room.manager.game.player.room_pos().add(new Vec2(this.manager.random.next_int_ranged(-2, 2), this.manager.random.next_int_ranged(-2, 2))));
+				this.current_path_progress = 1;
+			}
 
-			this.move(v);
+			if (this.current_path_progress < this.path.length / 2) {
+				this.move_to(this.path[this.current_path_progress]);
+				this.current_path_progress++;
+			}
+			else
+				this.current_path_progress = 0;
 		}
 
 		if (this.lifetime % 120 == 0) {
-			this.attack();
+			this.try_attack();
 		}
 	}
 

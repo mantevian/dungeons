@@ -114,4 +114,8 @@ export default class Vec2 {
 	equals(vec: Vec2): boolean {
 		return this.x == vec.x && this.y == vec.y;
 	}
+
+	floor(): Vec2 {
+		return new Vec2(Math.floor(this.x), Math.floor(this.y));
+	}
 }

@@ -19,6 +19,8 @@ export default class LivingEntity extends Entity {
 	max_damage_invincibility_timer: number;
 
 	attack_damage: number;
+	prepare_attack: number;
+	start_prepare_attack: number;
 
 	last_attacker: Entity;
 
@@ -33,10 +35,12 @@ export default class LivingEntity extends Entity {
 		this.max_move_timeout = 10;
 		this.moving = Vec2.zero();
 
-		this.health = 20;
-		this.max_health = 20;
+		this.health = 50;
+		this.max_health = 50;
 
-		this.attack_damage = 1;
+		this.attack_damage = 5;
+		this.prepare_attack = -1;
+		this.start_prepare_attack = 1;
 
 		this.max_damage_invincibility_timer = 20;
 		this.damage_invincibility_timer = 0;
@@ -56,6 +60,12 @@ export default class LivingEntity extends Entity {
 		}
 		else
 			this.moving = Vec2.zero();
+		
+		if (this.prepare_attack > -1)
+			this.prepare_attack--;
+		
+		if (this.prepare_attack == 0)
+			this.attack();
 		
 		if (this.health > this.max_health)
 			this.health = this.max_health;
@@ -98,12 +108,19 @@ export default class LivingEntity extends Entity {
 		this.facing = Math.atan2(vec.y, vec.x) * 180 / Math.PI;
 	}
 
+	try_attack(): void {
+		this.prepare_attack = this.start_prepare_attack;
+		this.scale_over_time(1.1, this.start_prepare_attack);
+	}
+
 	attack(): void {
 		this.manager.spawn_projectile(this.room_pos(), new Projectile(this, this.attack_damage), this.facing, 0.2);
 		this.scale = 1.1;
+		this.scale_over_time(1, 10);
 	}
 
 	damage(damage: number, source: Entity, timer = this.max_damage_invincibility_timer): void {
+		damage = Math.floor(damage);
 		this.health -= damage;
 		this.max_damage_invincibility_timer = timer;
 		this.damage_invincibility_timer = timer;
@@ -114,9 +131,14 @@ export default class LivingEntity extends Entity {
 	}
 
 	render(): void {
-		if (this.scale > 1)
-			this.scale -= 0.01;
-		else this.scale = 1;
+		if (this.scale_time > 0) {
+			this.scale_time--;
+			this.scale += this.scale_per_tick;
+		}
+		else {
+			this.scale = 1;
+			this.scale_per_tick = 0;
+		}
 
 		Renderer.rect(this.room_pos(), this.size, this.color.lighten(this.damage_invincibility_timer / this.max_damage_invincibility_timer), this.corner_radius, this.scale);
 	}

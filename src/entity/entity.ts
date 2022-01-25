@@ -16,6 +16,8 @@ export default class Entity {
 	color: Color;
 	corner_radius: number;
 	scale: number;
+	scale_time: number;
+	scale_per_tick: number;
 
 	lifetime: number;
 
@@ -32,6 +34,8 @@ export default class Entity {
 		this.color = Color.RGB(255, 255, 255);
 		this.corner_radius = 0;
 		this.scale = 1;
+		this.scale_time = 0;
+		this.scale_per_tick = 0;
 
 		this.lifetime = 0;
 
@@ -56,6 +60,10 @@ export default class Entity {
 			this.set_position(new_position);
 		else
 			this.on_tile_collision();
+	}
+
+	move_to(vec: Vec2): void {
+		this.move(vec.subtract(this.position));
 	}
 
 	tick(): void {
@@ -103,6 +111,15 @@ export default class Entity {
 	}
 
 	render(): void {
+		if (this.scale_time > 0) {
+			this.scale_time--;
+			this.scale += this.scale_per_tick;
+		}
+		else {
+			this.scale = 1;
+			this.scale_per_tick = 0;
+		}
+
 		Renderer.rect(this.room_pos(), this.size, this.color, this.corner_radius, this.scale);
 	}
 
@@ -115,6 +132,11 @@ export default class Entity {
 			this.position.copy(position.add(this.parent.position));
 		else
 			this.position.copy(position);
+	}
+
+	scale_over_time(scale: number, time: number): void {
+		this.scale_per_tick = (scale - this.scale) / time;
+		this.scale_time = time;
 	}
 
 	room_pos(): Vec2 {

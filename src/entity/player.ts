@@ -22,7 +22,7 @@ export default class Player extends LivingEntity {
 		this.attack_cooldown = 20;
 		this.max_attack_cooldown = 20;
 
-		this.attack_damage = 5;
+		this.attack_damage = 15;
 
 		this.xp = 0;
 	}
@@ -32,7 +32,7 @@ export default class Player extends LivingEntity {
 	}
 
 	mousedown(e: MouseEvent): void {
-		this.attack();
+		this.try_attack();
 	}
 
 	tick(): void {
@@ -58,10 +58,14 @@ export default class Player extends LivingEntity {
 			Renderer.rect(new Vec2(0, 0), new Vec2(100, 100), Color.RGBA(255, 100, 0, 32 * this.damage_invincibility_timer / this.max_damage_invincibility_timer), 0);
 	}
 
-	attack(): void {
+	try_attack(): void {
 		if (this.attack_cooldown > 0)
 			return;
 		
+		super.try_attack();
+	}
+
+	attack(): void {
 		super.attack();
 
 		this.attack_cooldown = this.max_attack_cooldown;

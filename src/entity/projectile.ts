@@ -26,6 +26,8 @@ export default class Projectile extends Entity {
 		this.velocity = Vec2.zero();
 
 		this.scale = 1.2;
+		this.scale_per_tick = -0.01;
+		this.scale_time = 1000;
 
 		this.player_friendly = parent instanceof Player;
 	}
@@ -59,7 +61,6 @@ export default class Projectile extends Entity {
 		super.render();
 
 		if (this.scale > 0.5) {
-			this.scale -= 0.01;
 			this.velocity = this.velocity.multiply(0.98);
 			this.attack_damage *= 0.99;
 		}

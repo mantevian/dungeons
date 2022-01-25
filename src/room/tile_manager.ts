@@ -4,11 +4,14 @@ import Wall from "../tile/wall";
 import Random from "../util/random";
 import Vec2 from "../util/vec2";
 import Room from "./room";
+import PF from 'pathfinding';
 
 export default class TileManager {
 	readonly room: Room;
 	private tiles: Map<string, Tile>;
 	readonly random: Random;
+	readonly pathfinding_grid: PF.Grid;
+	readonly pathfinder: PF.AStarFinder;
 
 	constructor(room: Room) {
 		this.room = room;
@@ -17,6 +20,8 @@ export default class TileManager {
 
 		let w = Game.width;
 		let c = Math.floor(w / 2);
+
+		this.pathfinding_grid = new PF.Grid(w, w);
 
 		for (let i = 0; i < w; i++)
 			for (let j = 0; j < w; j++) {
@@ -44,6 +49,8 @@ export default class TileManager {
 
 		if (this.room.position.y < 2)
 			this.clear(new Vec2(c, w - 1));
+		
+		this.pathfinder = new PF.AStarFinder();
 	}
 
 	tick(): void {
@@ -60,6 +67,7 @@ export default class TileManager {
 	set(tile: Tile): void {
 		tile.manager = this;
 		this.tiles.set(tile.position.toString(), tile);
+		this.pathfinding_grid.setWalkableAt(tile.position.x, tile.position.y, !tile.solid);
 	}
 
 	/** Remove a tile by its position */
@@ -67,15 +75,17 @@ export default class TileManager {
 		this.set(new Tile(position));
 	}
 
-	/** Return the map */
-	map(): Map<string, Tile> {
+	/** Return the tilemap */
+	get_tiles(): Map<string, Tile> {
 		return this.tiles;
 	}
 
+	/** Check whether a tile at position is solid */
 	solid(position: Vec2): boolean {
 		return this.get(position) && this.get(position).solid;
 	}
-
+	
+	/** Check whether a box centered at @position with the size of @size collides with any tiles */
 	passable(position: Vec2, size: Vec2): boolean {
 		let left_up = new Vec2(Math.floor(position.x - size.x * 0.5), Math.floor(position.y - size.y * 0.5));
 		let right_up = new Vec2(Math.floor(position.x + size.x * 0.5), Math.floor(position.y - size.y * 0.5));
@@ -83,5 +93,25 @@ export default class TileManager {
 		let left_down = new Vec2(Math.floor(position.x - size.x * 0.5), Math.floor(position.y + size.y * 0.5));
 
 		return !this.solid(left_up) && !this.solid(right_up) && !this.solid(right_down) && !this.solid(left_down);
+	}
+
+	/** Get all tiles as an */
+	array(): Array<Tile> {
+		return [...this.tiles.values()];
+	}
+
+	/** Get a matrix of 0's for passable tiles and 1's for unpassable */
+	to_solid_matrix(): Array<Array<number>> {
+		let matrix = new Array<Array<number>>();
+
+		for (let i = 0; i < Game.width; i++)
+			for (let j = 0; j < Game.width; j++)
+				matrix[i][j] = this.solid(new Vec2(i, j)) ? 1 : 0;
+
+		return matrix;
+	}
+
+	find_path(start: Vec2, end: Vec2): Array<Vec2> {
+		return this.pathfinder.findPath(start.floor().x, start.floor().y, end.floor().x, end.floor().y, this.pathfinding_grid.clone()).map(pos => new Vec2(pos[0] + 0.5, pos[1] + 0.5));
 	}
 }
