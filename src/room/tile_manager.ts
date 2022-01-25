@@ -112,6 +112,6 @@ export default class TileManager {
 	}
 
 	find_path(start: Vec2, end: Vec2): Array<Vec2> {
-		return this.pathfinder.findPath(start.floor().x, start.floor().y, end.floor().x, end.floor().y, this.pathfinding_grid.clone()).map(pos => new Vec2(pos[0] + 0.5, pos[1] + 0.5));
+		return this.pathfinder.findPath(start.constrain_room().floor().x, start.constrain_room().floor().y, end.constrain_room().floor().x, end.constrain_room().floor().y, this.pathfinding_grid.clone()).map(pos => new Vec2(pos[0] + 0.5, pos[1] + 0.5));
 	}
 }

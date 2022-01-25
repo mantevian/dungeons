@@ -21,6 +21,10 @@ export default class Vec2 {
 		this.y = vec.y;
 	}
 
+	clone(): Vec2 {
+		return new Vec2(this.x, this.y);
+	}
+
 	/** (0, 0) */
 	static zero(): Vec2 {
 		return new Vec2(0, 0);
@@ -117,5 +121,22 @@ export default class Vec2 {
 
 	floor(): Vec2 {
 		return new Vec2(Math.floor(this.x), Math.floor(this.y));
+	}
+
+	constrain_room(): Vec2 {
+		let vec = this.clone();
+		if (vec.x < 0)
+			vec.x = 0;
+		
+		if (vec.y < 0)
+			vec.y = 0;
+		
+		if (vec.x > Game.width - 1)
+			vec.x = Game.width - 1;
+		
+		if (vec.y > Game.width - 1)
+			vec.y = Game.width - 1;
+		
+		return vec;
 	}
 }

@@ -16,7 +16,7 @@ export default class EntityManager {
 		this.entities = new Map<string, Entity>();
 		this.random = new Random();
 
-		for (let i = 0; i < this.random.next_int_ranged(0, Math.abs(this.room.position.x) + Math.abs(this.room.position.y)); i++) {
+		for (let i = 0; i < this.random.next_int_ranged(0, this.room.position.x * this.room.position.x + this.room.position.y * this.room.position.y); i++) {
 			let mob = new Mob();
 			let w = Game.width;
 			mob.set_position(new Vec2(this.random.next_int_ranged(2, w - 3) + 0.5, this.random.next_int_ranged(2, w - 3) + 0.5));
