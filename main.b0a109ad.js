@@ -28974,6 +28974,11 @@ var Vec2 = /*#__PURE__*/function () {
       this.x = vec.x;
       this.y = vec.y;
     }
+  }, {
+    key: "clone",
+    value: function clone() {
+      return new Vec2(this.x, this.y);
+    }
     /** (0, 0) */
 
   }, {
@@ -29041,6 +29046,16 @@ var Vec2 = /*#__PURE__*/function () {
     key: "floor",
     value: function floor() {
       return new Vec2(Math.floor(this.x), Math.floor(this.y));
+    }
+  }, {
+    key: "constrain_room",
+    value: function constrain_room() {
+      var vec = this.clone();
+      if (vec.x < 0) vec.x = 0;
+      if (vec.y < 0) vec.y = 0;
+      if (vec.x > game_1.default.width - 1) vec.x = game_1.default.width - 1;
+      if (vec.y > game_1.default.width - 1) vec.y = game_1.default.width - 1;
+      return vec;
     }
   }], [{
     key: "zero",
@@ -30359,7 +30374,7 @@ var EntityManager = /*#__PURE__*/function () {
     this.entities = new Map();
     this.random = new random_1.default();
 
-    for (var i = 0; i < this.random.next_int_ranged(0, Math.abs(this.room.position.x) + Math.abs(this.room.position.y)); i++) {
+    for (var i = 0; i < this.random.next_int_ranged(0, this.room.position.x * this.room.position.x + this.room.position.y * this.room.position.y); i++) {
       var mob = new mob_1.default();
       var w = game_1.default.width;
       mob.set_position(new vec2_1.default(this.random.next_int_ranged(2, w - 3) + 0.5, this.random.next_int_ranged(2, w - 3) + 0.5));
@@ -33431,7 +33446,7 @@ var TileManager = /*#__PURE__*/function () {
   }, {
     key: "find_path",
     value: function find_path(start, end) {
-      return this.pathfinder.findPath(start.floor().x, start.floor().y, end.floor().x, end.floor().y, this.pathfinding_grid.clone()).map(function (pos) {
+      return this.pathfinder.findPath(start.constrain_room().floor().x, start.constrain_room().floor().y, end.constrain_room().floor().x, end.constrain_room().floor().y, this.pathfinding_grid.clone()).map(function (pos) {
         return new vec2_1.default(pos[0] + 0.5, pos[1] + 0.5);
       });
     }
@@ -33789,7 +33804,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "50740" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "53167" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
