@@ -42,7 +42,7 @@ export default class Player extends LivingEntity {
 			this.attack_cooldown--;
 		
 		if (this.health < 0)
-			this.manager.room.manager.game.stop();
+			this.manager.room.manager.game.stop_caused_by_death();
 	}
 
 	can_go_through(position: Vec2): boolean {

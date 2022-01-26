@@ -14,6 +14,8 @@ export default class Game {
 	static readonly width = 15;
 	static readonly center = this.width / 2;
 
+	state: 'menu' | 'running' | 'dead';
+
 	keys_down: Map<string, number>;
 
 	mouse_pos: Vec2;
@@ -30,12 +32,17 @@ export default class Game {
 		Renderer.p5 = p5;
 		Renderer.scale = 600 / Game.width;
 
+		this.state = 'menu';
 		this.keys_down = new Map<string, number>();
+	}
 
+	start(): void {
 		window.addEventListener('keydown', (e: KeyboardEvent) => this.keydown(e));
 		window.addEventListener('keyup', (e: KeyboardEvent) => this.keyup(e));
 		window.addEventListener('mousedown', (e: MouseEvent) => this.mousedown(e));
 		document.getElementById('defaultCanvas0').addEventListener('mousemove', (e: MouseEvent) => this.mousemove(e));
+
+		this.state = 'running';
 	}
 
 	keydown(e: KeyboardEvent): void {
@@ -73,12 +80,13 @@ export default class Game {
 				this.keys_down.delete(key[0]);
 	}
 
-	stop(): void {
-		Renderer.p5.background(37, 33, 53);
-		Renderer.p5.textSize(30);
-		Renderer.p5.fill('white');
-		Renderer.p5.text('You died! Refresh to restart', 100, 200);
-		Renderer.p5.noLoop();
+	stop_caused_by_death(): void {
+		window.removeEventListener('keydown', (e: KeyboardEvent) => this.keydown(e));
+		window.removeEventListener('keyup', (e: KeyboardEvent) => this.keyup(e));
+		window.removeEventListener('mousedown', (e: MouseEvent) => this.mousedown(e));
+		document.getElementById('defaultCanvas0').removeEventListener('mousemove', (e: MouseEvent) => this.mousemove(e));
+
+		this.state = 'dead';
 	}
 
 	/** The amount of ticks since this Game's start */

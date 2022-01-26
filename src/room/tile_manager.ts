@@ -19,7 +19,6 @@ export default class TileManager {
 		this.random = new Random();
 
 		let w = Game.width;
-		let c = Math.floor(w / 2);
 
 		this.pathfinding_grid = new PF.Grid(w, w);
 
@@ -38,18 +37,6 @@ export default class TileManager {
 		for (let i = 0; i < this.random.next_int_ranged(8 + 3 * Math.abs(this.room.position.x) * Math.abs(this.room.position.y), 12 + 8 * Math.abs(this.room.position.x) * Math.abs(this.room.position.y)); i++)
 			this.set(new Wall(new Vec2(this.room.manager.game.random.next_int_ranged(2, w - 3), this.room.manager.game.random.next_int_ranged(2, w - 3))));
 
-		if (this.room.position.x > -2)
-			this.clear(new Vec2(0, c));
-
-		if (this.room.position.y > -2)
-			this.clear(new Vec2(c, 0));
-
-		if (this.room.position.x < 2)
-			this.clear(new Vec2(w - 1, c));
-
-		if (this.room.position.y < 2)
-			this.clear(new Vec2(c, w - 1));
-		
 		this.pathfinder = new PF.AStarFinder();
 	}
 
@@ -84,7 +71,7 @@ export default class TileManager {
 	solid(position: Vec2): boolean {
 		return this.get(position) && this.get(position).solid;
 	}
-	
+
 	/** Check whether a box centered at @position with the size of @size collides with any tiles */
 	passable(position: Vec2, size: Vec2): boolean {
 		let left_up = new Vec2(Math.floor(position.x - size.x * 0.5), Math.floor(position.y - size.y * 0.5));
@@ -111,7 +98,28 @@ export default class TileManager {
 		return matrix;
 	}
 
+	/** Returns a path from @start to @end */
 	find_path(start: Vec2, end: Vec2): Array<Vec2> {
 		return this.pathfinder.findPath(start.constrain_room().floor().x, start.constrain_room().floor().y, end.constrain_room().floor().x, end.constrain_room().floor().y, this.pathfinding_grid.clone()).map(pos => new Vec2(pos[0] + 0.5, pos[1] + 0.5));
+	}
+
+	create_door(direction: 'left' | 'right' | 'up' | 'down'): void {
+		switch (direction) {
+			case 'left':
+				this.clear(new Vec2(0, Math.floor(Game.center)));
+				break;
+			
+			case 'right':
+				this.clear(new Vec2(Game.width - 1, Math.floor(Game.center)));
+				break;
+			
+			case 'up':
+				this.clear(new Vec2(Math.floor(Game.center), 0));
+				break;
+			
+			case 'down':
+				this.clear(new Vec2(Math.floor(Game.center), Game.width - 1));
+				break;
+		}
 	}
 }

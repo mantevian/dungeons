@@ -10,7 +10,7 @@ export default class Renderer {
 	static scale: number;
 
 	static canvas_coords(vec: Vec2): Vec2 {
-		return new Vec2(vec.x * this.scale, vec.y * this.scale);
+		return new Vec2(vec.x * this.scale + 300, vec.y * this.scale);
 	}
 
 	static rect(position: Vec2, size: Vec2, color: Color, corner_radius: number, scale = 0.95) {
@@ -44,6 +44,40 @@ export default class Renderer {
 		this.p5.textSize(size);
 		this.p5.fill(color.get_red(), color.get_green(), color.get_blue(), color.get_alpha());
 		this.p5.text(text, this.canvas_coords(position).x, this.canvas_coords(position).y);
+		this.p5.pop();
+	}
+	
+	static map(): void {
+		this.p5.push();
+		this.p5.translate(100, 300);
+		this.p5.rectMode('corner');
+
+		for (let room of this.game.room_manager.array()) {
+			this.p5.fill(128, 128, 128);
+			if (room.visited)
+				this.p5.fill(192, 192, 192);
+				if (room.cleared)
+					this.p5.fill(64, 220, 64);
+
+			this.p5.rect(room.position.x * 20, room.position.y * 20, 15, 15);
+
+			this.p5.fill(96, 96, 96);
+			if (room.has_door('left'))
+				this.p5.rect(room.position.x * 20 - 2.5, room.position.y * 20 + 5, 2.5, 5);
+			
+			if (room.has_door('right'))
+				this.p5.rect(room.position.x * 20 + 15, room.position.y * 20 + 5, 2.5, 5);
+			
+			if (room.has_door('up'))
+				this.p5.rect(room.position.x * 20 + 5, room.position.y * 20 - 2.5, 5, 2.5);
+			
+			if (room.has_door('down'))
+				this.p5.rect(room.position.x * 20 + 5, room.position.y * 20 + 15, 5, 2.5);
+		}
+
+		this.p5.fill(255, 255, 255);
+		this.p5.rect(this.game.room_manager.current_room.position.x * 20 + 5, this.game.room_manager.current_room.position.y * 20 + 5, 5, 5)
+
 		this.p5.pop();
 	}
 }
