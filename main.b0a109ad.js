@@ -29110,6 +29110,12 @@ exports.default = Vec2;
 },{"../game/game":"src/game/game.ts"}],"src/game/renderer.ts":[function(require,module,exports) {
 "use strict";
 
+function _createForOfIteratorHelper(o, allowArrayLike) { var it = typeof Symbol !== "undefined" && o[Symbol.iterator] || o["@@iterator"]; if (!it) { if (Array.isArray(o) || (it = _unsupportedIterableToArray(o)) || allowArrayLike && o && typeof o.length === "number") { if (it) o = it; var i = 0; var F = function F() {}; return { s: F, n: function n() { if (i >= o.length) return { done: true }; return { done: false, value: o[i++] }; }, e: function e(_e) { throw _e; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var normalCompletion = true, didErr = false, err; return { s: function s() { it = it.call(o); }, n: function n() { var step = it.next(); normalCompletion = step.done; return step; }, e: function e(_e2) { didErr = true; err = _e2; }, f: function f() { try { if (!normalCompletion && it.return != null) it.return(); } finally { if (didErr) throw err; } } }; }
+
+function _unsupportedIterableToArray(o, minLen) { if (!o) return; if (typeof o === "string") return _arrayLikeToArray(o, minLen); var n = Object.prototype.toString.call(o).slice(8, -1); if (n === "Object" && o.constructor) n = o.constructor.name; if (n === "Map" || n === "Set") return Array.from(o); if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray(o, minLen); }
+
+function _arrayLikeToArray(arr, len) { if (len == null || len > arr.length) len = arr.length; for (var i = 0, arr2 = new Array(len); i < len; i++) { arr2[i] = arr[i]; } return arr2; }
+
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
@@ -29138,7 +29144,7 @@ var Renderer = /*#__PURE__*/function () {
   _createClass(Renderer, null, [{
     key: "canvas_coords",
     value: function canvas_coords(vec) {
-      return new vec2_1.default(vec.x * this.scale, vec.y * this.scale);
+      return new vec2_1.default(vec.x * this.scale + 300, vec.y * this.scale);
     }
   }, {
     key: "rect",
@@ -29176,6 +29182,39 @@ var Renderer = /*#__PURE__*/function () {
       this.p5.textSize(size);
       this.p5.fill(color.get_red(), color.get_green(), color.get_blue(), color.get_alpha());
       this.p5.text(_text, this.canvas_coords(position).x, this.canvas_coords(position).y);
+      this.p5.pop();
+    }
+  }, {
+    key: "map",
+    value: function map() {
+      this.p5.push();
+      this.p5.translate(100, 300);
+      this.p5.rectMode('corner');
+
+      var _iterator = _createForOfIteratorHelper(this.game.room_manager.array()),
+          _step;
+
+      try {
+        for (_iterator.s(); !(_step = _iterator.n()).done;) {
+          var room = _step.value;
+          this.p5.fill(128, 128, 128);
+          if (room.visited) this.p5.fill(192, 192, 192);
+          if (room.cleared) this.p5.fill(64, 220, 64);
+          this.p5.rect(room.position.x * 20, room.position.y * 20, 15, 15);
+          this.p5.fill(96, 96, 96);
+          if (room.has_door('left')) this.p5.rect(room.position.x * 20 - 2.5, room.position.y * 20 + 5, 2.5, 5);
+          if (room.has_door('right')) this.p5.rect(room.position.x * 20 + 15, room.position.y * 20 + 5, 2.5, 5);
+          if (room.has_door('up')) this.p5.rect(room.position.x * 20 + 5, room.position.y * 20 - 2.5, 5, 2.5);
+          if (room.has_door('down')) this.p5.rect(room.position.x * 20 + 5, room.position.y * 20 + 15, 5, 2.5);
+        }
+      } catch (err) {
+        _iterator.e(err);
+      } finally {
+        _iterator.f();
+      }
+
+      this.p5.fill(255, 255, 255);
+      this.p5.rect(this.game.room_manager.current_room.position.x * 20 + 5, this.game.room_manager.current_room.position.y * 20 + 5, 5, 5);
       this.p5.pop();
     }
   }]);
@@ -30057,7 +30096,7 @@ var Player = /*#__PURE__*/function (_living_entity_1$defa) {
       _get(_getPrototypeOf(Player.prototype), "tick", this).call(this);
 
       if (this.attack_cooldown > 0) this.attack_cooldown--;
-      if (this.health < 0) this.manager.room.manager.game.stop();
+      if (this.health < 0) this.manager.room.manager.game.stop_caused_by_death();
     }
   }, {
     key: "can_go_through",
@@ -30374,7 +30413,7 @@ var EntityManager = /*#__PURE__*/function () {
     this.entities = new Map();
     this.random = new random_1.default();
 
-    for (var i = 0; i < this.random.next_int_ranged(0, this.room.position.x * this.room.position.x + this.room.position.y * this.room.position.y); i++) {
+    for (var i = 0; i < this.random.next_int_ranged(0, 1) + this.random.next_int_ranged(0, Math.sqrt(this.room.position.x * this.room.position.x + this.room.position.y * this.room.position.y)); i++) {
       var mob = new mob_1.default();
       var w = game_1.default.width;
       mob.set_position(new vec2_1.default(this.random.next_int_ranged(2, w - 3) + 0.5, this.random.next_int_ranged(2, w - 3) + 0.5));
@@ -33329,7 +33368,6 @@ var TileManager = /*#__PURE__*/function () {
     this.tiles = new Map();
     this.random = new random_1.default();
     var w = game_1.default.width;
-    var c = Math.floor(w / 2);
     this.pathfinding_grid = new pathfinding_1.default.Grid(w, w);
 
     for (var i = 0; i < w; i++) {
@@ -33349,10 +33387,6 @@ var TileManager = /*#__PURE__*/function () {
       this.set(new wall_1.default(new vec2_1.default(this.room.manager.game.random.next_int_ranged(2, w - 3), this.room.manager.game.random.next_int_ranged(2, w - 3))));
     }
 
-    if (this.room.position.x > -2) this.clear(new vec2_1.default(0, c));
-    if (this.room.position.y > -2) this.clear(new vec2_1.default(c, 0));
-    if (this.room.position.x < 2) this.clear(new vec2_1.default(w - 1, c));
-    if (this.room.position.y < 2) this.clear(new vec2_1.default(c, w - 1));
     this.pathfinder = new pathfinding_1.default.AStarFinder();
   }
 
@@ -33443,12 +33477,35 @@ var TileManager = /*#__PURE__*/function () {
 
       return matrix;
     }
+    /** Returns a path from @start to @end */
+
   }, {
     key: "find_path",
     value: function find_path(start, end) {
       return this.pathfinder.findPath(start.constrain_room().floor().x, start.constrain_room().floor().y, end.constrain_room().floor().x, end.constrain_room().floor().y, this.pathfinding_grid.clone()).map(function (pos) {
         return new vec2_1.default(pos[0] + 0.5, pos[1] + 0.5);
       });
+    }
+  }, {
+    key: "create_door",
+    value: function create_door(direction) {
+      switch (direction) {
+        case 'left':
+          this.clear(new vec2_1.default(0, Math.floor(game_1.default.center)));
+          break;
+
+        case 'right':
+          this.clear(new vec2_1.default(game_1.default.width - 1, Math.floor(game_1.default.center)));
+          break;
+
+        case 'up':
+          this.clear(new vec2_1.default(Math.floor(game_1.default.center), 0));
+          break;
+
+        case 'down':
+          this.clear(new vec2_1.default(Math.floor(game_1.default.center), game_1.default.width - 1));
+          break;
+      }
     }
   }]);
 
@@ -33475,6 +33532,10 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
+var game_1 = __importDefault(require("../game/game"));
+
+var vec2_1 = __importDefault(require("../util/vec2"));
+
 var entity_manager_1 = __importDefault(require("./entity_manager"));
 
 var particle_manager_1 = __importDefault(require("./particle_manager"));
@@ -33498,6 +33559,33 @@ var Room = /*#__PURE__*/function () {
       this.tiles.tick();
       this.entities.tick();
       this.particles.tick();
+      this.visited = true;
+      if (this.entities.size() == 0) this.cleared = true;
+    }
+  }, {
+    key: "has_door",
+    value: function has_door(direction) {
+      var pos;
+
+      switch (direction) {
+        case 'left':
+          pos = new vec2_1.default(0, game_1.default.center).floor();
+          break;
+
+        case 'right':
+          pos = new vec2_1.default(game_1.default.width - 1, game_1.default.center).floor();
+          break;
+
+        case 'up':
+          pos = new vec2_1.default(game_1.default.center, 0).floor();
+          break;
+
+        case 'down':
+          pos = new vec2_1.default(game_1.default.center, game_1.default.width - 1).floor();
+          break;
+      }
+
+      return !this.tiles.solid(pos);
     }
   }]);
 
@@ -33505,8 +33593,20 @@ var Room = /*#__PURE__*/function () {
 }();
 
 exports.default = Room;
-},{"./entity_manager":"src/room/entity_manager.ts","./particle_manager":"src/room/particle_manager.ts","./tile_manager":"src/room/tile_manager.ts"}],"src/game/room_manager.ts":[function(require,module,exports) {
+},{"../game/game":"src/game/game.ts","../util/vec2":"src/util/vec2.ts","./entity_manager":"src/room/entity_manager.ts","./particle_manager":"src/room/particle_manager.ts","./tile_manager":"src/room/tile_manager.ts"}],"src/game/room_manager.ts":[function(require,module,exports) {
 "use strict";
+
+function _toConsumableArray(arr) { return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _unsupportedIterableToArray(arr) || _nonIterableSpread(); }
+
+function _nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
+
+function _unsupportedIterableToArray(o, minLen) { if (!o) return; if (typeof o === "string") return _arrayLikeToArray(o, minLen); var n = Object.prototype.toString.call(o).slice(8, -1); if (n === "Object" && o.constructor) n = o.constructor.name; if (n === "Map" || n === "Set") return Array.from(o); if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray(o, minLen); }
+
+function _iterableToArray(iter) { if (typeof Symbol !== "undefined" && iter[Symbol.iterator] != null || iter["@@iterator"] != null) return Array.from(iter); }
+
+function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) return _arrayLikeToArray(arr); }
+
+function _arrayLikeToArray(arr, len) { if (len == null || len > arr.length) len = arr.length; for (var i = 0, arr2 = new Array(len); i < len; i++) { arr2[i] = arr[i]; } return arr2; }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
@@ -33526,9 +33626,13 @@ Object.defineProperty(exports, "__esModule", {
 
 var room_1 = __importDefault(require("../room/room"));
 
+var random_1 = __importDefault(require("../util/random"));
+
 var vec2_1 = __importDefault(require("../util/vec2"));
 
 var game_1 = __importDefault(require("./game"));
+
+var renderer_1 = __importDefault(require("./renderer"));
 
 var RoomManager = /*#__PURE__*/function () {
   function RoomManager(game) {
@@ -33536,20 +33640,82 @@ var RoomManager = /*#__PURE__*/function () {
 
     this.game = game;
     this.rooms = new Map();
+    this.random = new random_1.default();
+    this.set(new room_1.default(vec2_1.default.zero(), this));
 
-    for (var i = -2; i <= 2; i++) {
-      for (var j = -2; j <= 2; j++) {
-        this.set(new room_1.default(new vec2_1.default(i, j), this));
+    for (var thread = 0; thread < 7; thread++) {
+      var direction = this.random_direction();
+      var pos = vec2_1.default.zero();
+      var prev_pos = vec2_1.default.zero();
+
+      for (var i = 0; i < 20; i++) {
+        prev_pos = pos.clone();
+
+        switch (direction) {
+          case 'left':
+            pos = pos.add(new vec2_1.default(-1, 0));
+            break;
+
+          case 'right':
+            pos = pos.add(new vec2_1.default(1, 0));
+            break;
+
+          case 'up':
+            pos = pos.add(new vec2_1.default(0, -1));
+            break;
+
+          case 'down':
+            pos = pos.add(new vec2_1.default(0, 1));
+            break;
+        }
+
+        if (!this.get(pos)) {
+          this.set(new room_1.default(pos, this));
+          this.get(pos).tiles.create_door(this.opposite_direction(direction));
+          this.get(prev_pos).tiles.create_door(direction);
+        }
+
+        direction = this.random_direction();
       }
     }
 
+    var w = game_1.default.width - 1;
+    var c = Math.floor(w / 2);
     this.enter(vec2_1.default.zero());
   }
 
   _createClass(RoomManager, [{
+    key: "random_direction",
+    value: function random_direction() {
+      return this.random.choice(['left', 'right', 'up', 'down']);
+    }
+  }, {
+    key: "opposite_direction",
+    value: function opposite_direction(direction) {
+      switch (direction) {
+        case 'left':
+          return 'right';
+
+        case 'right':
+          return 'left';
+
+        case 'up':
+          return 'down';
+
+        case 'down':
+          return 'up';
+      }
+    }
+  }, {
+    key: "array",
+    value: function array() {
+      return _toConsumableArray(this.rooms.values());
+    }
+  }, {
     key: "tick",
     value: function tick() {
       this.current_room.tick();
+      renderer_1.default.map();
     }
     /** Get a Room by position */
 
@@ -33583,7 +33749,7 @@ var RoomManager = /*#__PURE__*/function () {
 }();
 
 exports.default = RoomManager;
-},{"../room/room":"src/room/room.ts","../util/vec2":"src/util/vec2.ts","./game":"src/game/game.ts"}],"src/game/game.ts":[function(require,module,exports) {
+},{"../room/room":"src/room/room.ts","../util/random":"src/util/random.ts","../util/vec2":"src/util/vec2.ts","./game":"src/game/game.ts","./renderer":"src/game/renderer.ts"}],"src/game/game.ts":[function(require,module,exports) {
 "use strict";
 
 function _createForOfIteratorHelper(o, allowArrayLike) { var it = typeof Symbol !== "undefined" && o[Symbol.iterator] || o["@@iterator"]; if (!it) { if (Array.isArray(o) || (it = _unsupportedIterableToArray(o)) || allowArrayLike && o && typeof o.length === "number") { if (it) o = it; var i = 0; var F = function F() {}; return { s: F, n: function n() { if (i >= o.length) return { done: true }; return { done: false, value: o[i++] }; }, e: function e(_e) { throw _e; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var normalCompletion = true, didErr = false, err; return { s: function s() { it = it.call(o); }, n: function n() { var step = it.next(); normalCompletion = step.done; return step; }, e: function e(_e2) { didErr = true; err = _e2; }, f: function f() { try { if (!normalCompletion && it.return != null) it.return(); } finally { if (didErr) throw err; } } }; }
@@ -33622,8 +33788,6 @@ var room_manager_1 = __importDefault(require("./room_manager"));
 
 var Game = /*#__PURE__*/function () {
   function Game(p5) {
-    var _this = this;
-
     _classCallCheck(this, Game);
 
     this.random = new random_1.default();
@@ -33635,22 +33799,30 @@ var Game = /*#__PURE__*/function () {
     renderer_1.default.game = this;
     renderer_1.default.p5 = p5;
     renderer_1.default.scale = 600 / Game.width;
+    this.state = 'menu';
     this.keys_down = new Map();
-    window.addEventListener('keydown', function (e) {
-      return _this.keydown(e);
-    });
-    window.addEventListener('keyup', function (e) {
-      return _this.keyup(e);
-    });
-    window.addEventListener('mousedown', function (e) {
-      return _this.mousedown(e);
-    });
-    document.getElementById('defaultCanvas0').addEventListener('mousemove', function (e) {
-      return _this.mousemove(e);
-    });
   }
 
   _createClass(Game, [{
+    key: "start",
+    value: function start() {
+      var _this = this;
+
+      window.addEventListener('keydown', function (e) {
+        return _this.keydown(e);
+      });
+      window.addEventListener('keyup', function (e) {
+        return _this.keyup(e);
+      });
+      window.addEventListener('mousedown', function (e) {
+        return _this.mousedown(e);
+      });
+      document.getElementById('defaultCanvas0').addEventListener('mousemove', function (e) {
+        return _this.mousemove(e);
+      });
+      this.state = 'running';
+    }
+  }, {
     key: "keydown",
     value: function keydown(e) {
       this.keys_down.set(e.code, -1);
@@ -33700,13 +33872,23 @@ var Game = /*#__PURE__*/function () {
       }
     }
   }, {
-    key: "stop",
-    value: function stop() {
-      renderer_1.default.p5.background(37, 33, 53);
-      renderer_1.default.p5.textSize(30);
-      renderer_1.default.p5.fill('white');
-      renderer_1.default.p5.text('You died! Refresh to restart', 100, 200);
-      renderer_1.default.p5.noLoop();
+    key: "stop_caused_by_death",
+    value: function stop_caused_by_death() {
+      var _this2 = this;
+
+      window.removeEventListener('keydown', function (e) {
+        return _this2.keydown(e);
+      });
+      window.removeEventListener('keyup', function (e) {
+        return _this2.keyup(e);
+      });
+      window.removeEventListener('mousedown', function (e) {
+        return _this2.mousedown(e);
+      });
+      document.getElementById('defaultCanvas0').removeEventListener('mousemove', function (e) {
+        return _this2.mousemove(e);
+      });
+      this.state = 'dead';
     }
     /** The amount of ticks since this Game's start */
 
@@ -33746,32 +33928,58 @@ var sketch = function sketch(p5) {
   var montserrat;
 
   p5.setup = function () {
-    var canvas = p5.createCanvas(800, 600);
+    var canvas = p5.createCanvas(1200, 600);
     canvas.parent('canvas');
     p5.rectMode('center');
     p5.angleMode('degrees');
     p5.frameRate(60);
     montserrat = p5.loadFont('//db.onlinewebfonts.com/c/0462590be6674a5827956be5045c54de?family=Montserrat');
     p5.textFont('Montserrat', 20);
+    p5.textStyle('bold');
     game = new game_1.default(p5);
   };
 
   p5.draw = function () {
     p5.background(37, 33, 53);
     p5.strokeWeight(0);
-    p5.push();
-    game.tick();
-    p5.pop();
-    p5.push();
-    p5.rectMode('corner');
-    p5.fill(64, 128, 64);
-    p5.rect(615, 5, 160, 40);
-    p5.fill(64, 256, 64);
-    p5.rect(620, 10, 150 * game.player.health / game.player.max_health, 30);
-    p5.fill(0, 0, 0);
-    p5.text("".concat(game.player.health, " / ").concat(game.player.max_health), 630, 32);
-    p5.text("XP: ".concat(game.player.xp), 630, 70);
-    p5.pop();
+
+    switch (game.state) {
+      case 'running':
+        p5.push();
+        game.tick();
+        p5.pop();
+        p5.push();
+        p5.translate(1000, 0);
+        p5.rectMode('corner');
+        p5.fill(64, 128, 64);
+        p5.rect(15, 5, 160, 40);
+        p5.fill(64, 256, 64);
+        p5.rect(20, 10, 150 * game.player.health / game.player.max_health, 30);
+        p5.fill(0, 0, 0);
+        p5.text("".concat(game.player.health, " / ").concat(game.player.max_health), 30, 32);
+        p5.fill(255, 255, 255);
+        p5.text("XP: ".concat(game.player.xp), 30, 70);
+        p5.pop();
+        break;
+
+      case 'menu':
+        p5.noLoop();
+        var start_button = p5.createButton('start');
+        start_button.style('font-family', 'Montserrat');
+        start_button.style('font-weight', '600');
+        start_button.style('color', '#33ff33');
+        start_button.style('background', '#5c4baa');
+        start_button.center();
+        start_button.mousePressed(function () {
+          game.start();
+          start_button.remove();
+          p5.loop();
+        });
+        break;
+
+      case 'dead':
+        break;
+    }
   };
 };
 
@@ -33804,7 +34012,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "53167" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "49932" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
