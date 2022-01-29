@@ -29750,14 +29750,14 @@ var Entity = /*#__PURE__*/function () {
     key: "trace_tiles",
     value: function trace_tiles(angle) {
       var max_distance = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 10;
-      var current = this.position.clone();
+      var current = this.position;
       var vec = vec2_1.default.from_angle(angle).multiply(0.05);
       var distance = 0;
 
       while (distance < max_distance) {
         current = current.add(vec);
         distance += 0.05;
-        if (this.manager.room.tiles.solid(current.clone().floor())) break;
+        if (this.manager.room.tiles.solid(current.floor())) break;
       }
 
       return distance;
@@ -34526,7 +34526,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "54882" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "64078" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
