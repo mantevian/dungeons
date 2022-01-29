@@ -29029,13 +29029,13 @@ var Vec2 = /*#__PURE__*/function () {
     }
   }, {
     key: "length",
-    value: function length() {
+    get: function get() {
       return Math.sqrt(this.x * this.x + this.y * this.y);
     }
   }, {
     key: "normalize",
     value: function normalize() {
-      return new Vec2(this.x / this.length(), this.y / this.length());
+      return new Vec2(this.x / this.length, this.y / this.length);
     }
   }, {
     key: "equals",
@@ -29056,6 +29056,12 @@ var Vec2 = /*#__PURE__*/function () {
       if (vec.x > game_1.default.width - 1) vec.x = game_1.default.width - 1;
       if (vec.y > game_1.default.width - 1) vec.y = game_1.default.width - 1;
       return vec;
+    }
+  }, {
+    key: "rotate",
+    value: function rotate(angle) {
+      var rad = angle * Math.PI / 180;
+      return new Vec2(Math.cos(rad * this.x) - Math.sin(rad * this.y), Math.cos(rad * this.x) + Math.sin(rad * this.y));
     }
   }], [{
     key: "zero",
@@ -29149,21 +29155,27 @@ var Renderer = /*#__PURE__*/function () {
   }, {
     key: "rect",
     value: function rect(position, size, color, corner_radius) {
-      var scale = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : 0.95;
-      position = position.modulus_room();
+      var options = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : {
+        scale: 0.95,
+        rotation: 0
+      };
+      this.p5.push();
       this.p5.fill(color.get_red(), color.get_green(), color.get_blue(), color.get_alpha());
-      this.p5.rect(this.canvas_coords(position).x, this.canvas_coords(position).y, size.x * this.scale * scale, size.y * this.scale * scale, corner_radius * this.scale);
+      this.p5.translate(this.canvas_coords(position).x, this.canvas_coords(position).y);
+      this.p5.rotate(options.rotation);
+      this.p5.rect(0, 0, size.x * this.scale * options.scale, size.y * this.scale * options.scale, corner_radius * this.scale);
+      this.p5.pop();
     }
   }, {
     key: "pointer",
     value: function pointer(entity) {
-      var canvas_pos = this.canvas_coords(entity.room_pos());
+      var canvas_pos = this.canvas_coords(entity.position);
       this.p5.push();
       this.p5.stroke(255, 255, 255, 64 + (entity.scale - 1) * 128 * 5);
       this.p5.strokeWeight(5 + (entity.scale - 1) * 20);
       this.p5.translate(canvas_pos.x, canvas_pos.y);
       this.p5.rotate(entity.facing);
-      this.p5.line(25, 0, 35, 0);
+      this.p5.line(30 * (entity.size.x + entity.size.y) / 2, 0, 40 * (entity.size.x + entity.size.y) / 2, 0);
       this.p5.pop();
     }
   }, {
@@ -29171,8 +29183,14 @@ var Renderer = /*#__PURE__*/function () {
     value: function health_bar(position, size, ratio) {
       this.p5.push();
       this.p5.rectMode('corner');
-      Renderer.rect(new vec2_1.default(position.x - size.x * 0.5, position.y - size.y * 0.75), new vec2_1.default(size.x, 0.1), color_1.default.RGBA(128, 128, 128, 128), 0.1, 1);
-      Renderer.rect(new vec2_1.default(position.x - size.x * 0.5, position.y - size.y * 0.75), new vec2_1.default(size.x * ratio, 0.1), color_1.default.RGB(255, 50, 50), 0.1, 1);
+      Renderer.rect(new vec2_1.default(position.x - size.x * 0.5, position.y - size.y * 0.75), new vec2_1.default(size.x, 0.1), color_1.default.RGBA(128, 128, 128, 128), 0.1, {
+        scale: 1,
+        rotation: 0
+      });
+      Renderer.rect(new vec2_1.default(position.x - size.x * 0.5, position.y - size.y * 0.75), new vec2_1.default(size.x * ratio, 0.1), color_1.default.RGB(255, 50, 50), 0.1, {
+        scale: 1,
+        rotation: 0
+      });
       this.p5.pop();
     }
   }, {
@@ -29555,8 +29573,7 @@ var DamageCountParticle = /*#__PURE__*/function (_particle_1$default) {
   }, {
     key: "render",
     value: function render() {
-      var damage = Math.floor(this.damage * 10) / 10;
-      renderer_1.default.text(this.position, 12, color_1.default.RGBA(255, 128, 20, this.lifetime * 255 / 30), damage.toString());
+      renderer_1.default.text(this.position, 12, color_1.default.RGBA(255, 128, 20, this.lifetime * 255 / 30), this.damage.toString());
     }
   }]);
 
@@ -29607,6 +29624,7 @@ var Entity = /*#__PURE__*/function () {
     this.position = vec2_1.default.zero();
     this.noclip = true;
     this.size = new vec2_1.default(0.5, 0.5);
+    this.rotation = 0;
     this.color = color_1.default.RGB(255, 255, 255);
     this.corner_radius = 0;
     this.scale = 1;
@@ -29638,6 +29656,11 @@ var Entity = /*#__PURE__*/function () {
       this.move(vec.subtract(this.position));
     }
   }, {
+    key: "step_to",
+    value: function step_to(vec) {
+      this.move(vec2_1.default.step(vec.subtract(this.position)));
+    }
+  }, {
     key: "tick",
     value: function tick() {
       this.lifetime++;
@@ -29661,11 +29684,12 @@ var Entity = /*#__PURE__*/function () {
       }
 
       this.render();
+      if (this.anchored) this.follow();
     }
   }, {
     key: "collides_with_entity",
     value: function collides_with_entity(entity) {
-      return !this.equals(entity) && this.room_pos().x - this.size.x * 0.5 < entity.room_pos().x + entity.size.x * 0.5 && this.room_pos().x + this.size.x * 0.5 > entity.room_pos().x - entity.size.x * 0.5 && this.room_pos().y - this.size.x * 0.5 < entity.room_pos().y + entity.size.y * 0.5 && this.room_pos().y + this.size.y * 0.5 > entity.room_pos().y - entity.size.y * 0.5;
+      return !this.equals(entity) && this.position.x - this.size.x * 0.5 < entity.position.x + entity.size.x * 0.5 && this.position.x + this.size.x * 0.5 > entity.position.x - entity.size.x * 0.5 && this.position.y - this.size.x * 0.5 < entity.position.y + entity.size.y * 0.5 && this.position.y + this.size.y * 0.5 > entity.position.y - entity.size.y * 0.5;
     }
   }, {
     key: "on_tile_collision",
@@ -29698,7 +29722,10 @@ var Entity = /*#__PURE__*/function () {
         this.scale_per_tick = 0;
       }
 
-      renderer_1.default.rect(this.room_pos(), this.size, this.color, this.corner_radius, this.scale);
+      renderer_1.default.rect(this.position, this.size, this.color, this.corner_radius, {
+        scale: this.scale,
+        rotation: this.rotation
+      });
     }
   }, {
     key: "equals",
@@ -29717,9 +29744,28 @@ var Entity = /*#__PURE__*/function () {
       this.scale_time = time;
     }
   }, {
-    key: "room_pos",
-    value: function room_pos() {
-      return this.position.modulus_room();
+    key: "follow",
+    value: function follow() {}
+  }, {
+    key: "trace_tiles",
+    value: function trace_tiles(angle) {
+      var max_distance = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 10;
+      var current = this.position.clone();
+      var vec = vec2_1.default.from_angle(angle).multiply(0.05);
+      var distance = 0;
+
+      while (distance < max_distance) {
+        current = current.add(vec);
+        distance += 0.05;
+        if (this.manager.room.tiles.solid(current.clone().floor())) break;
+      }
+
+      return distance;
+    }
+  }, {
+    key: "distance_to",
+    value: function distance_to(entity) {
+      return entity.position.subtract(this.position).length;
     }
   }]);
 
@@ -29727,124 +29773,7 @@ var Entity = /*#__PURE__*/function () {
 }();
 
 exports.default = Entity;
-},{"../game/renderer":"src/game/renderer.ts","../util/color":"src/util/color.ts","../util/vec2":"src/util/vec2.ts","uuid":"node_modules/uuid/index.js","../game/game":"src/game/game.ts"}],"src/entity/projectile.ts":[function(require,module,exports) {
-"use strict";
-
-function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
-
-function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); Object.defineProperty(Constructor, "prototype", { writable: false }); return Constructor; }
-
-function _get() { if (typeof Reflect !== "undefined" && Reflect.get) { _get = Reflect.get; } else { _get = function _get(target, property, receiver) { var base = _superPropBase(target, property); if (!base) return; var desc = Object.getOwnPropertyDescriptor(base, property); if (desc.get) { return desc.get.call(arguments.length < 3 ? target : receiver); } return desc.value; }; } return _get.apply(this, arguments); }
-
-function _superPropBase(object, property) { while (!Object.prototype.hasOwnProperty.call(object, property)) { object = _getPrototypeOf(object); if (object === null) break; } return object; }
-
-function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); Object.defineProperty(subClass, "prototype", { writable: false }); if (superClass) _setPrototypeOf(subClass, superClass); }
-
-function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
-
-function _createSuper(Derived) { var hasNativeReflectConstruct = _isNativeReflectConstruct(); return function _createSuperInternal() { var Super = _getPrototypeOf(Derived), result; if (hasNativeReflectConstruct) { var NewTarget = _getPrototypeOf(this).constructor; result = Reflect.construct(Super, arguments, NewTarget); } else { result = Super.apply(this, arguments); } return _possibleConstructorReturn(this, result); }; }
-
-function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } else if (call !== void 0) { throw new TypeError("Derived constructors may only return object or undefined"); } return _assertThisInitialized(self); }
-
-function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
-
-function _isNativeReflectConstruct() { if (typeof Reflect === "undefined" || !Reflect.construct) return false; if (Reflect.construct.sham) return false; if (typeof Proxy === "function") return true; try { Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function () {})); return true; } catch (e) { return false; } }
-
-function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
-
-var __importDefault = this && this.__importDefault || function (mod) {
-  return mod && mod.__esModule ? mod : {
-    "default": mod
-  };
-};
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-
-var color_1 = __importDefault(require("../util/color"));
-
-var vec2_1 = __importDefault(require("../util/vec2"));
-
-var entity_1 = __importDefault(require("./entity"));
-
-var living_entity_1 = __importDefault(require("./living_entity"));
-
-var player_1 = __importDefault(require("./player"));
-
-var Projectile = /*#__PURE__*/function (_entity_1$default) {
-  _inherits(Projectile, _entity_1$default);
-
-  var _super = _createSuper(Projectile);
-
-  function Projectile(parent) {
-    var _this;
-
-    var damage = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 5;
-
-    _classCallCheck(this, Projectile);
-
-    _this = _super.call(this);
-    _this.noclip = false;
-    _this.size = new vec2_1.default(0.2, 0.2);
-    _this.color = color_1.default.RGB(255, 128, 0);
-    _this.corner_radius = 0.3;
-    _this.parent = parent;
-    _this.attack_damage = damage;
-    _this.velocity = vec2_1.default.zero();
-    _this.scale = 1.2;
-    _this.scale_per_tick = -0.01;
-    _this.scale_time = 1000;
-    _this.player_friendly = parent instanceof player_1.default;
-    return _this;
-  }
-
-  _createClass(Projectile, [{
-    key: "tick",
-    value: function tick() {
-      _get(_getPrototypeOf(Projectile.prototype), "tick", this).call(this);
-
-      this.move(this.velocity);
-    }
-  }, {
-    key: "on_tile_collision",
-    value: function on_tile_collision() {
-      this.destroy();
-    }
-  }, {
-    key: "on_entity_collision",
-    value: function on_entity_collision(entity) {
-      if (!(entity instanceof living_entity_1.default)) return;
-      if (!this.player_friendly && !(entity instanceof player_1.default)) return;
-      entity.damage(this.attack_damage, this.parent);
-      this.destroy();
-    }
-  }, {
-    key: "on_kill",
-    value: function on_kill(target) {
-      this.parent.on_kill(target);
-    }
-  }, {
-    key: "render",
-    value: function render() {
-      _get(_getPrototypeOf(Projectile.prototype), "render", this).call(this);
-
-      if (this.scale > 0.5) {
-        this.velocity = this.velocity.multiply(0.98);
-        this.attack_damage *= 0.99;
-      } else this.destroy();
-    }
-  }]);
-
-  return Projectile;
-}(entity_1.default);
-
-exports.default = Projectile;
-},{"../util/color":"src/util/color.ts","../util/vec2":"src/util/vec2.ts","./entity":"src/entity/entity.ts","./living_entity":"src/entity/living_entity.ts","./player":"src/entity/player.ts"}],"src/entity/living_entity.ts":[function(require,module,exports) {
+},{"../game/renderer":"src/game/renderer.ts","../util/color":"src/util/color.ts","../util/vec2":"src/util/vec2.ts","uuid":"node_modules/uuid/index.js","../game/game":"src/game/game.ts"}],"src/entity/living_entity.ts":[function(require,module,exports) {
 "use strict";
 
 function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
@@ -29890,8 +29819,6 @@ var vec2_1 = __importDefault(require("../util/vec2"));
 var entity_1 = __importDefault(require("./entity"));
 
 var player_1 = __importDefault(require("./player"));
-
-var projectile_1 = __importDefault(require("./projectile"));
 
 var LivingEntity = /*#__PURE__*/function (_entity_1$default) {
   _inherits(LivingEntity, _entity_1$default);
@@ -29960,7 +29887,7 @@ var LivingEntity = /*#__PURE__*/function (_entity_1$default) {
   }, {
     key: "look",
     value: function look(pos) {
-      var canvas_position = renderer_1.default.canvas_coords(this.room_pos());
+      var canvas_position = renderer_1.default.canvas_coords(this.position);
       var vec = pos.subtract(canvas_position);
       this.facing = Math.atan2(vec.y, vec.x) * 180 / Math.PI;
     }
@@ -29972,20 +29899,17 @@ var LivingEntity = /*#__PURE__*/function (_entity_1$default) {
     }
   }, {
     key: "attack",
-    value: function attack() {
-      this.manager.spawn_projectile(this.room_pos(), new projectile_1.default(this, this.attack_damage), this.facing, 0.2);
-      this.scale = 1.1;
-      this.scale_over_time(1, 10);
-    }
+    value: function attack() {}
   }, {
     key: "damage",
     value: function damage(_damage, source) {
       var timer = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : this.max_damage_invincibility_timer;
+      if (this.damage_invincibility_timer > 0) return;
       _damage = Math.floor(_damage);
       this.health -= _damage;
       this.max_damage_invincibility_timer = timer;
       this.damage_invincibility_timer = timer;
-      this.manager.room.particles.spawn(new damage_count_1.default(this.room_pos().add(new vec2_1.default(0, this.size.y * -0.5)), _damage));
+      this.manager.room.particles.spawn(new damage_count_1.default(this.position.add(new vec2_1.default(0, this.size.y * -0.5)), _damage));
       this.last_attacker = source;
     }
   }, {
@@ -29999,7 +29923,10 @@ var LivingEntity = /*#__PURE__*/function (_entity_1$default) {
         this.scale_per_tick = 0;
       }
 
-      renderer_1.default.rect(this.room_pos(), this.size, this.color.lighten(this.damage_invincibility_timer / this.max_damage_invincibility_timer), this.corner_radius, this.scale);
+      renderer_1.default.rect(this.position, this.size, this.color.lighten(this.damage_invincibility_timer / this.max_damage_invincibility_timer), this.corner_radius, {
+        scale: this.scale,
+        rotation: this.rotation
+      });
     }
   }]);
 
@@ -30007,7 +29934,424 @@ var LivingEntity = /*#__PURE__*/function (_entity_1$default) {
 }(entity_1.default);
 
 exports.default = LivingEntity;
-},{"../game/game":"src/game/game.ts","../game/renderer":"src/game/renderer.ts","../particle/damage_count":"src/particle/damage_count.ts","../util/vec2":"src/util/vec2.ts","./entity":"src/entity/entity.ts","./player":"src/entity/player.ts","./projectile":"src/entity/projectile.ts"}],"src/entity/player.ts":[function(require,module,exports) {
+},{"../game/game":"src/game/game.ts","../game/renderer":"src/game/renderer.ts","../particle/damage_count":"src/particle/damage_count.ts","../util/vec2":"src/util/vec2.ts","./entity":"src/entity/entity.ts","./player":"src/entity/player.ts"}],"src/entity/mob.ts":[function(require,module,exports) {
+"use strict";
+
+function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); Object.defineProperty(Constructor, "prototype", { writable: false }); return Constructor; }
+
+function _get() { if (typeof Reflect !== "undefined" && Reflect.get) { _get = Reflect.get; } else { _get = function _get(target, property, receiver) { var base = _superPropBase(target, property); if (!base) return; var desc = Object.getOwnPropertyDescriptor(base, property); if (desc.get) { return desc.get.call(arguments.length < 3 ? target : receiver); } return desc.value; }; } return _get.apply(this, arguments); }
+
+function _superPropBase(object, property) { while (!Object.prototype.hasOwnProperty.call(object, property)) { object = _getPrototypeOf(object); if (object === null) break; } return object; }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); Object.defineProperty(subClass, "prototype", { writable: false }); if (superClass) _setPrototypeOf(subClass, superClass); }
+
+function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
+
+function _createSuper(Derived) { var hasNativeReflectConstruct = _isNativeReflectConstruct(); return function _createSuperInternal() { var Super = _getPrototypeOf(Derived), result; if (hasNativeReflectConstruct) { var NewTarget = _getPrototypeOf(this).constructor; result = Reflect.construct(Super, arguments, NewTarget); } else { result = Super.apply(this, arguments); } return _possibleConstructorReturn(this, result); }; }
+
+function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } else if (call !== void 0) { throw new TypeError("Derived constructors may only return object or undefined"); } return _assertThisInitialized(self); }
+
+function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
+
+function _isNativeReflectConstruct() { if (typeof Reflect === "undefined" || !Reflect.construct) return false; if (Reflect.construct.sham) return false; if (typeof Proxy === "function") return true; try { Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function () {})); return true; } catch (e) { return false; } }
+
+function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
+
+var __importDefault = this && this.__importDefault || function (mod) {
+  return mod && mod.__esModule ? mod : {
+    "default": mod
+  };
+};
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var renderer_1 = __importDefault(require("../game/renderer"));
+
+var color_1 = __importDefault(require("../util/color"));
+
+var vec2_1 = __importDefault(require("../util/vec2"));
+
+var living_entity_1 = __importDefault(require("./living_entity"));
+
+var Mob = /*#__PURE__*/function (_living_entity_1$defa) {
+  _inherits(Mob, _living_entity_1$defa);
+
+  var _super = _createSuper(Mob);
+
+  function Mob() {
+    var _this;
+
+    _classCallCheck(this, Mob);
+
+    _this = _super.call(this);
+    _this.color = color_1.default.RGB(255, 80, 30);
+    _this.size = new vec2_1.default(0.7, 0.7);
+    _this.corner_radius = 0.15;
+    _this.max_health = 35;
+    _this.start_prepare_attack = 30;
+    _this.attack_damage = 6;
+    _this.path = new Array();
+    _this.current_path_progress = 0;
+    _this.xp = 1;
+    _this.money = 1;
+    return _this;
+  }
+
+  _createClass(Mob, [{
+    key: "tick",
+    value: function tick() {
+      _get(_getPrototypeOf(Mob.prototype), "tick", this).call(this);
+    }
+  }, {
+    key: "render",
+    value: function render() {
+      _get(_getPrototypeOf(Mob.prototype), "render", this).call(this);
+
+      renderer_1.default.pointer(this);
+      if (this.health < this.max_health) renderer_1.default.health_bar(this.position, this.size, this.health / this.max_health);
+    }
+  }, {
+    key: "update_path",
+    value: function update_path() {
+      this.current_path_progress = 1;
+    }
+  }, {
+    key: "walk",
+    value: function walk() {
+      if (this.current_path_progress == 0) this.update_path();
+
+      if (this.current_path_progress < this.path.length / 2) {
+        var vec = this.path[this.current_path_progress];
+        var d = new vec2_1.default(vec.subtract(this.position).x, vec.subtract(this.position).y);
+
+        if (Math.abs(d.x) > 1.01 || Math.abs(d.y) > 1.01) {
+          this.update_path();
+        } else {
+          this.move_to(vec);
+          this.current_path_progress++;
+        }
+      } else this.current_path_progress = 0;
+    }
+  }]);
+
+  return Mob;
+}(living_entity_1.default);
+
+exports.default = Mob;
+},{"../game/renderer":"src/game/renderer.ts","../util/color":"src/util/color.ts","../util/vec2":"src/util/vec2.ts","./living_entity":"src/entity/living_entity.ts"}],"src/entity/projectile.ts":[function(require,module,exports) {
+"use strict";
+
+function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); Object.defineProperty(Constructor, "prototype", { writable: false }); return Constructor; }
+
+function _get() { if (typeof Reflect !== "undefined" && Reflect.get) { _get = Reflect.get; } else { _get = function _get(target, property, receiver) { var base = _superPropBase(target, property); if (!base) return; var desc = Object.getOwnPropertyDescriptor(base, property); if (desc.get) { return desc.get.call(arguments.length < 3 ? target : receiver); } return desc.value; }; } return _get.apply(this, arguments); }
+
+function _superPropBase(object, property) { while (!Object.prototype.hasOwnProperty.call(object, property)) { object = _getPrototypeOf(object); if (object === null) break; } return object; }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); Object.defineProperty(subClass, "prototype", { writable: false }); if (superClass) _setPrototypeOf(subClass, superClass); }
+
+function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
+
+function _createSuper(Derived) { var hasNativeReflectConstruct = _isNativeReflectConstruct(); return function _createSuperInternal() { var Super = _getPrototypeOf(Derived), result; if (hasNativeReflectConstruct) { var NewTarget = _getPrototypeOf(this).constructor; result = Reflect.construct(Super, arguments, NewTarget); } else { result = Super.apply(this, arguments); } return _possibleConstructorReturn(this, result); }; }
+
+function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } else if (call !== void 0) { throw new TypeError("Derived constructors may only return object or undefined"); } return _assertThisInitialized(self); }
+
+function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
+
+function _isNativeReflectConstruct() { if (typeof Reflect === "undefined" || !Reflect.construct) return false; if (Reflect.construct.sham) return false; if (typeof Proxy === "function") return true; try { Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function () {})); return true; } catch (e) { return false; } }
+
+function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
+
+var __importDefault = this && this.__importDefault || function (mod) {
+  return mod && mod.__esModule ? mod : {
+    "default": mod
+  };
+};
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var color_1 = __importDefault(require("../util/color"));
+
+var vec2_1 = __importDefault(require("../util/vec2"));
+
+var entity_1 = __importDefault(require("./entity"));
+
+var mob_1 = __importDefault(require("./mob"));
+
+var player_1 = __importDefault(require("./player"));
+
+var Projectile = /*#__PURE__*/function (_entity_1$default) {
+  _inherits(Projectile, _entity_1$default);
+
+  var _super = _createSuper(Projectile);
+
+  function Projectile(parent) {
+    var _this;
+
+    var damage = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 5;
+
+    _classCallCheck(this, Projectile);
+
+    _this = _super.call(this);
+    _this.noclip = false;
+    _this.size = new vec2_1.default(0.2, 0.2);
+    _this.color = color_1.default.RGB(255, 128, 0);
+    _this.corner_radius = 0.3;
+    _this.parent = parent;
+    _this.attack_damage = damage;
+    _this.velocity = vec2_1.default.zero();
+    _this.scale = 1;
+    _this.scale_per_tick = 0;
+    _this.scale_time = 0;
+    _this.player_friendly = parent instanceof player_1.default;
+    return _this;
+  }
+
+  _createClass(Projectile, [{
+    key: "tick",
+    value: function tick() {
+      _get(_getPrototypeOf(Projectile.prototype), "tick", this).call(this);
+    }
+  }, {
+    key: "on_tile_collision",
+    value: function on_tile_collision() {
+      this.destroy();
+    }
+  }, {
+    key: "on_entity_collision",
+    value: function on_entity_collision(entity) {
+      if (this.player_friendly && entity instanceof mob_1.default) this.on_enemy_collision(entity);else if (entity instanceof player_1.default) this.on_enemy_collision(entity);
+    }
+  }, {
+    key: "on_enemy_collision",
+    value: function on_enemy_collision(entity) {
+      entity.damage(this.attack_damage, this.parent);
+    }
+  }, {
+    key: "on_kill",
+    value: function on_kill(target) {
+      this.parent.on_kill(target);
+    }
+  }]);
+
+  return Projectile;
+}(entity_1.default);
+
+exports.default = Projectile;
+},{"../util/color":"src/util/color.ts","../util/vec2":"src/util/vec2.ts","./entity":"src/entity/entity.ts","./mob":"src/entity/mob.ts","./player":"src/entity/player.ts"}],"src/entity/projectile/bullet.ts":[function(require,module,exports) {
+"use strict";
+
+function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); Object.defineProperty(Constructor, "prototype", { writable: false }); return Constructor; }
+
+function _get() { if (typeof Reflect !== "undefined" && Reflect.get) { _get = Reflect.get; } else { _get = function _get(target, property, receiver) { var base = _superPropBase(target, property); if (!base) return; var desc = Object.getOwnPropertyDescriptor(base, property); if (desc.get) { return desc.get.call(arguments.length < 3 ? target : receiver); } return desc.value; }; } return _get.apply(this, arguments); }
+
+function _superPropBase(object, property) { while (!Object.prototype.hasOwnProperty.call(object, property)) { object = _getPrototypeOf(object); if (object === null) break; } return object; }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); Object.defineProperty(subClass, "prototype", { writable: false }); if (superClass) _setPrototypeOf(subClass, superClass); }
+
+function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
+
+function _createSuper(Derived) { var hasNativeReflectConstruct = _isNativeReflectConstruct(); return function _createSuperInternal() { var Super = _getPrototypeOf(Derived), result; if (hasNativeReflectConstruct) { var NewTarget = _getPrototypeOf(this).constructor; result = Reflect.construct(Super, arguments, NewTarget); } else { result = Super.apply(this, arguments); } return _possibleConstructorReturn(this, result); }; }
+
+function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } else if (call !== void 0) { throw new TypeError("Derived constructors may only return object or undefined"); } return _assertThisInitialized(self); }
+
+function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
+
+function _isNativeReflectConstruct() { if (typeof Reflect === "undefined" || !Reflect.construct) return false; if (Reflect.construct.sham) return false; if (typeof Proxy === "function") return true; try { Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function () {})); return true; } catch (e) { return false; } }
+
+function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
+
+var __importDefault = this && this.__importDefault || function (mod) {
+  return mod && mod.__esModule ? mod : {
+    "default": mod
+  };
+};
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var color_1 = __importDefault(require("../../util/color"));
+
+var vec2_1 = __importDefault(require("../../util/vec2"));
+
+var projectile_1 = __importDefault(require("../projectile"));
+
+var Bullet = /*#__PURE__*/function (_projectile_1$default) {
+  _inherits(Bullet, _projectile_1$default);
+
+  var _super = _createSuper(Bullet);
+
+  function Bullet(parent) {
+    var _this;
+
+    var damage = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 5;
+
+    _classCallCheck(this, Bullet);
+
+    _this = _super.call(this, parent, damage);
+    _this.size = new vec2_1.default(0.2, 0.2);
+    _this.color = color_1.default.RGB(255, 128, 0);
+    _this.corner_radius = 0.3;
+    _this.scale = 1.2;
+    _this.scale_per_tick = -0.01;
+    _this.scale_time = 1000;
+    return _this;
+  }
+
+  _createClass(Bullet, [{
+    key: "tick",
+    value: function tick() {
+      _get(_getPrototypeOf(Bullet.prototype), "tick", this).call(this);
+
+      this.move(this.velocity);
+
+      if (this.scale > 0.5) {
+        this.velocity = this.velocity.multiply(0.98);
+        this.attack_damage *= 0.99;
+      } else this.destroy();
+    }
+  }, {
+    key: "on_enemy_collision",
+    value: function on_enemy_collision(entity) {
+      _get(_getPrototypeOf(Bullet.prototype), "on_enemy_collision", this).call(this, entity);
+
+      this.destroy();
+    }
+  }]);
+
+  return Bullet;
+}(projectile_1.default);
+
+exports.default = Bullet;
+},{"../../util/color":"src/util/color.ts","../../util/vec2":"src/util/vec2.ts","../projectile":"src/entity/projectile.ts"}],"src/entity/projectile/sword.ts":[function(require,module,exports) {
+"use strict";
+
+function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); Object.defineProperty(Constructor, "prototype", { writable: false }); return Constructor; }
+
+function _get() { if (typeof Reflect !== "undefined" && Reflect.get) { _get = Reflect.get; } else { _get = function _get(target, property, receiver) { var base = _superPropBase(target, property); if (!base) return; var desc = Object.getOwnPropertyDescriptor(base, property); if (desc.get) { return desc.get.call(arguments.length < 3 ? target : receiver); } return desc.value; }; } return _get.apply(this, arguments); }
+
+function _superPropBase(object, property) { while (!Object.prototype.hasOwnProperty.call(object, property)) { object = _getPrototypeOf(object); if (object === null) break; } return object; }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); Object.defineProperty(subClass, "prototype", { writable: false }); if (superClass) _setPrototypeOf(subClass, superClass); }
+
+function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
+
+function _createSuper(Derived) { var hasNativeReflectConstruct = _isNativeReflectConstruct(); return function _createSuperInternal() { var Super = _getPrototypeOf(Derived), result; if (hasNativeReflectConstruct) { var NewTarget = _getPrototypeOf(this).constructor; result = Reflect.construct(Super, arguments, NewTarget); } else { result = Super.apply(this, arguments); } return _possibleConstructorReturn(this, result); }; }
+
+function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } else if (call !== void 0) { throw new TypeError("Derived constructors may only return object or undefined"); } return _assertThisInitialized(self); }
+
+function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
+
+function _isNativeReflectConstruct() { if (typeof Reflect === "undefined" || !Reflect.construct) return false; if (Reflect.construct.sham) return false; if (typeof Proxy === "function") return true; try { Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function () {})); return true; } catch (e) { return false; } }
+
+function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
+
+var __importDefault = this && this.__importDefault || function (mod) {
+  return mod && mod.__esModule ? mod : {
+    "default": mod
+  };
+};
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var color_1 = __importDefault(require("../../util/color"));
+
+var vec2_1 = __importDefault(require("../../util/vec2"));
+
+var projectile_1 = __importDefault(require("../projectile"));
+
+var Sword = /*#__PURE__*/function (_projectile_1$default) {
+  _inherits(Sword, _projectile_1$default);
+
+  var _super = _createSuper(Sword);
+
+  function Sword(parent) {
+    var _this;
+
+    var damage = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 5;
+    var angle = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 20;
+
+    _classCallCheck(this, Sword);
+
+    _this = _super.call(this, parent, damage);
+    _this.starting_rotation = parent.facing - angle;
+    _this.ending_rotation = parent.facing + angle;
+    _this.rotation_speed = 2;
+    _this.rotation = _this.starting_rotation;
+    _this.anchored = true;
+    _this.size = new vec2_1.default(2.5, 0.2);
+    _this.color = color_1.default.RGB(255, 128, 0);
+    _this.corner_radius = 0.9;
+    _this.max_health = 4;
+    _this.health = 4;
+
+    _this.follow();
+
+    return _this;
+  }
+
+  _createClass(Sword, [{
+    key: "on_enemy_collision",
+    value: function on_enemy_collision(entity) {
+      if (this.parent.trace_tiles(this.rotation) < this.parent.distance_to(entity)) return;
+
+      _get(_getPrototypeOf(Sword.prototype), "on_enemy_collision", this).call(this, entity);
+
+      entity.move(vec2_1.default.step(entity.position.subtract(this.parent.position)));
+    }
+  }, {
+    key: "tick",
+    value: function tick() {
+      _get(_getPrototypeOf(Sword.prototype), "tick", this).call(this);
+
+      if (this.rotation > this.ending_rotation) this.health--;else {
+        this.rotation += this.rotation_speed;
+        this.rotation_speed += 1;
+      }
+      if (this.health <= 0) this.destroy();
+    }
+  }, {
+    key: "follow",
+    value: function follow() {
+      this.set_position(vec2_1.default.from_angle(this.rotation).multiply(2));
+    }
+  }]);
+
+  return Sword;
+}(projectile_1.default);
+
+exports.default = Sword;
+},{"../../util/color":"src/util/color.ts","../../util/vec2":"src/util/vec2.ts","../projectile":"src/entity/projectile.ts"}],"src/entity/player.ts":[function(require,module,exports) {
 "use strict";
 
 function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
@@ -30060,6 +30404,12 @@ var vec2_1 = __importDefault(require("../util/vec2"));
 
 var living_entity_1 = __importDefault(require("./living_entity"));
 
+var mob_1 = __importDefault(require("./mob"));
+
+var bullet_1 = __importDefault(require("./projectile/bullet"));
+
+var sword_1 = __importDefault(require("./projectile/sword"));
+
 var Player = /*#__PURE__*/function (_living_entity_1$defa) {
   _inherits(Player, _living_entity_1$defa);
 
@@ -30075,9 +30425,19 @@ var Player = /*#__PURE__*/function (_living_entity_1$defa) {
     _this.size = new vec2_1.default(0.8, 0.8);
     _this.color = color_1.default.RGB(40, 255, 40);
     _this.corner_radius = 0.35;
-    _this.attack_cooldown = 20;
-    _this.max_attack_cooldown = 20;
-    _this.attack_damage = 15;
+    _this.attack_cooldown = 30;
+    _this.max_attack_cooldown = 30;
+
+    switch (game.player_class) {
+      case 'swordsman':
+        _this.attack_damage = 8;
+        break;
+
+      case 'turret':
+        _this.attack_damage = 12;
+        break;
+    }
+
     _this.xp = 0;
     return _this;
   }
@@ -30106,8 +30466,18 @@ var Player = /*#__PURE__*/function (_living_entity_1$defa) {
   }, {
     key: "render",
     value: function render() {
-      _get(_getPrototypeOf(Player.prototype), "render", this).call(this);
+      if (this.scale_time > 0) {
+        this.scale_time--;
+        this.scale += this.scale_per_tick;
+      } else {
+        this.scale = 1;
+        this.scale_per_tick = 0;
+      }
 
+      renderer_1.default.rect(this.position, this.size, this.color, this.corner_radius, {
+        scale: this.scale,
+        rotation: this.rotation
+      });
       renderer_1.default.pointer(this);
       if (this.damage_invincibility_timer > 0) renderer_1.default.rect(new vec2_1.default(0, 0), new vec2_1.default(100, 100), color_1.default.RGBA(255, 100, 0, 32 * this.damage_invincibility_timer / this.max_damage_invincibility_timer), 0);
     }
@@ -30121,14 +30491,27 @@ var Player = /*#__PURE__*/function (_living_entity_1$defa) {
   }, {
     key: "attack",
     value: function attack() {
-      _get(_getPrototypeOf(Player.prototype), "attack", this).call(this);
+      this.scale = 1.1;
+
+      switch (this.manager.room.manager.game.player_class) {
+        case 'swordsman':
+          console.log(this.attack_damage);
+          this.manager.spawn_projectile(new sword_1.default(this, this.attack_damage), this.facing);
+          this.scale_over_time(1, 30);
+          break;
+
+        case 'turret':
+          this.manager.spawn_projectile(new bullet_1.default(this, this.attack_damage), this.facing, 0.2, this.position);
+          this.scale_over_time(1, 10);
+          break;
+      }
 
       this.attack_cooldown = this.max_attack_cooldown;
     }
   }, {
     key: "on_kill",
     value: function on_kill(target) {
-      this.xp++;
+      if (target instanceof mob_1.default) this.xp += target.xp;
     }
   }, {
     key: "keydown",
@@ -30174,7 +30557,7 @@ var Player = /*#__PURE__*/function (_living_entity_1$defa) {
 }(living_entity_1.default);
 
 exports.default = Player;
-},{"../game/renderer":"src/game/renderer.ts","../util/color":"src/util/color.ts","../util/vec2":"src/util/vec2.ts","./living_entity":"src/entity/living_entity.ts"}],"src/util/random.ts":[function(require,module,exports) {
+},{"../game/renderer":"src/game/renderer.ts","../util/color":"src/util/color.ts","../util/vec2":"src/util/vec2.ts","./living_entity":"src/entity/living_entity.ts","./mob":"src/entity/mob.ts","./projectile/bullet":"src/entity/projectile/bullet.ts","./projectile/sword":"src/entity/projectile/sword.ts"}],"src/util/random.ts":[function(require,module,exports) {
 "use strict";
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -30258,7 +30641,7 @@ var Random = /*#__PURE__*/function () {
 }();
 
 exports.default = Random;
-},{}],"src/entity/mob.ts":[function(require,module,exports) {
+},{}],"src/entity/mob/turret.ts":[function(require,module,exports) {
 "use strict";
 
 function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
@@ -30297,74 +30680,157 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
-var renderer_1 = __importDefault(require("../game/renderer"));
+var renderer_1 = __importDefault(require("../../game/renderer"));
 
-var color_1 = __importDefault(require("../util/color"));
+var vec2_1 = __importDefault(require("../../util/vec2"));
 
-var vec2_1 = __importDefault(require("../util/vec2"));
+var mob_1 = __importDefault(require("../mob"));
 
-var living_entity_1 = __importDefault(require("./living_entity"));
+var bullet_1 = __importDefault(require("../projectile/bullet"));
 
-var Mob = /*#__PURE__*/function (_living_entity_1$defa) {
-  _inherits(Mob, _living_entity_1$defa);
+var Turret = /*#__PURE__*/function (_mob_1$default) {
+  _inherits(Turret, _mob_1$default);
 
-  var _super = _createSuper(Mob);
+  var _super = _createSuper(Turret);
 
-  function Mob() {
-    var _this;
+  function Turret() {
+    _classCallCheck(this, Turret);
 
-    _classCallCheck(this, Mob);
-
-    _this = _super.call(this);
-    _this.color = color_1.default.RGB(255, 80, 30);
-    _this.size = new vec2_1.default(0.7, 0.7);
-    _this.corner_radius = 0.15;
-    _this.max_health = 35;
-    _this.start_prepare_attack = 30;
-    _this.attack_damage = 6;
-    _this.path = new Array();
-    _this.current_path_progress = 0;
-    return _this;
+    return _super.call(this);
   }
 
-  _createClass(Mob, [{
+  _createClass(Turret, [{
     key: "tick",
     value: function tick() {
-      _get(_getPrototypeOf(Mob.prototype), "tick", this).call(this);
+      _get(_getPrototypeOf(Turret.prototype), "tick", this).call(this);
 
-      this.look(renderer_1.default.canvas_coords(this.manager.room.manager.game.player.room_pos()));
-
-      if (this.lifetime % 50 == 0) {
-        if (this.current_path_progress == 0) {
-          this.path = this.manager.room.tiles.find_path(this.room_pos(), this.manager.room.manager.game.player.room_pos().add(new vec2_1.default(this.manager.random.next_int_ranged(-2, 2), this.manager.random.next_int_ranged(-2, 2))));
-          this.current_path_progress = 1;
-        }
-
-        if (this.current_path_progress < this.path.length / 2) {
-          this.move_to(this.path[this.current_path_progress]);
-          this.current_path_progress++;
-        } else this.current_path_progress = 0;
-      }
-
-      if (this.lifetime % 120 == 0) {
-        this.try_attack();
-      }
+      this.look(renderer_1.default.canvas_coords(this.manager.room.manager.game.player.position));
+      if (this.lifetime % 50 == 0) this.walk();
+      if (this.lifetime % 120 == 0) this.try_attack();
     }
   }, {
-    key: "render",
-    value: function render() {
-      _get(_getPrototypeOf(Mob.prototype), "render", this).call(this);
+    key: "attack",
+    value: function attack() {
+      this.manager.spawn_projectile(new bullet_1.default(this, this.attack_damage), this.facing, 0.2, this.position);
+      this.scale = 1.1;
+      this.scale_over_time(1, 10);
+    }
+  }, {
+    key: "update_path",
+    value: function update_path() {
+      _get(_getPrototypeOf(Turret.prototype), "update_path", this).call(this);
 
-      renderer_1.default.pointer(this);
-      if (this.health < this.max_health) renderer_1.default.health_bar(this.room_pos(), this.size, this.health / this.max_health);
+      this.path = this.manager.room.tiles.find_path(this.position, this.manager.room.manager.game.player.position.add(new vec2_1.default(this.manager.random.next_int_ranged(-1, 1), this.manager.random.next_int_ranged(-1, 1))));
     }
   }]);
 
-  return Mob;
-}(living_entity_1.default);
+  return Turret;
+}(mob_1.default);
 
-exports.default = Mob;
-},{"../game/renderer":"src/game/renderer.ts","../util/color":"src/util/color.ts","../util/vec2":"src/util/vec2.ts","./living_entity":"src/entity/living_entity.ts"}],"src/room/entity_manager.ts":[function(require,module,exports) {
+exports.default = Turret;
+},{"../../game/renderer":"src/game/renderer.ts","../../util/vec2":"src/util/vec2.ts","../mob":"src/entity/mob.ts","../projectile/bullet":"src/entity/projectile/bullet.ts"}],"src/entity/mob/swordsman.ts":[function(require,module,exports) {
+"use strict";
+
+function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); Object.defineProperty(Constructor, "prototype", { writable: false }); return Constructor; }
+
+function _get() { if (typeof Reflect !== "undefined" && Reflect.get) { _get = Reflect.get; } else { _get = function _get(target, property, receiver) { var base = _superPropBase(target, property); if (!base) return; var desc = Object.getOwnPropertyDescriptor(base, property); if (desc.get) { return desc.get.call(arguments.length < 3 ? target : receiver); } return desc.value; }; } return _get.apply(this, arguments); }
+
+function _superPropBase(object, property) { while (!Object.prototype.hasOwnProperty.call(object, property)) { object = _getPrototypeOf(object); if (object === null) break; } return object; }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); Object.defineProperty(subClass, "prototype", { writable: false }); if (superClass) _setPrototypeOf(subClass, superClass); }
+
+function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
+
+function _createSuper(Derived) { var hasNativeReflectConstruct = _isNativeReflectConstruct(); return function _createSuperInternal() { var Super = _getPrototypeOf(Derived), result; if (hasNativeReflectConstruct) { var NewTarget = _getPrototypeOf(this).constructor; result = Reflect.construct(Super, arguments, NewTarget); } else { result = Super.apply(this, arguments); } return _possibleConstructorReturn(this, result); }; }
+
+function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } else if (call !== void 0) { throw new TypeError("Derived constructors may only return object or undefined"); } return _assertThisInitialized(self); }
+
+function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
+
+function _isNativeReflectConstruct() { if (typeof Reflect === "undefined" || !Reflect.construct) return false; if (Reflect.construct.sham) return false; if (typeof Proxy === "function") return true; try { Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function () {})); return true; } catch (e) { return false; } }
+
+function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
+
+var __importDefault = this && this.__importDefault || function (mod) {
+  return mod && mod.__esModule ? mod : {
+    "default": mod
+  };
+};
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var renderer_1 = __importDefault(require("../../game/renderer"));
+
+var color_1 = __importDefault(require("../../util/color"));
+
+var vec2_1 = __importDefault(require("../../util/vec2"));
+
+var mob_1 = __importDefault(require("../mob"));
+
+var sword_1 = __importDefault(require("../projectile/sword"));
+
+var Swordsman = /*#__PURE__*/function (_mob_1$default) {
+  _inherits(Swordsman, _mob_1$default);
+
+  var _super = _createSuper(Swordsman);
+
+  function Swordsman() {
+    var _this;
+
+    _classCallCheck(this, Swordsman);
+
+    _this = _super.call(this);
+    _this.color = color_1.default.RGB(210, 160, 120);
+    _this.size = new vec2_1.default(0.85, 0.85);
+    _this.corner_radius = 0.1;
+    _this.max_health = 45;
+    _this.health = 45;
+    _this.start_prepare_attack = 10;
+    _this.attack_damage = 6;
+    _this.xp = 3;
+    _this.money = 3;
+    return _this;
+  }
+
+  _createClass(Swordsman, [{
+    key: "tick",
+    value: function tick() {
+      _get(_getPrototypeOf(Swordsman.prototype), "tick", this).call(this);
+
+      this.look(renderer_1.default.canvas_coords(this.manager.room.manager.game.player.position));
+      if (this.lifetime % 120 == 0) this.walk();
+      if (this.lifetime % 120 == 0) this.try_attack();
+    }
+  }, {
+    key: "attack",
+    value: function attack() {
+      this.manager.spawn_projectile(new sword_1.default(this, this.attack_damage), this.facing, 0);
+      this.scale = 1.1;
+      this.scale_over_time(1, 10);
+      this.move(vec2_1.default.step(vec2_1.default.from_angle(this.facing)));
+    }
+  }, {
+    key: "update_path",
+    value: function update_path() {
+      _get(_getPrototypeOf(Swordsman.prototype), "update_path", this).call(this);
+
+      this.path = this.manager.room.tiles.find_path(this.position, this.manager.room.manager.game.player.position);
+    }
+  }]);
+
+  return Swordsman;
+}(mob_1.default);
+
+exports.default = Swordsman;
+},{"../../game/renderer":"src/game/renderer.ts","../../util/color":"src/util/color.ts","../../util/vec2":"src/util/vec2.ts","../mob":"src/entity/mob.ts","../projectile/sword":"src/entity/projectile/sword.ts"}],"src/room/entity_manager.ts":[function(require,module,exports) {
 "use strict";
 
 function _createForOfIteratorHelper(o, allowArrayLike) { var it = typeof Symbol !== "undefined" && o[Symbol.iterator] || o["@@iterator"]; if (!it) { if (Array.isArray(o) || (it = _unsupportedIterableToArray(o)) || allowArrayLike && o && typeof o.length === "number") { if (it) o = it; var i = 0; var F = function F() {}; return { s: F, n: function n() { if (i >= o.length) return { done: true }; return { done: false, value: o[i++] }; }, e: function e(_e) { throw _e; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var normalCompletion = true, didErr = false, err; return { s: function s() { it = it.call(o); }, n: function n() { var step = it.next(); normalCompletion = step.done; return step; }, e: function e(_e2) { didErr = true; err = _e2; }, f: function f() { try { if (!normalCompletion && it.return != null) it.return(); } finally { if (didErr) throw err; } } }; }
@@ -30399,11 +30865,13 @@ Object.defineProperty(exports, "__esModule", {
 
 var random_1 = __importDefault(require("../util/random"));
 
-var mob_1 = __importDefault(require("../entity/mob"));
-
 var vec2_1 = __importDefault(require("../util/vec2"));
 
 var game_1 = __importDefault(require("../game/game"));
+
+var turret_1 = __importDefault(require("../entity/mob/turret"));
+
+var swordsman_1 = __importDefault(require("../entity/mob/swordsman"));
 
 var EntityManager = /*#__PURE__*/function () {
   function EntityManager(room) {
@@ -30414,7 +30882,13 @@ var EntityManager = /*#__PURE__*/function () {
     this.random = new random_1.default();
 
     for (var i = 0; i < this.random.next_int_ranged(0, 1) + this.random.next_int_ranged(0, Math.sqrt(this.room.position.x * this.room.position.x + this.room.position.y * this.room.position.y)); i++) {
-      var mob = new mob_1.default();
+      var mob = this.random.weighted_random([{
+        item: new turret_1.default(),
+        weight: 3
+      }, {
+        item: new swordsman_1.default(),
+        weight: 1
+      }]);
       var w = game_1.default.width;
       mob.set_position(new vec2_1.default(this.random.next_int_ranged(2, w - 3) + 0.5, this.random.next_int_ranged(2, w - 3) + 0.5));
       this.spawn(mob);
@@ -30447,8 +30921,10 @@ var EntityManager = /*#__PURE__*/function () {
     }
   }, {
     key: "spawn_projectile",
-    value: function spawn_projectile(position, projectile, angle, speed) {
-      projectile.set_position(position.modulus_room());
+    value: function spawn_projectile(projectile, angle) {
+      var speed = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 0;
+      var position = arguments.length > 3 ? arguments[3] : undefined;
+      if (position) projectile.set_position(position);
       projectile.velocity = vec2_1.default.from_angle(angle).multiply(speed);
       this.spawn(projectile);
     }
@@ -30533,7 +31009,7 @@ var EntityManager = /*#__PURE__*/function () {
 }();
 
 exports.default = EntityManager;
-},{"../util/random":"src/util/random.ts","../entity/mob":"src/entity/mob.ts","../util/vec2":"src/util/vec2.ts","../game/game":"src/game/game.ts"}],"src/room/particle_manager.ts":[function(require,module,exports) {
+},{"../util/random":"src/util/random.ts","../util/vec2":"src/util/vec2.ts","../game/game":"src/game/game.ts","../entity/mob/turret":"src/entity/mob/turret.ts","../entity/mob/swordsman":"src/entity/mob/swordsman.ts"}],"src/room/particle_manager.ts":[function(require,module,exports) {
 "use strict";
 
 function _createForOfIteratorHelper(o, allowArrayLike) { var it = typeof Symbol !== "undefined" && o[Symbol.iterator] || o["@@iterator"]; if (!it) { if (Array.isArray(o) || (it = _unsupportedIterableToArray(o)) || allowArrayLike && o && typeof o.length === "number") { if (it) o = it; var i = 0; var F = function F() {}; return { s: F, n: function n() { if (i >= o.length) return { done: true }; return { done: false, value: o[i++] }; }, e: function e(_e) { throw _e; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var normalCompletion = true, didErr = false, err; return { s: function s() { it = it.call(o); }, n: function n() { var step = it.next(); normalCompletion = step.done; return step; }, e: function e(_e2) { didErr = true; err = _e2; }, f: function f() { try { if (!normalCompletion && it.return != null) it.return(); } finally { if (didErr) throw err; } } }; }
@@ -33600,11 +34076,13 @@ function _toConsumableArray(arr) { return _arrayWithoutHoles(arr) || _iterableTo
 
 function _nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
 
-function _unsupportedIterableToArray(o, minLen) { if (!o) return; if (typeof o === "string") return _arrayLikeToArray(o, minLen); var n = Object.prototype.toString.call(o).slice(8, -1); if (n === "Object" && o.constructor) n = o.constructor.name; if (n === "Map" || n === "Set") return Array.from(o); if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray(o, minLen); }
-
 function _iterableToArray(iter) { if (typeof Symbol !== "undefined" && iter[Symbol.iterator] != null || iter["@@iterator"] != null) return Array.from(iter); }
 
 function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) return _arrayLikeToArray(arr); }
+
+function _createForOfIteratorHelper(o, allowArrayLike) { var it = typeof Symbol !== "undefined" && o[Symbol.iterator] || o["@@iterator"]; if (!it) { if (Array.isArray(o) || (it = _unsupportedIterableToArray(o)) || allowArrayLike && o && typeof o.length === "number") { if (it) o = it; var i = 0; var F = function F() {}; return { s: F, n: function n() { if (i >= o.length) return { done: true }; return { done: false, value: o[i++] }; }, e: function e(_e) { throw _e; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var normalCompletion = true, didErr = false, err; return { s: function s() { it = it.call(o); }, n: function n() { var step = it.next(); normalCompletion = step.done; return step; }, e: function e(_e2) { didErr = true; err = _e2; }, f: function f() { try { if (!normalCompletion && it.return != null) it.return(); } finally { if (didErr) throw err; } } }; }
+
+function _unsupportedIterableToArray(o, minLen) { if (!o) return; if (typeof o === "string") return _arrayLikeToArray(o, minLen); var n = Object.prototype.toString.call(o).slice(8, -1); if (n === "Object" && o.constructor) n = o.constructor.name; if (n === "Map" || n === "Set") return Array.from(o); if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray(o, minLen); }
 
 function _arrayLikeToArray(arr, len) { if (len == null || len > arr.length) len = arr.length; for (var i = 0, arr2 = new Array(len); i < len; i++) { arr2[i] = arr[i]; } return arr2; }
 
@@ -33629,8 +34107,6 @@ var room_1 = __importDefault(require("../room/room"));
 var random_1 = __importDefault(require("../util/random"));
 
 var vec2_1 = __importDefault(require("../util/vec2"));
-
-var game_1 = __importDefault(require("./game"));
 
 var renderer_1 = __importDefault(require("./renderer"));
 
@@ -33679,8 +34155,40 @@ var RoomManager = /*#__PURE__*/function () {
       }
     }
 
-    var w = game_1.default.width - 1;
-    var c = Math.floor(w / 2);
+    var _iterator = _createForOfIteratorHelper(this.array()),
+        _step;
+
+    try {
+      for (_iterator.s(); !(_step = _iterator.n()).done;) {
+        var room = _step.value;
+        var _pos = room.position;
+
+        if (this.random.next_float() < 0.1 && this.get(_pos.add(new vec2_1.default(-1, 0)))) {
+          this.get(_pos).tiles.create_door('left');
+          this.get(_pos.add(new vec2_1.default(-1, 0))).tiles.create_door('right');
+        }
+
+        if (this.random.next_float() < 0.1 && this.get(_pos.add(new vec2_1.default(1, 0)))) {
+          this.get(_pos).tiles.create_door('right');
+          this.get(_pos.add(new vec2_1.default(1, 0))).tiles.create_door('left');
+        }
+
+        if (this.random.next_float() < 0.1 && this.get(_pos.add(new vec2_1.default(0, -1)))) {
+          this.get(_pos).tiles.create_door('up');
+          this.get(_pos.add(new vec2_1.default(0, -1))).tiles.create_door('down');
+        }
+
+        if (this.random.next_float() < 0.1 && this.get(_pos.add(new vec2_1.default(0, 1)))) {
+          this.get(_pos).tiles.create_door('down');
+          this.get(_pos.add(new vec2_1.default(0, 1))).tiles.create_door('up');
+        }
+      }
+    } catch (err) {
+      _iterator.e(err);
+    } finally {
+      _iterator.f();
+    }
+
     this.enter(vec2_1.default.zero());
   }
 
@@ -33739,9 +34247,7 @@ var RoomManager = /*#__PURE__*/function () {
   }, {
     key: "passable",
     value: function passable(position, size) {
-      var w = game_1.default.width;
-      var room = new vec2_1.default(Math.floor(position.x / w), Math.floor(position.y / w));
-      return this.get(room).tiles.passable(position.modulus_room(), size);
+      return this.current_room.tiles.passable(position, size);
     }
   }]);
 
@@ -33749,7 +34255,7 @@ var RoomManager = /*#__PURE__*/function () {
 }();
 
 exports.default = RoomManager;
-},{"../room/room":"src/room/room.ts","../util/random":"src/util/random.ts","../util/vec2":"src/util/vec2.ts","./game":"src/game/game.ts","./renderer":"src/game/renderer.ts"}],"src/game/game.ts":[function(require,module,exports) {
+},{"../room/room":"src/room/room.ts","../util/random":"src/util/random.ts","../util/vec2":"src/util/vec2.ts","./renderer":"src/game/renderer.ts"}],"src/game/game.ts":[function(require,module,exports) {
 "use strict";
 
 function _createForOfIteratorHelper(o, allowArrayLike) { var it = typeof Symbol !== "undefined" && o[Symbol.iterator] || o["@@iterator"]; if (!it) { if (Array.isArray(o) || (it = _unsupportedIterableToArray(o)) || allowArrayLike && o && typeof o.length === "number") { if (it) o = it; var i = 0; var F = function F() {}; return { s: F, n: function n() { if (i >= o.length) return { done: true }; return { done: false, value: o[i++] }; }, e: function e(_e) { throw _e; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var normalCompletion = true, didErr = false, err; return { s: function s() { it = it.call(o); }, n: function n() { var step = it.next(); normalCompletion = step.done; return step; }, e: function e(_e2) { didErr = true; err = _e2; }, f: function f() { try { if (!normalCompletion && it.return != null) it.return(); } finally { if (didErr) throw err; } } }; }
@@ -33787,12 +34293,15 @@ var renderer_1 = __importDefault(require("./renderer"));
 var room_manager_1 = __importDefault(require("./room_manager"));
 
 var Game = /*#__PURE__*/function () {
-  function Game(p5) {
+  function Game(p5, player_class) {
+    var _this = this;
+
     _classCallCheck(this, Game);
 
     this.random = new random_1.default();
     this.room_manager = new room_manager_1.default(this);
     this.time = 0;
+    this.player_class = player_class;
     this.player = new player_1.default(this);
     this.player.set_position(new vec2_1.default(Game.center, Game.center));
     this.mouse_pos = vec2_1.default.zero();
@@ -33801,25 +34310,24 @@ var Game = /*#__PURE__*/function () {
     renderer_1.default.scale = 600 / Game.width;
     this.state = 'menu';
     this.keys_down = new Map();
+    window.addEventListener('keydown', function (e) {
+      return _this.keydown(e);
+    });
+    window.addEventListener('keyup', function (e) {
+      return _this.keyup(e);
+    });
+    window.addEventListener('mousedown', function (e) {
+      return _this.mousedown(e);
+    });
+    document.getElementById('defaultCanvas0').addEventListener('mousemove', function (e) {
+      return _this.mousemove(e);
+    });
+    this.start();
   }
 
   _createClass(Game, [{
     key: "start",
     value: function start() {
-      var _this = this;
-
-      window.addEventListener('keydown', function (e) {
-        return _this.keydown(e);
-      });
-      window.addEventListener('keyup', function (e) {
-        return _this.keyup(e);
-      });
-      window.addEventListener('mousedown', function (e) {
-        return _this.mousedown(e);
-      });
-      document.getElementById('defaultCanvas0').addEventListener('mousemove', function (e) {
-        return _this.mousemove(e);
-      });
       this.state = 'running';
     }
   }, {
@@ -33850,7 +34358,11 @@ var Game = /*#__PURE__*/function () {
   }, {
     key: "tick",
     value: function tick() {
-      this.room_manager.enter(new vec2_1.default(Math.floor(this.player.position.x / Game.width), Math.floor(this.player.position.y / Game.width)));
+      if (this.player.position.x < 0) this.room_manager.enter(this.room_manager.current_room.position.add(new vec2_1.default(-1, 0)));
+      if (this.player.position.x > Game.width) this.room_manager.enter(this.room_manager.current_room.position.add(new vec2_1.default(1, 0)));
+      if (this.player.position.y < 0) this.room_manager.enter(this.room_manager.current_room.position.add(new vec2_1.default(0, -1)));
+      if (this.player.position.y > Game.width) this.room_manager.enter(this.room_manager.current_room.position.add(new vec2_1.default(0, 1)));
+      this.player.position = this.player.position.modulus_room();
       this.player.manager = this.room_manager.current_room.entities;
       this.room_manager.tick();
       this.player.look(this.mouse_pos);
@@ -33926,6 +34438,7 @@ var game_1 = __importDefault(require("./game/game"));
 var sketch = function sketch(p5) {
   var game;
   var montserrat;
+  var state;
 
   p5.setup = function () {
     var canvas = p5.createCanvas(1200, 600);
@@ -33936,14 +34449,14 @@ var sketch = function sketch(p5) {
     montserrat = p5.loadFont('//db.onlinewebfonts.com/c/0462590be6674a5827956be5045c54de?family=Montserrat');
     p5.textFont('Montserrat', 20);
     p5.textStyle('bold');
-    game = new game_1.default(p5);
+    state = 'menu';
   };
 
   p5.draw = function () {
     p5.background(37, 33, 53);
     p5.strokeWeight(0);
 
-    switch (game.state) {
+    switch (state) {
       case 'running':
         p5.push();
         game.tick();
@@ -33960,24 +34473,25 @@ var sketch = function sketch(p5) {
         p5.fill(255, 255, 255);
         p5.text("XP: ".concat(game.player.xp), 30, 70);
         p5.pop();
+        state = game.state;
         break;
 
       case 'menu':
         p5.noLoop();
-        var start_button = p5.createButton('start');
-        start_button.style('font-family', 'Montserrat');
-        start_button.style('font-weight', '600');
-        start_button.style('color', '#33ff33');
-        start_button.style('background', '#5c4baa');
-        start_button.center();
-        start_button.mousePressed(function () {
-          game.start();
-          start_button.remove();
+        var menu;
+        var select_text_class = p5.createDiv('choose class');
+        var selector = p5.createSelect().child(p5.createElement('option', 'turret').attribute('value', 'turret')).child(p5.createElement('option', 'swordsman').attribute('value', 'swordsman'));
+        var start_button = p5.createButton('start').style('font-family', 'Montserrat').style('font-weight', '600').style('color', '#33ff33').style('background', '#5c4baa').mousePressed(function () {
+          game = new game_1.default(p5, selector.value());
+          menu.remove();
+          state = 'running';
           p5.loop();
         });
+        menu = p5.createDiv().child(select_text_class).child(selector).child(start_button).center();
         break;
 
       case 'dead':
+        var text = p5.createDiv('you died! refresh the page to restart').center();
         break;
     }
   };
@@ -34012,7 +34526,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "49932" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "54882" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
