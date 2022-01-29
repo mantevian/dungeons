@@ -7,6 +7,9 @@ export default class Mob extends LivingEntity {
 	path: Array<Vec2>;
 	current_path_progress: number;
 
+	xp: number;
+	money: number;
+
 	constructor() {
 		super();
 
@@ -20,36 +23,42 @@ export default class Mob extends LivingEntity {
 
 		this.path = new Array<Vec2>();
 		this.current_path_progress = 0;
+
+		this.xp = 1;
+		this.money = 1;
 	}
 
 	tick(): void {
 		super.tick();
-
-		this.look(Renderer.canvas_coords(this.manager.room.manager.game.player.room_pos()));
-
-		if (this.lifetime % 50 == 0) {
-			if (this.current_path_progress == 0) {
-				this.path = this.manager.room.tiles.find_path(this.room_pos(), this.manager.room.manager.game.player.room_pos().add(new Vec2(this.manager.random.next_int_ranged(-2, 2), this.manager.random.next_int_ranged(-2, 2))));
-				this.current_path_progress = 1;
-			}
-
-			if (this.current_path_progress < this.path.length / 2) {
-				this.move_to(this.path[this.current_path_progress]);
-				this.current_path_progress++;
-			}
-			else
-				this.current_path_progress = 0;
-		}
-
-		if (this.lifetime % 120 == 0) {
-			this.try_attack();
-		}
 	}
 
 	render(): void {
 		super.render();
 		Renderer.pointer(this);
 		if (this.health < this.max_health)
-			Renderer.health_bar(this.room_pos(), this.size, this.health / this.max_health);
+			Renderer.health_bar(this.position, this.size, this.health / this.max_health);
+	}
+
+	update_path(): void {
+		this.current_path_progress = 1;
+	}
+
+	walk(): void {
+		if (this.current_path_progress == 0)
+			this.update_path();
+
+		if (this.current_path_progress < this.path.length / 2) {
+			let vec = this.path[this.current_path_progress];
+			let d = new Vec2(vec.subtract(this.position).x, vec.subtract(this.position).y);
+			if (Math.abs(d.x) > 1.01 || Math.abs(d.y) > 1.01) {
+				this.update_path();
+			}
+			else {
+				this.move_to(vec);
+				this.current_path_progress++;
+			}
+		}
+		else
+			this.current_path_progress = 0;
 	}
 }

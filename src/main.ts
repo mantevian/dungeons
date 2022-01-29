@@ -5,6 +5,8 @@ const sketch = (p5: P5) => {
 	let game: Game;
 	let montserrat: P5.Font;
 
+	let state: 'running' | 'menu' | 'dead';
+
 	p5.setup = () => {
 		const canvas = p5.createCanvas(1200, 600);
 		canvas.parent('canvas');
@@ -17,14 +19,14 @@ const sketch = (p5: P5) => {
 		p5.textFont('Montserrat', 20);
 		p5.textStyle('bold');
 
-		game = new Game(p5);
+		state = 'menu';
 	}
 
 	p5.draw = () => {
 		p5.background(37, 33, 53);
 		p5.strokeWeight(0);
 
-		switch (game.state) {
+		switch (state) {
 			case 'running':
 				p5.push();
 				game.tick();
@@ -47,27 +49,42 @@ const sketch = (p5: P5) => {
 				p5.text(`XP: ${game.player.xp}`, 30, 70);
 				p5.pop();
 
+				state = game.state;
+
 				break;
 
 			case 'menu':
 				p5.noLoop();
 
-				let start_button = p5.createButton('start');
-				start_button.style('font-family', 'Montserrat');
-				start_button.style('font-weight', '600');
-				start_button.style('color', '#33ff33');
-				start_button.style('background', '#5c4baa');
-				start_button.center();
-				start_button.mousePressed(() => {
-					game.start();
-					start_button.remove();
-					p5.loop();
-				});
-				
-				break;
-			
-			case 'dead':
+				let menu: P5.Element;
 
+				let select_text_class = p5.createDiv('choose class');
+				let selector = p5.createSelect()
+					.child(p5.createElement('option', 'turret').attribute('value', 'turret'))
+					.child(p5.createElement('option', 'swordsman').attribute('value', 'swordsman'))
+
+				let start_button = p5.createButton('start')
+					.style('font-family', 'Montserrat')
+					.style('font-weight', '600')
+					.style('color', '#33ff33')
+					.style('background', '#5c4baa')
+					.mousePressed(() => {
+						game = new Game(p5, selector.value() as 'turret' | 'swordsman');
+						menu.remove();
+						state = 'running';
+						p5.loop();
+					});
+
+				menu = p5.createDiv()
+					.child(select_text_class)
+					.child(selector)
+					.child(start_button)
+					.center();
+
+				break;
+
+			case 'dead':
+				let text = p5.createDiv('you died! refresh the page to restart').center();
 				break;
 		}
 	}

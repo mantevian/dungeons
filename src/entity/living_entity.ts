@@ -5,6 +5,7 @@ import Vec2 from "../util/vec2";
 import Entity from "./entity";
 import Player from "./player";
 import Projectile from "./projectile";
+import Bullet from "./projectile/bullet";
 
 export default class LivingEntity extends Entity {
 	facing: number;
@@ -13,8 +14,6 @@ export default class LivingEntity extends Entity {
 	max_move_timeout: number;
 	moving: Vec2;
 
-	health: number;
-	max_health: number;
 	damage_invincibility_timer: number;
 	max_damage_invincibility_timer: number;
 
@@ -60,13 +59,13 @@ export default class LivingEntity extends Entity {
 		}
 		else
 			this.moving = Vec2.zero();
-		
+
 		if (this.prepare_attack > -1)
 			this.prepare_attack--;
-		
+
 		if (this.prepare_attack == 0)
 			this.attack();
-		
+
 		if (this.health > this.max_health)
 			this.health = this.max_health;
 
@@ -103,7 +102,7 @@ export default class LivingEntity extends Entity {
 	}
 
 	look(pos: Vec2): void {
-		let canvas_position = Renderer.canvas_coords(this.room_pos());
+		let canvas_position = Renderer.canvas_coords(this.position);
 		let vec = pos.subtract(canvas_position);
 		this.facing = Math.atan2(vec.y, vec.x) * 180 / Math.PI;
 	}
@@ -114,18 +113,19 @@ export default class LivingEntity extends Entity {
 	}
 
 	attack(): void {
-		this.manager.spawn_projectile(this.room_pos(), new Projectile(this, this.attack_damage), this.facing, 0.2);
-		this.scale = 1.1;
-		this.scale_over_time(1, 10);
+
 	}
 
 	damage(damage: number, source: Entity, timer = this.max_damage_invincibility_timer): void {
+		if (this.damage_invincibility_timer > 0)
+			return;
+
 		damage = Math.floor(damage);
 		this.health -= damage;
 		this.max_damage_invincibility_timer = timer;
 		this.damage_invincibility_timer = timer;
 
-		this.manager.room.particles.spawn(new DamageCountParticle(this.room_pos().add(new Vec2(0, this.size.y * -0.5)), damage));
+		this.manager.room.particles.spawn(new DamageCountParticle(this.position.add(new Vec2(0, this.size.y * -0.5)), damage));
 
 		this.last_attacker = source;
 	}
@@ -140,6 +140,6 @@ export default class LivingEntity extends Entity {
 			this.scale_per_tick = 0;
 		}
 
-		Renderer.rect(this.room_pos(), this.size, this.color.lighten(this.damage_invincibility_timer / this.max_damage_invincibility_timer), this.corner_radius, this.scale);
+		Renderer.rect(this.position, this.size, this.color.lighten(this.damage_invincibility_timer / this.max_damage_invincibility_timer), this.corner_radius, { scale: this.scale, rotation: this.rotation });
 	}
 }

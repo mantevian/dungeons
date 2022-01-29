@@ -53,8 +53,29 @@ export default class RoomManager {
 			}
 		}
 
-		let w = Game.width - 1;
-		let c = Math.floor(w / 2);
+		for (let room of this.array()) {
+			let pos = room.position;
+
+			if (this.random.next_float() < 0.1 && this.get(pos.add(new Vec2(-1, 0)))) {
+				this.get(pos).tiles.create_door('left');
+				this.get(pos.add(new Vec2(-1, 0))).tiles.create_door('right');
+			}
+				
+			if (this.random.next_float() < 0.1 && this.get(pos.add(new Vec2(1, 0)))) {
+				this.get(pos).tiles.create_door('right');
+				this.get(pos.add(new Vec2(1, 0))).tiles.create_door('left');
+			}
+
+			if (this.random.next_float() < 0.1 && this.get(pos.add(new Vec2(0, -1)))) {
+				this.get(pos).tiles.create_door('up');
+				this.get(pos.add(new Vec2(0, -1))).tiles.create_door('down');
+			}
+
+			if (this.random.next_float() < 0.1 && this.get(pos.add(new Vec2(0, 1)))) {
+				this.get(pos).tiles.create_door('down');
+				this.get(pos.add(new Vec2(0, 1))).tiles.create_door('up');
+			}
+		}
 
 		this.enter(Vec2.zero());
 	}
@@ -96,8 +117,6 @@ export default class RoomManager {
 	}
 
 	passable(position: Vec2, size: Vec2): boolean {
-		let w = Game.width;
-		let room = new Vec2(Math.floor(position.x / w), Math.floor(position.y / w));
-		return this.get(room).tiles.passable(position.modulus_room(), size);
+		return this.current_room.tiles.passable(position, size);
 	}
 }

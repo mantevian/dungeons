@@ -41,7 +41,7 @@ export default class Random {
 		return this.choice([1, -1]);
 	}
 
-	weighted_random(arr: Array<any>): any {
+	weighted_random(arr: Array<{ item: any, weight: number }>): any {
 		var entries = [];
 		var accumulated_weight = 0;
 

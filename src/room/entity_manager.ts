@@ -5,6 +5,8 @@ import Mob from "../entity/mob";
 import Vec2 from "../util/vec2";
 import Game from "../game/game";
 import Projectile from "../entity/projectile";
+import Turret from "../entity/mob/turret";
+import Swordsman from "../entity/mob/swordsman";
 
 export default class EntityManager {
 	readonly room: Room;
@@ -17,7 +19,16 @@ export default class EntityManager {
 		this.random = new Random();
 
 		for (let i = 0; i < this.random.next_int_ranged(0, 1) + this.random.next_int_ranged(0, Math.sqrt(this.room.position.x * this.room.position.x + this.room.position.y * this.room.position.y)); i++) {
-			let mob = new Mob();
+			let mob = this.random.weighted_random([
+				{
+					item: new Turret(),
+					weight: 3
+				},
+				{
+					item: new Swordsman(),
+					weight: 1
+				}
+			]);
 			let w = Game.width;
 			mob.set_position(new Vec2(this.random.next_int_ranged(2, w - 3) + 0.5, this.random.next_int_ranged(2, w - 3) + 0.5));
 			this.spawn(mob);
@@ -40,8 +51,8 @@ export default class EntityManager {
 		this.entities.set(entity.uuid, entity);
 	}
 
-	spawn_projectile(position: Vec2, projectile: Projectile, angle: number, speed: number): void {
-		projectile.set_position(position.modulus_room());
+	spawn_projectile(projectile: Projectile, angle: number, speed = 0, position?: Vec2): void {
+		if (position) projectile.set_position(position);
 		projectile.velocity = Vec2.from_angle(angle).multiply(speed);
 		this.spawn(projectile);
 	}

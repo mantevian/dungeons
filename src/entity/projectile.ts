@@ -2,6 +2,7 @@ import Color from "../util/color";
 import Vec2 from "../util/vec2";
 import Entity from "./entity";
 import LivingEntity from "./living_entity";
+import Mob from "./mob";
 import Player from "./player";
 
 export default class Projectile extends Entity {
@@ -25,17 +26,15 @@ export default class Projectile extends Entity {
 
 		this.velocity = Vec2.zero();
 
-		this.scale = 1.2;
-		this.scale_per_tick = -0.01;
-		this.scale_time = 1000;
+		this.scale = 1;
+		this.scale_per_tick = 0;
+		this.scale_time = 0;
 
 		this.player_friendly = parent instanceof Player;
 	}
 
 	tick(): void {
 		super.tick();
-
-		this.move(this.velocity);
 	}
 
 	on_tile_collision(): void {
@@ -43,27 +42,18 @@ export default class Projectile extends Entity {
 	}
 
 	on_entity_collision(entity: Entity): void {
-		if (!(entity instanceof LivingEntity))
-			return;
-		
-		if (!this.player_friendly && !(entity instanceof Player))
-			return;
+		if (this.player_friendly && entity instanceof Mob)
+			this.on_enemy_collision(entity);
+		else
+			if (entity instanceof Player)
+				this.on_enemy_collision(entity);
+	}
 
+	on_enemy_collision(entity: LivingEntity): void {
 		entity.damage(this.attack_damage, this.parent);
-		this.destroy();
 	}
 
 	on_kill(target: Entity): void {
 		this.parent.on_kill(target);
-	}
-
-	render(): void {
-		super.render();
-
-		if (this.scale > 0.5) {
-			this.velocity = this.velocity.multiply(0.98);
-			this.attack_damage *= 0.99;
-		}
-		else this.destroy();
 	}
 }

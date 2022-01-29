@@ -20,7 +20,6 @@ export default class DamageCountParticle extends Particle {
 	}
 
 	render(): void {
-		let damage = Math.floor(this.damage * 10) / 10;
-		Renderer.text(this.position, 12, Color.RGBA(255, 128, 20, this.lifetime * 255 / 30), damage.toString());
+		Renderer.text(this.position, 12, Color.RGBA(255, 128, 20, this.lifetime * 255 / 30), this.damage.toString());
 	}
 }

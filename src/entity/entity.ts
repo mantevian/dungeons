@@ -12,7 +12,11 @@ export default class Entity {
 	position: Vec2;
 	noclip: boolean;
 
+	health: number;
+	max_health: number;
+
 	size: Vec2;
+	rotation: number;
 	color: Color;
 	corner_radius: number;
 	scale: number;
@@ -31,6 +35,7 @@ export default class Entity {
 		this.noclip = true;
 
 		this.size = new Vec2(0.5, 0.5);
+		this.rotation = 0;
 		this.color = Color.RGB(255, 255, 255);
 		this.corner_radius = 0;
 		this.scale = 1;
@@ -66,6 +71,10 @@ export default class Entity {
 		this.move(vec.subtract(this.position));
 	}
 
+	step_to(vec: Vec2): void {
+		this.move(Vec2.step(vec.subtract(this.position)));
+	}
+
 	tick(): void {
 		this.lifetime++;
 
@@ -77,14 +86,17 @@ export default class Entity {
 		}
 
 		this.render();
+
+		if (this.anchored)
+			this.follow();
 	}
 
 	collides_with_entity(entity: Entity): boolean {
 		return !this.equals(entity) &&
-			this.room_pos().x - this.size.x * 0.5 < entity.room_pos().x + entity.size.x * 0.5 &&
-			this.room_pos().x + this.size.x * 0.5 > entity.room_pos().x - entity.size.x * 0.5 &&
-			this.room_pos().y - this.size.x * 0.5 < entity.room_pos().y + entity.size.y * 0.5 &&
-			this.room_pos().y + this.size.y * 0.5 > entity.room_pos().y - entity.size.y * 0.5;
+			this.position.x - this.size.x * 0.5 < entity.position.x + entity.size.x * 0.5 &&
+			this.position.x + this.size.x * 0.5 > entity.position.x - entity.size.x * 0.5 &&
+			this.position.y - this.size.x * 0.5 < entity.position.y + entity.size.y * 0.5 &&
+			this.position.y + this.size.y * 0.5 > entity.position.y - entity.size.y * 0.5;
 	}
 
 	on_tile_collision(): void {
@@ -120,7 +132,7 @@ export default class Entity {
 			this.scale_per_tick = 0;
 		}
 
-		Renderer.rect(this.room_pos(), this.size, this.color, this.corner_radius, this.scale);
+		Renderer.rect(this.position, this.size, this.color, this.corner_radius, { scale: this.scale, rotation: this.rotation });
 	}
 
 	equals(entity: Entity): boolean {
@@ -139,7 +151,27 @@ export default class Entity {
 		this.scale_time = time;
 	}
 
-	room_pos(): Vec2 {
-		return this.position.modulus_room();
+	follow(): void {
+
+	}
+
+	trace_tiles(angle: number, max_distance = 10): number {
+		let current = this.position.clone();
+		let vec = Vec2.from_angle(angle).multiply(0.05);
+
+		let distance = 0;
+
+		while (distance < max_distance) {
+			current = current.add(vec);
+			distance += 0.05;
+			if (this.manager.room.tiles.solid(current.clone().floor()))
+				break;
+		}
+
+		return distance;
+	}
+
+	distance_to(entity: Entity): number {
+		return entity.position.subtract(this.position).length;
 	}
 }

@@ -107,12 +107,12 @@ export default class Vec2 {
 		return new Vec2(Math.round(this.x), Math.round(this.y));
 	}
 
-	length(): number {
+	get length() {
 		return Math.sqrt(this.x * this.x + this.y * this.y);
 	}
 
 	normalize(): Vec2 {
-		return new Vec2(this.x / this.length(), this.y / this.length());
+		return new Vec2(this.x / this.length, this.y / this.length);
 	}
 
 	equals(vec: Vec2): boolean {
@@ -138,5 +138,10 @@ export default class Vec2 {
 			vec.y = Game.width - 1;
 		
 		return vec;
+	}
+
+	rotate(angle: number): Vec2 {
+		let rad = angle * Math.PI / 180;
+		return new Vec2(Math.cos(rad * this.x) - Math.sin(rad * this.y), Math.cos(rad * this.x) + Math.sin(rad * this.y));
 	}
 }

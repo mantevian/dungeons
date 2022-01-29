@@ -2,8 +2,11 @@ import Game from "../game/game";
 import Renderer from "../game/renderer";
 import Color from "../util/color";
 import Vec2 from "../util/vec2";
-import entity from "./entity";
+import Entity from "./entity";
 import LivingEntity from "./living_entity";
+import Mob from "./mob";
+import Bullet from "./projectile/bullet";
+import Sword from "./projectile/sword";
 
 export default class Player extends LivingEntity {
 	attack_cooldown: number;
@@ -19,11 +22,19 @@ export default class Player extends LivingEntity {
 		this.color = Color.RGB(40, 255, 40);
 		this.corner_radius = 0.35;
 
-		this.attack_cooldown = 20;
-		this.max_attack_cooldown = 20;
+		this.attack_cooldown = 30;
+		this.max_attack_cooldown = 30;
 
-		this.attack_damage = 15;
+		switch (game.player_class) {
+			case 'swordsman':
+				this.attack_damage = 8;
+				break;
 
+			case 'turret':
+				this.attack_damage = 12;
+				break;
+		}
+		
 		this.xp = 0;
 	}
 
@@ -40,7 +51,7 @@ export default class Player extends LivingEntity {
 
 		if (this.attack_cooldown > 0)
 			this.attack_cooldown--;
-		
+
 		if (this.health < 0)
 			this.manager.room.manager.game.stop_caused_by_death();
 	}
@@ -50,7 +61,16 @@ export default class Player extends LivingEntity {
 	}
 
 	render(): void {
-		super.render();
+		if (this.scale_time > 0) {
+			this.scale_time--;
+			this.scale += this.scale_per_tick;
+		}
+		else {
+			this.scale = 1;
+			this.scale_per_tick = 0;
+		}
+
+		Renderer.rect(this.position, this.size, this.color, this.corner_radius, { scale: this.scale, rotation: this.rotation });
 
 		Renderer.pointer(this);
 
@@ -61,18 +81,32 @@ export default class Player extends LivingEntity {
 	try_attack(): void {
 		if (this.attack_cooldown > 0)
 			return;
-		
+
 		super.try_attack();
 	}
 
 	attack(): void {
-		super.attack();
+		this.scale = 1.1;
 
+		switch (this.manager.room.manager.game.player_class) {
+			case 'swordsman':
+				console.log(this.attack_damage)
+				this.manager.spawn_projectile(new Sword(this, this.attack_damage), this.facing);
+				this.scale_over_time(1, 30);
+				break;
+			
+			case 'turret':
+				this.manager.spawn_projectile(new Bullet(this, this.attack_damage), this.facing, 0.2, this.position);
+				this.scale_over_time(1, 10);
+				break;
+		}
+		
 		this.attack_cooldown = this.max_attack_cooldown;
 	}
 
-	on_kill(target: entity): void {
-		this.xp++;
+	on_kill(target: Entity): void {
+		if (target instanceof Mob)
+			this.xp += target.xp;
 	}
 
 	keydown(keys: Map<string, number>): void {

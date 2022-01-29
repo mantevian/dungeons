@@ -16,14 +16,17 @@ export default class Game {
 
 	state: 'menu' | 'running' | 'dead';
 
+	player_class: 'turret' | 'swordsman';
+
 	keys_down: Map<string, number>;
 
 	mouse_pos: Vec2;
 
-	constructor(p5: p5) {
+	constructor(p5: p5, player_class: 'turret' | 'swordsman') {
 		this.random = new Random();
 		this.room_manager = new RoomManager(this);
 		this.time = 0;
+		this.player_class = player_class;
 		this.player = new Player(this);
 		this.player.set_position(new Vec2(Game.center, Game.center));
 		this.mouse_pos = Vec2.zero();
@@ -34,14 +37,16 @@ export default class Game {
 
 		this.state = 'menu';
 		this.keys_down = new Map<string, number>();
-	}
 
-	start(): void {
 		window.addEventListener('keydown', (e: KeyboardEvent) => this.keydown(e));
 		window.addEventListener('keyup', (e: KeyboardEvent) => this.keyup(e));
 		window.addEventListener('mousedown', (e: MouseEvent) => this.mousedown(e));
 		document.getElementById('defaultCanvas0').addEventListener('mousemove', (e: MouseEvent) => this.mousemove(e));
 
+		this.start();	
+	}
+
+	start(): void {
 		this.state = 'running';
 	}
 
@@ -66,7 +71,19 @@ export default class Game {
 
 	/** The main tick function for this Game */
 	tick(): void {
-		this.room_manager.enter(new Vec2(Math.floor(this.player.position.x / Game.width), Math.floor(this.player.position.y / Game.width)));
+		if (this.player.position.x < 0)
+			this.room_manager.enter(this.room_manager.current_room.position.add(new Vec2(-1, 0)));
+		
+		if (this.player.position.x > Game.width)
+			this.room_manager.enter(this.room_manager.current_room.position.add(new Vec2(1, 0)));
+		
+		if (this.player.position.y < 0)
+			this.room_manager.enter(this.room_manager.current_room.position.add(new Vec2(0, -1)));
+
+		if (this.player.position.y > Game.width)
+			this.room_manager.enter(this.room_manager.current_room.position.add(new Vec2(0, 1)));
+
+		this.player.position = this.player.position.modulus_room();
 		this.player.manager = this.room_manager.current_room.entities;
 		this.room_manager.tick();
 		this.player.look(this.mouse_pos);
