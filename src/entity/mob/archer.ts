@@ -2,17 +2,24 @@ import Renderer from "../../game/renderer";
 import Color from "../../util/color";
 import Vec2 from "../../util/vec2";
 import Mob from "../mob";
-import Bullet from "../projectile/bullet";
+import Arrow from "../projectile/arrow";
 
-export default class Turret extends Mob {
+export default class Archer extends Mob {
+	random_recharge: number;
+
 	constructor() {
 		super();
 
-		this.max_health = 25;
-		this.start_prepare_attack = 30;
-		this.attack_damage = 4;
+		this.max_health = 20;
+		this.start_prepare_attack = 20;
+		this.attack_damage = 5;
 
-		this.color = Color.RGB(64, 92, 255);
+		this.size = new Vec2(0.65, 0.65);
+		this.corner_radius = 0.15;
+
+		this.color = Color.RGB(16, 255, 192);
+
+		this.random_recharge = 0;
 	}
 
 	tick(): void {
@@ -20,15 +27,19 @@ export default class Turret extends Mob {
 
 		this.look(Renderer.canvas_coords(this.manager.room.manager.game.player.position));
 
-		if (this.lifetime % 45 == 0)
+		if (this.lifetime % (45 + this.random_recharge) == 0) {
 			this.walk();
+			this.random_recharge = this.manager.random.next_int_ranged(0, 45);
+		}
 
-		if (this.lifetime % 75 == 0)
+		if (this.lifetime % 60 == 0)
 			this.try_attack();
 	}
 
 	attack(): void {
-		this.manager.spawn_projectile(new Bullet(this, this.attack_damage), this.facing, 0.3, this.position);
+		let arrow = new Arrow(this, this.attack_damage);
+		arrow.rotation = this.facing;
+		this.manager.spawn_projectile(arrow, this.facing, 0.25, this.position);
 		this.scale = 1.1;
 		this.scale_over_time(1, 10);
 	}

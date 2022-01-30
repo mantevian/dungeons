@@ -35,7 +35,7 @@ export default class Swordsman extends Mob {
 	}
 
 	attack(): void {
-		this.manager.spawn_projectile(new Sword(this, this.attack_damage), this.facing, 0);
+		this.manager.spawn_projectile(new Sword(this, this.attack_damage), this.facing);
 		this.scale = 1.1;
 		this.scale_over_time(1, 10);
 

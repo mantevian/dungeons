@@ -83,4 +83,37 @@ export default class Renderer {
 
 		this.p5.pop();
 	}
+
+	static sword(position: Vec2, size: Vec2, color: Color, corner_radius: number, options = { scale: 1, rotation: 0 }) {
+		this.p5.push();
+		
+		this.p5.translate(this.canvas_coords(position).x, this.canvas_coords(position).y);
+		this.p5.rotate(options.rotation);
+		let size_scaled = size.multiply(this.scale).multiply(options.scale);
+		
+		this.p5.fill(128, 128, 128);
+		this.p5.rect(0, 0, size_scaled.x, size_scaled.y * 0.4, corner_radius * this.scale);
+		
+		this.p5.fill(color.get_red(), color.get_green(), color.get_blue(), color.get_alpha());
+		this.p5.rect(size_scaled.x * 0.1, 0, size_scaled.x * 0.8, size_scaled.y, corner_radius * this.scale);
+
+		this.p5.fill(128, 128, 128);
+		this.p5.rect(-size_scaled.x * 0.3, 0, size_scaled.x * 0.05, size_scaled.y * 2, corner_radius * this.scale);
+		this.p5.pop();
+	}
+
+	static arrow(position: Vec2, size: Vec2, color: Color, corner_radius: number, options = { scale: 1, rotation: 0 }) {
+		this.p5.push();
+
+		this.p5.translate(this.canvas_coords(position).x, this.canvas_coords(position).y);
+		this.p5.rotate(options.rotation);
+		let size_scaled = size.multiply(this.scale).multiply(options.scale);
+
+		this.p5.fill(128, 128, 128);
+		this.p5.rect(0, 0, size_scaled.x, size_scaled.y * 0.5, corner_radius * this.scale);
+
+		this.p5.fill(color.get_red(), color.get_green(), color.get_blue(), color.get_alpha());
+		this.p5.rect(size_scaled.x * 0.5, 0, size_scaled.x * 0.3, size_scaled.y, corner_radius * this.scale);
+		this.p5.pop();
+	}
 }

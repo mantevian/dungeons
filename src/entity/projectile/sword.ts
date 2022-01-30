@@ -1,6 +1,6 @@
+import Renderer from "../../game/renderer";
 import Color from "../../util/color";
 import Vec2 from "../../util/vec2";
-import Entity from "../entity";
 import LivingEntity from "../living_entity";
 import Projectile from "../projectile";
 
@@ -14,17 +14,17 @@ export default class Sword extends Projectile {
 
 		this.starting_rotation = parent.facing - angle;
 		this.ending_rotation = parent.facing + angle;
-		this.rotation_speed = 2;
+		this.rotation_speed = 0.5;
 
 		this.rotation = this.starting_rotation;
 		this.anchored = true;
 
 		this.size = new Vec2(2.5, 0.2);
-		this.color = Color.RGB(255, 128, 0);
+		this.color = Color.RGB(220, 220, 220);
 		this.corner_radius = 0.9;
 
-		this.max_health = 4;
-		this.health = 4;
+		this.max_health = 8;
+		this.health = 8;
 
 		this.follow();
 	}
@@ -45,7 +45,7 @@ export default class Sword extends Projectile {
 			this.health--;
 		else {
 			this.rotation += this.rotation_speed;
-			this.rotation_speed += 1;
+			this.rotation_speed += 0.5;
 		}
 
 		if (this.health <= 0)
@@ -54,5 +54,9 @@ export default class Sword extends Projectile {
 
 	follow(): void {
 		this.set_position(Vec2.from_angle(this.rotation).multiply(2));
+	}
+
+	render(): void {
+		Renderer.sword(this.position, this.size, this.color, this.corner_radius, { scale: this.scale, rotation: this.rotation });
 	}
 }

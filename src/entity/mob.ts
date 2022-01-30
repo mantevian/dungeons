@@ -17,9 +17,9 @@ export default class Mob extends LivingEntity {
 		this.size = new Vec2(0.7, 0.7);
 		this.corner_radius = 0.15;
 
-		this.max_health = 35;
-		this.start_prepare_attack = 30;
-		this.attack_damage = 6;
+		this.max_health = 1;
+		this.start_prepare_attack = 1;
+		this.attack_damage = 1;
 
 		this.path = new Array<Vec2>();
 		this.current_path_progress = 0;

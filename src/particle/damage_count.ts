@@ -9,17 +9,17 @@ export default class DamageCountParticle extends Particle {
 	constructor(position: Vec2, damage: number) {
 		super();
 
-		this.lifetime = 30;
+		this.lifetime = 40;
 		this.position = position;
 		this.damage = damage;
 	}
 
 	tick(): void {
 		super.tick();
-		this.position = this.position.add(new Vec2(0, -0.01));
+		this.position = this.position.add(new Vec2(0, -0.015));
 	}
 
 	render(): void {
-		Renderer.text(this.position, 12, Color.RGBA(255, 128, 20, this.lifetime * 255 / 30), this.damage.toString());
+		Renderer.text(this.position, 13, Color.RGBA(255, 128, 20, this.lifetime * 255 / 30), this.damage.toString());
 	}
 }

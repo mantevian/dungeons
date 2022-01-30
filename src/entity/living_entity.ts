@@ -2,10 +2,10 @@ import Game from "../game/game";
 import Renderer from "../game/renderer";
 import DamageCountParticle from "../particle/damage_count";
 import Vec2 from "../util/vec2";
+import StatusEffect from "./effect/status_effect";
+import StatusEffectManager from "./effect/status_effect_manager";
 import Entity from "./entity";
 import Player from "./player";
-import Projectile from "./projectile";
-import Bullet from "./projectile/bullet";
 
 export default class LivingEntity extends Entity {
 	facing: number;
@@ -22,6 +22,8 @@ export default class LivingEntity extends Entity {
 	start_prepare_attack: number;
 
 	last_attacker: Entity;
+
+	effects: StatusEffectManager;
 
 	constructor(anchor?: Entity) {
 		super(anchor);
@@ -45,10 +47,14 @@ export default class LivingEntity extends Entity {
 		this.damage_invincibility_timer = 0;
 
 		this.last_attacker = null;
+
+		this.effects = new StatusEffectManager(this);
 	}
 
 	tick(): void {
 		this.lifetime++;
+
+		this.effects.tick();
 
 		if (this.damage_invincibility_timer > 0)
 			this.damage_invincibility_timer--;
@@ -69,7 +75,7 @@ export default class LivingEntity extends Entity {
 		if (this.health > this.max_health)
 			this.health = this.max_health;
 
-		if (this.health <= 0)
+		if (this.health < 1)
 			this.destroy(this.last_attacker);
 
 		this.render();
@@ -116,7 +122,7 @@ export default class LivingEntity extends Entity {
 
 	}
 
-	damage(damage: number, source: Entity, timer = this.max_damage_invincibility_timer): void {
+	damage(damage: number, source?: Entity, timer = this.max_damage_invincibility_timer): void {
 		if (this.damage_invincibility_timer > 0)
 			return;
 
@@ -141,5 +147,15 @@ export default class LivingEntity extends Entity {
 		}
 
 		Renderer.rect(this.position, this.size, this.color.lighten(this.damage_invincibility_timer / this.max_damage_invincibility_timer), this.corner_radius, { scale: this.scale, rotation: this.rotation });
+	}
+
+	apply_status_effect(effect: StatusEffect) {
+		let current = this.effects.find(e => e.id == effect.id);
+		if (current) {
+			current.ticks = 0;
+			current.duration = Math.max(current.duration, effect.duration);
+		}
+		else
+			this.effects.apply(effect);
 	}
 }

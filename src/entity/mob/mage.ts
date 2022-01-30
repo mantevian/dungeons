@@ -2,17 +2,23 @@ import Renderer from "../../game/renderer";
 import Color from "../../util/color";
 import Vec2 from "../../util/vec2";
 import Mob from "../mob";
-import Bullet from "../projectile/bullet";
+import Fireball from "../projectile/fireball";
 
-export default class Turret extends Mob {
+export default class Mage extends Mob {
+	random_recharge: number;
+
 	constructor() {
 		super();
 
-		this.max_health = 25;
-		this.start_prepare_attack = 30;
-		this.attack_damage = 4;
+		this.max_health = 30;
+		this.start_prepare_attack = 40;
+		this.attack_damage = 0;
 
-		this.color = Color.RGB(64, 92, 255);
+		this.corner_radius = 0.3;
+
+		this.color = Color.RGB(255, 128, 16);
+
+		this.random_recharge = 0;
 	}
 
 	tick(): void {
@@ -20,15 +26,17 @@ export default class Turret extends Mob {
 
 		this.look(Renderer.canvas_coords(this.manager.room.manager.game.player.position));
 
-		if (this.lifetime % 45 == 0)
+		if (this.lifetime % 90 == 0)
 			this.walk();
 
-		if (this.lifetime % 75 == 0)
+		if (this.lifetime % (45 + this.random_recharge) == 0) {
 			this.try_attack();
+			this.random_recharge = this.manager.random.next_int_ranged(0, 45);
+		}
 	}
 
 	attack(): void {
-		this.manager.spawn_projectile(new Bullet(this, this.attack_damage), this.facing, 0.3, this.position);
+		this.manager.spawn_projectile(new Fireball(this, this.attack_damage), this.facing, 0.15, this.position);
 		this.scale = 1.1;
 		this.scale_over_time(1, 10);
 	}

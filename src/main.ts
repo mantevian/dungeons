@@ -1,11 +1,11 @@
 import P5 from "p5";
-import Game from "./game/game";
+import Game, { GameStates, PlayerClass } from "./game/game";
 
 const sketch = (p5: P5) => {
 	let game: Game;
 	let montserrat: P5.Font;
 
-	let state: 'running' | 'menu' | 'dead';
+	let state: GameStates;
 
 	p5.setup = () => {
 		const canvas = p5.createCanvas(1200, 600);
@@ -19,7 +19,7 @@ const sketch = (p5: P5) => {
 		p5.textFont('Montserrat', 20);
 		p5.textStyle('bold');
 
-		state = 'menu';
+		state = GameStates.MENU;
 	}
 
 	p5.draw = () => {
@@ -62,6 +62,8 @@ const sketch = (p5: P5) => {
 				let selector = p5.createSelect()
 					.child(p5.createElement('option', 'turret').attribute('value', 'turret'))
 					.child(p5.createElement('option', 'swordsman').attribute('value', 'swordsman'))
+					.child(p5.createElement('option', 'mage').attribute('value', 'mage'))
+					.child(p5.createElement('option', 'archer').attribute('value', 'archer'))
 
 				let start_button = p5.createButton('start')
 					.style('font-family', 'Montserrat')
@@ -69,9 +71,29 @@ const sketch = (p5: P5) => {
 					.style('color', '#33ff33')
 					.style('background', '#5c4baa')
 					.mousePressed(() => {
-						game = new Game(p5, selector.value() as 'turret' | 'swordsman');
+						let player_class: PlayerClass;
+
+						switch (selector.value()) {
+							case 'swordsman':
+								player_class = PlayerClass.SWORDSMAN;
+								break;
+							
+							case 'mage':
+								player_class = PlayerClass.MAGE;
+								break;
+							
+							case 'archer':
+								player_class = PlayerClass.ARCHER;
+								break;
+							
+							default:
+								player_class = PlayerClass.TURRET;
+								break;
+						}
+
+						game = new Game(p5, player_class);
 						menu.remove();
-						state = 'running';
+						state = GameStates.RUNNING;
 						p5.loop();
 					});
 

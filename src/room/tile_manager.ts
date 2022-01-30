@@ -34,7 +34,7 @@ export default class TileManager {
 			this.set(new Wall(new Vec2(w - 1, i)));
 		}
 
-		for (let i = 0; i < this.random.next_int_ranged(8 + 3 * Math.abs(this.room.position.x) * Math.abs(this.room.position.y), 12 + 8 * Math.abs(this.room.position.x) * Math.abs(this.room.position.y)); i++)
+		for (let i = 0; i < this.random.next_int_ranged(6 + 2 * Math.abs(this.room.position.x) * Math.abs(this.room.position.y), 8 + 4 * Math.abs(this.room.position.x) * Math.abs(this.room.position.y)); i++)
 			this.set(new Wall(new Vec2(this.room.manager.game.random.next_int_ranged(2, w - 3), this.room.manager.game.random.next_int_ranged(2, w - 3))));
 
 		this.pathfinder = new PF.AStarFinder();

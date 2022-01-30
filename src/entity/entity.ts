@@ -156,7 +156,7 @@ export default class Entity {
 	}
 
 	trace_tiles(angle: number, max_distance = 10): number {
-		let current = this.position.clone();
+		let current = this.position;
 		let vec = Vec2.from_angle(angle).multiply(0.05);
 
 		let distance = 0;
@@ -164,7 +164,7 @@ export default class Entity {
 		while (distance < max_distance) {
 			current = current.add(vec);
 			distance += 0.05;
-			if (this.manager.room.tiles.solid(current.clone().floor()))
+			if (this.manager.room.tiles.solid(current.floor()))
 				break;
 		}
 

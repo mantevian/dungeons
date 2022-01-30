@@ -7,6 +7,8 @@ import Game from "../game/game";
 import Projectile from "../entity/projectile";
 import Turret from "../entity/mob/turret";
 import Swordsman from "../entity/mob/swordsman";
+import Mage from "../entity/mob/mage";
+import Archer from "../entity/mob/archer";
 
 export default class EntityManager {
 	readonly room: Room;
@@ -27,6 +29,14 @@ export default class EntityManager {
 				{
 					item: new Swordsman(),
 					weight: 1
+				},
+				{
+					item: new Mage(),
+					weight: 1
+				},
+				{
+					item: new Archer(),
+					weight: 1
 				}
 			]);
 			let w = Game.width;
@@ -42,6 +52,7 @@ export default class EntityManager {
 
 	/** Find an Entity using a function predicate. Returns the first found result */
 	find(filter: (entity: Entity) => boolean): Entity {
+		if (this.size() == 0) return undefined;
 		return [...this.entities.entries()].find((value: [string, Entity]) => filter(value[1]))[1];
 	}
 

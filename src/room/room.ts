@@ -26,9 +26,9 @@ export default class Room {
 
 	tick(): void {
 		this.tiles.tick();
-		this.entities.tick();
 		this.particles.tick();
-
+		this.entities.tick();
+		
 		this.visited = true;
 
 		if (this.entities.size() == 0)

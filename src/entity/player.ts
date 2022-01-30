@@ -1,20 +1,27 @@
-import Game from "../game/game";
+import Game, { PlayerClass } from "../game/game";
 import Renderer from "../game/renderer";
 import Color from "../util/color";
 import Vec2 from "../util/vec2";
 import Entity from "./entity";
 import LivingEntity from "./living_entity";
 import Mob from "./mob";
+import Projectile from "./projectile";
+import Arrow from "./projectile/arrow";
 import Bullet from "./projectile/bullet";
+import Fireball from "./projectile/fireball";
 import Sword from "./projectile/sword";
 
 export default class Player extends LivingEntity {
 	attack_cooldown: number;
 	max_attack_cooldown: number;
+	attack_scale_duration: number;
+	attack_projectile: typeof Projectile;
+	projectile_anchored: boolean;
+	projectile_speed: number;
 
 	xp: number;
 
-	constructor(game: Game) {
+	constructor(game: Game, player_class: PlayerClass) {
 		super();
 
 		this.manager = game.room_manager.current_room.entities;
@@ -22,19 +29,54 @@ export default class Player extends LivingEntity {
 		this.color = Color.RGB(40, 255, 40);
 		this.corner_radius = 0.35;
 
-		this.attack_cooldown = 30;
-		this.max_attack_cooldown = 30;
+		this.projectile_anchored = false;
 
-		switch (game.player_class) {
-			case 'swordsman':
-				this.attack_damage = 8;
+		switch (player_class) {
+			case PlayerClass.TURRET:
+				this.attack_cooldown = 12;
+				this.max_attack_cooldown = 12;
+				this.attack_damage = 5;
+				this.attack_scale_duration = 5;
+				this.attack_projectile = Bullet;
+				this.projectile_speed = 0.3;
+				this.start_prepare_attack = 1;
 				break;
-
-			case 'turret':
-				this.attack_damage = 12;
+			
+			case PlayerClass.SWORDSMAN:
+				this.attack_cooldown = 30;
+				this.max_attack_cooldown = 30;
+				this.attack_damage = 8;
+				this.attack_scale_duration = 30;
+				this.attack_projectile = Sword;
+				this.projectile_anchored = true;
+				this.projectile_speed = 0;
+				this.start_prepare_attack = 3;
+				this.max_health = 60;
+				break;
+			
+			case PlayerClass.MAGE:
+				this.attack_cooldown = 20;
+				this.max_attack_cooldown = 20;
+				this.attack_damage = 5;
+				this.attack_scale_duration = 20;
+				this.attack_projectile = Fireball;
+				this.projectile_speed = 0.15;
+				this.start_prepare_attack = 8;
+				break;
+			
+			case PlayerClass.ARCHER:
+				this.attack_cooldown = 24;
+				this.max_attack_cooldown = 24;
+				this.attack_damage = 6;
+				this.attack_scale_duration = 24;
+				this.attack_projectile = Arrow;
+				this.projectile_speed = 0.25;
+				this.start_prepare_attack = 5;
+				this.max_health = 40;
 				break;
 		}
 		
+		this.health = this.max_health;
 		this.xp = 0;
 	}
 
@@ -44,6 +86,10 @@ export default class Player extends LivingEntity {
 
 	mousedown(e: MouseEvent): void {
 		this.try_attack();
+	}
+
+	mouseup(e: MouseEvent): void {
+		this.prepare_attack = -1;
 	}
 
 	tick(): void {
@@ -87,20 +133,11 @@ export default class Player extends LivingEntity {
 
 	attack(): void {
 		this.scale = 1.1;
+		let projectile = new this.attack_projectile(this, this.attack_damage);
+		if (!this.projectile_anchored) projectile.rotation = this.facing;
+		this.manager.spawn_projectile(projectile, this.facing, this.projectile_speed, this.projectile_anchored ? undefined : this.position);
+		this.scale_over_time(1, this.attack_scale_duration);
 
-		switch (this.manager.room.manager.game.player_class) {
-			case 'swordsman':
-				console.log(this.attack_damage)
-				this.manager.spawn_projectile(new Sword(this, this.attack_damage), this.facing);
-				this.scale_over_time(1, 30);
-				break;
-			
-			case 'turret':
-				this.manager.spawn_projectile(new Bullet(this, this.attack_damage), this.facing, 0.2, this.position);
-				this.scale_over_time(1, 10);
-				break;
-		}
-		
 		this.attack_cooldown = this.max_attack_cooldown;
 	}
 
@@ -133,4 +170,6 @@ export default class Player extends LivingEntity {
 
 		this.move(move);
 	}
+
+	
 }

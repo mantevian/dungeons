@@ -12,7 +12,7 @@ export default class Projectile extends Entity {
 	player_friendly: boolean;
 
 	constructor(parent: Entity, damage = 5) {
-		super();
+		super(parent);
 
 		this.noclip = false;
 
