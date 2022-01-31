@@ -117,7 +117,7 @@ parcelRequire = (function (modules, cache, entry, globalName) {
   }
 
   return newRequire;
-})({"node_modules/p5/lib/p5.min.js":[function(require,module,exports) {
+})({"SOQY":[function(require,module,exports) {
 var define;
 var global = arguments[3];
 /*! p5.js v1.4.0 June 29, 2021 */
@@ -28836,7 +28836,7 @@ var global = arguments[3];
     }]
   }, {}, [245])(245);
 });
-},{}],"src/util/color.ts":[function(require,module,exports) {
+},{}],"Mr6S":[function(require,module,exports) {
 "use strict";
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -28929,7 +28929,7 @@ var Color = /*#__PURE__*/function () {
 }();
 
 exports.default = Color;
-},{}],"src/util/vec2.ts":[function(require,module,exports) {
+},{}],"zLWC":[function(require,module,exports) {
 "use strict";
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -29150,7 +29150,7 @@ var Vec2 = /*#__PURE__*/function () {
 }();
 
 exports.default = Vec2;
-},{"../game/game":"src/game/game.ts"}],"src/game/renderer.ts":[function(require,module,exports) {
+},{"../game/game":"rwBp"}],"lyTY":[function(require,module,exports) {
 "use strict";
 
 function _createForOfIteratorHelper(o, allowArrayLike) { var it = typeof Symbol !== "undefined" && o[Symbol.iterator] || o["@@iterator"]; if (!it) { if (Array.isArray(o) || (it = _unsupportedIterableToArray(o)) || allowArrayLike && o && typeof o.length === "number") { if (it) o = it; var i = 0; var F = function F() {}; return { s: F, n: function n() { if (i >= o.length) return { done: true }; return { done: false, value: o[i++] }; }, e: function e(_e) { throw _e; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var normalCompletion = true, didErr = false, err; return { s: function s() { it = it.call(o); }, n: function n() { var step = it.next(); normalCompletion = step.done; return step; }, e: function e(_e2) { didErr = true; err = _e2; }, f: function f() { try { if (!normalCompletion && it.return != null) it.return(); } finally { if (didErr) throw err; } } }; }
@@ -29325,7 +29325,7 @@ var Renderer = /*#__PURE__*/function () {
 }();
 
 exports.default = Renderer;
-},{"../util/color":"src/util/color.ts","../util/vec2":"src/util/vec2.ts"}],"node_modules/uuid/lib/rng-browser.js":[function(require,module,exports) {
+},{"../util/color":"Mr6S","../util/vec2":"zLWC"}],"ogM3":[function(require,module,exports) {
 // Unique ID creation requires a high quality random # generator.  In the
 // browser this is a little complicated due to unknown quality of Math.random()
 // and inconsistent support for the `crypto` API.  We do the best we can via
@@ -29361,7 +29361,7 @@ if (getRandomValues) {
   };
 }
 
-},{}],"node_modules/uuid/lib/bytesToUuid.js":[function(require,module,exports) {
+},{}],"O4sp":[function(require,module,exports) {
 /**
  * Convert array of 16 byte values to UUID string format of the form:
  * XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
@@ -29389,7 +29389,7 @@ function bytesToUuid(buf, offset) {
 
 module.exports = bytesToUuid;
 
-},{}],"node_modules/uuid/v1.js":[function(require,module,exports) {
+},{}],"acME":[function(require,module,exports) {
 var rng = require('./lib/rng');
 var bytesToUuid = require('./lib/bytesToUuid');
 
@@ -29500,7 +29500,7 @@ function v1(options, buf, offset) {
 
 module.exports = v1;
 
-},{"./lib/rng":"node_modules/uuid/lib/rng-browser.js","./lib/bytesToUuid":"node_modules/uuid/lib/bytesToUuid.js"}],"node_modules/uuid/v4.js":[function(require,module,exports) {
+},{"./lib/rng":"ogM3","./lib/bytesToUuid":"O4sp"}],"UOdq":[function(require,module,exports) {
 var rng = require('./lib/rng');
 var bytesToUuid = require('./lib/bytesToUuid');
 
@@ -29531,7 +29531,7 @@ function v4(options, buf, offset) {
 
 module.exports = v4;
 
-},{"./lib/rng":"node_modules/uuid/lib/rng-browser.js","./lib/bytesToUuid":"node_modules/uuid/lib/bytesToUuid.js"}],"node_modules/uuid/index.js":[function(require,module,exports) {
+},{"./lib/rng":"ogM3","./lib/bytesToUuid":"O4sp"}],"gV9a":[function(require,module,exports) {
 var v1 = require('./v1');
 var v4 = require('./v4');
 
@@ -29541,7 +29541,7 @@ uuid.v4 = v4;
 
 module.exports = uuid;
 
-},{"./v1":"node_modules/uuid/v1.js","./v4":"node_modules/uuid/v4.js"}],"src/particle/particle.ts":[function(require,module,exports) {
+},{"./v1":"acME","./v4":"UOdq"}],"InUx":[function(require,module,exports) {
 "use strict";
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -29583,7 +29583,7 @@ var Particle = /*#__PURE__*/function () {
 }();
 
 exports.default = Particle;
-},{"uuid":"node_modules/uuid/index.js"}],"src/particle/damage_count.ts":[function(require,module,exports) {
+},{"uuid":"gV9a"}],"hsIf":[function(require,module,exports) {
 "use strict";
 
 function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
@@ -29665,7 +29665,7 @@ var DamageCountParticle = /*#__PURE__*/function (_particle_1$default) {
 }(particle_1.default);
 
 exports.default = DamageCountParticle;
-},{"../game/renderer":"src/game/renderer.ts","../util/color":"src/util/color.ts","../util/vec2":"src/util/vec2.ts","./particle":"src/particle/particle.ts"}],"src/util/random.ts":[function(require,module,exports) {
+},{"../game/renderer":"lyTY","../util/color":"Mr6S","../util/vec2":"zLWC","./particle":"InUx"}],"K9xg":[function(require,module,exports) {
 "use strict";
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -29749,7 +29749,7 @@ var Random = /*#__PURE__*/function () {
 }();
 
 exports.default = Random;
-},{}],"src/entity/effect/status_effect_manager.ts":[function(require,module,exports) {
+},{}],"aG6s":[function(require,module,exports) {
 "use strict";
 
 function _createForOfIteratorHelper(o, allowArrayLike) { var it = typeof Symbol !== "undefined" && o[Symbol.iterator] || o["@@iterator"]; if (!it) { if (Array.isArray(o) || (it = _unsupportedIterableToArray(o)) || allowArrayLike && o && typeof o.length === "number") { if (it) o = it; var i = 0; var F = function F() {}; return { s: F, n: function n() { if (i >= o.length) return { done: true }; return { done: false, value: o[i++] }; }, e: function e(_e) { throw _e; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var normalCompletion = true, didErr = false, err; return { s: function s() { it = it.call(o); }, n: function n() { var step = it.next(); normalCompletion = step.done; return step; }, e: function e(_e2) { didErr = true; err = _e2; }, f: function f() { try { if (!normalCompletion && it.return != null) it.return(); } finally { if (didErr) throw err; } } }; }
@@ -29894,7 +29894,7 @@ var StatusEffectManager = /*#__PURE__*/function () {
 }();
 
 exports.default = StatusEffectManager;
-},{"../../util/random":"src/util/random.ts"}],"src/entity/entity.ts":[function(require,module,exports) {
+},{"../../util/random":"K9xg"}],"iBtO":[function(require,module,exports) {
 "use strict";
 
 function _createForOfIteratorHelper(o, allowArrayLike) { var it = typeof Symbol !== "undefined" && o[Symbol.iterator] || o["@@iterator"]; if (!it) { if (Array.isArray(o) || (it = _unsupportedIterableToArray(o)) || allowArrayLike && o && typeof o.length === "number") { if (it) o = it; var i = 0; var F = function F() {}; return { s: F, n: function n() { if (i >= o.length) return { done: true }; return { done: false, value: o[i++] }; }, e: function e(_e) { throw _e; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var normalCompletion = true, didErr = false, err; return { s: function s() { it = it.call(o); }, n: function n() { var step = it.next(); normalCompletion = step.done; return step; }, e: function e(_e2) { didErr = true; err = _e2; }, f: function f() { try { if (!normalCompletion && it.return != null) it.return(); } finally { if (didErr) throw err; } } }; }
@@ -30086,7 +30086,7 @@ var Entity = /*#__PURE__*/function () {
 }();
 
 exports.default = Entity;
-},{"../game/renderer":"src/game/renderer.ts","../util/color":"src/util/color.ts","../util/vec2":"src/util/vec2.ts","uuid":"node_modules/uuid/index.js","../game/game":"src/game/game.ts"}],"src/entity/living_entity.ts":[function(require,module,exports) {
+},{"../game/renderer":"lyTY","../util/color":"Mr6S","../util/vec2":"zLWC","uuid":"gV9a","../game/game":"rwBp"}],"pJyF":[function(require,module,exports) {
 "use strict";
 
 function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
@@ -30263,7 +30263,7 @@ var LivingEntity = /*#__PURE__*/function (_entity_1$default) {
 }(entity_1.default);
 
 exports.default = LivingEntity;
-},{"../game/game":"src/game/game.ts","../game/renderer":"src/game/renderer.ts","../particle/damage_count":"src/particle/damage_count.ts","../util/vec2":"src/util/vec2.ts","./effect/status_effect_manager":"src/entity/effect/status_effect_manager.ts","./entity":"src/entity/entity.ts","./player":"src/entity/player.ts"}],"src/entity/mob.ts":[function(require,module,exports) {
+},{"../game/game":"rwBp","../game/renderer":"lyTY","../particle/damage_count":"hsIf","../util/vec2":"zLWC","./effect/status_effect_manager":"aG6s","./entity":"iBtO","./player":"XMVZ"}],"Du5n":[function(require,module,exports) {
 "use strict";
 
 function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
@@ -30375,7 +30375,7 @@ var Mob = /*#__PURE__*/function (_living_entity_1$defa) {
 }(living_entity_1.default);
 
 exports.default = Mob;
-},{"../game/renderer":"src/game/renderer.ts","../util/color":"src/util/color.ts","../util/vec2":"src/util/vec2.ts","./living_entity":"src/entity/living_entity.ts"}],"src/entity/projectile.ts":[function(require,module,exports) {
+},{"../game/renderer":"lyTY","../util/color":"Mr6S","../util/vec2":"zLWC","./living_entity":"pJyF"}],"eBgP":[function(require,module,exports) {
 "use strict";
 
 function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
@@ -30482,7 +30482,7 @@ var Projectile = /*#__PURE__*/function (_entity_1$default) {
 }(entity_1.default);
 
 exports.default = Projectile;
-},{"../util/color":"src/util/color.ts","../util/vec2":"src/util/vec2.ts","./entity":"src/entity/entity.ts","./mob":"src/entity/mob.ts","./player":"src/entity/player.ts"}],"src/entity/projectile/arrow.ts":[function(require,module,exports) {
+},{"../util/color":"Mr6S","../util/vec2":"zLWC","./entity":"iBtO","./mob":"Du5n","./player":"XMVZ"}],"KIuJ":[function(require,module,exports) {
 "use strict";
 
 function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
@@ -30576,7 +30576,7 @@ var Arrow = /*#__PURE__*/function (_projectile_1$default) {
 }(projectile_1.default);
 
 exports.default = Arrow;
-},{"../../game/renderer":"src/game/renderer.ts","../../util/color":"src/util/color.ts","../../util/vec2":"src/util/vec2.ts","../projectile":"src/entity/projectile.ts"}],"src/entity/projectile/bullet.ts":[function(require,module,exports) {
+},{"../../game/renderer":"lyTY","../../util/color":"Mr6S","../../util/vec2":"zLWC","../projectile":"eBgP"}],"Q9l9":[function(require,module,exports) {
 "use strict";
 
 function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
@@ -30668,7 +30668,7 @@ var Bullet = /*#__PURE__*/function (_projectile_1$default) {
 }(projectile_1.default);
 
 exports.default = Bullet;
-},{"../../util/color":"src/util/color.ts","../../util/vec2":"src/util/vec2.ts","../projectile":"src/entity/projectile.ts"}],"src/particle/rect.ts":[function(require,module,exports) {
+},{"../../util/color":"Mr6S","../../util/vec2":"zLWC","../projectile":"eBgP"}],"upBW":[function(require,module,exports) {
 "use strict";
 
 function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
@@ -30758,7 +30758,7 @@ var RectangleParticle = /*#__PURE__*/function (_particle_1$default) {
 }(particle_1.default);
 
 exports.default = RectangleParticle;
-},{"../game/renderer":"src/game/renderer.ts","../util/vec2":"src/util/vec2.ts","./particle":"src/particle/particle.ts"}],"src/particle/flame.ts":[function(require,module,exports) {
+},{"../game/renderer":"lyTY","../util/vec2":"zLWC","./particle":"InUx"}],"XQBd":[function(require,module,exports) {
 "use strict";
 
 function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
@@ -30835,7 +30835,7 @@ var FlameParticle = /*#__PURE__*/function (_rect_1$default) {
 }(rect_1.default);
 
 exports.default = FlameParticle;
-},{"../util/color":"src/util/color.ts","../util/vec2":"src/util/vec2.ts","./rect":"src/particle/rect.ts"}],"src/entity/effect/status_effect.ts":[function(require,module,exports) {
+},{"../util/color":"Mr6S","../util/vec2":"zLWC","./rect":"upBW"}],"OtgB":[function(require,module,exports) {
 "use strict";
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -30875,7 +30875,7 @@ var StatusEffect = /*#__PURE__*/function () {
 }();
 
 exports.default = StatusEffect;
-},{"uuid":"node_modules/uuid/index.js"}],"src/entity/effect/burn.ts":[function(require,module,exports) {
+},{"uuid":"gV9a"}],"tWLl":[function(require,module,exports) {
 "use strict";
 
 function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
@@ -30952,7 +30952,7 @@ var BurnEffect = /*#__PURE__*/function (_status_effect_1$defa) {
 }(status_effect_1.default);
 
 exports.default = BurnEffect;
-},{"../../particle/flame":"src/particle/flame.ts","./status_effect":"src/entity/effect/status_effect.ts"}],"src/entity/projectile/fireball.ts":[function(require,module,exports) {
+},{"../../particle/flame":"XQBd","./status_effect":"OtgB"}],"lrRb":[function(require,module,exports) {
 "use strict";
 
 function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
@@ -31055,7 +31055,7 @@ var Fireball = /*#__PURE__*/function (_projectile_1$default) {
 }(projectile_1.default);
 
 exports.default = Fireball;
-},{"../../particle/flame":"src/particle/flame.ts","../../util/color":"src/util/color.ts","../../util/vec2":"src/util/vec2.ts","../effect/burn":"src/entity/effect/burn.ts","../projectile":"src/entity/projectile.ts"}],"src/entity/projectile/sword.ts":[function(require,module,exports) {
+},{"../../particle/flame":"XQBd","../../util/color":"Mr6S","../../util/vec2":"zLWC","../effect/burn":"tWLl","../projectile":"eBgP"}],"JHlF":[function(require,module,exports) {
 "use strict";
 
 function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
@@ -31171,7 +31171,7 @@ var Sword = /*#__PURE__*/function (_projectile_1$default) {
 }(projectile_1.default);
 
 exports.default = Sword;
-},{"../../game/renderer":"src/game/renderer.ts","../../util/color":"src/util/color.ts","../../util/vec2":"src/util/vec2.ts","../projectile":"src/entity/projectile.ts"}],"src/entity/player.ts":[function(require,module,exports) {
+},{"../../game/renderer":"lyTY","../../util/color":"Mr6S","../../util/vec2":"zLWC","../projectile":"eBgP"}],"XMVZ":[function(require,module,exports) {
 "use strict";
 
 function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
@@ -31413,7 +31413,7 @@ var Player = /*#__PURE__*/function (_living_entity_1$defa) {
 }(living_entity_1.default);
 
 exports.default = Player;
-},{"../game/game":"src/game/game.ts","../game/renderer":"src/game/renderer.ts","../util/color":"src/util/color.ts","../util/vec2":"src/util/vec2.ts","./living_entity":"src/entity/living_entity.ts","./mob":"src/entity/mob.ts","./projectile/arrow":"src/entity/projectile/arrow.ts","./projectile/bullet":"src/entity/projectile/bullet.ts","./projectile/fireball":"src/entity/projectile/fireball.ts","./projectile/sword":"src/entity/projectile/sword.ts"}],"src/room/biome.ts":[function(require,module,exports) {
+},{"../game/game":"rwBp","../game/renderer":"lyTY","../util/color":"Mr6S","../util/vec2":"zLWC","./living_entity":"pJyF","./mob":"Du5n","./projectile/arrow":"KIuJ","./projectile/bullet":"Q9l9","./projectile/fireball":"lrRb","./projectile/sword":"JHlF"}],"RDR3":[function(require,module,exports) {
 "use strict";
 
 function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
@@ -31455,7 +31455,7 @@ var Biomes = {
   HELL: new Biome('hell', 2.0, color_1.default.RGB(53, 33, 21), color_1.default.RGB(86, 49, 24), color_1.default.RGB(170, 92, 49), color_1.default.RGB(255, 130, 49))
 };
 exports.default = Biomes;
-},{"../util/color":"src/util/color.ts"}],"src/entity/mob/turret.ts":[function(require,module,exports) {
+},{"../util/color":"Mr6S"}],"rp1r":[function(require,module,exports) {
 "use strict";
 
 function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
@@ -31551,7 +31551,7 @@ var Turret = /*#__PURE__*/function (_mob_1$default) {
 }(mob_1.default);
 
 exports.default = Turret;
-},{"../../game/renderer":"src/game/renderer.ts","../../util/color":"src/util/color.ts","../../util/vec2":"src/util/vec2.ts","../mob":"src/entity/mob.ts","../projectile/bullet":"src/entity/projectile/bullet.ts"}],"src/entity/mob/swordsman.ts":[function(require,module,exports) {
+},{"../../game/renderer":"lyTY","../../util/color":"Mr6S","../../util/vec2":"zLWC","../mob":"Du5n","../projectile/bullet":"Q9l9"}],"xqDY":[function(require,module,exports) {
 "use strict";
 
 function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
@@ -31653,7 +31653,7 @@ var Swordsman = /*#__PURE__*/function (_mob_1$default) {
 }(mob_1.default);
 
 exports.default = Swordsman;
-},{"../../game/renderer":"src/game/renderer.ts","../../util/color":"src/util/color.ts","../../util/vec2":"src/util/vec2.ts","../mob":"src/entity/mob.ts","../projectile/sword":"src/entity/projectile/sword.ts"}],"src/entity/mob/mage.ts":[function(require,module,exports) {
+},{"../../game/renderer":"lyTY","../../util/color":"Mr6S","../../util/vec2":"zLWC","../mob":"Du5n","../projectile/sword":"JHlF"}],"GGUa":[function(require,module,exports) {
 "use strict";
 
 function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
@@ -31755,7 +31755,7 @@ var Mage = /*#__PURE__*/function (_mob_1$default) {
 }(mob_1.default);
 
 exports.default = Mage;
-},{"../../game/renderer":"src/game/renderer.ts","../../util/color":"src/util/color.ts","../../util/vec2":"src/util/vec2.ts","../mob":"src/entity/mob.ts","../projectile/fireball":"src/entity/projectile/fireball.ts"}],"src/entity/mob/archer.ts":[function(require,module,exports) {
+},{"../../game/renderer":"lyTY","../../util/color":"Mr6S","../../util/vec2":"zLWC","../mob":"Du5n","../projectile/fireball":"lrRb"}],"gH5r":[function(require,module,exports) {
 "use strict";
 
 function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
@@ -31861,7 +31861,7 @@ var Archer = /*#__PURE__*/function (_mob_1$default) {
 }(mob_1.default);
 
 exports.default = Archer;
-},{"../../game/renderer":"src/game/renderer.ts","../../util/color":"src/util/color.ts","../../util/vec2":"src/util/vec2.ts","../mob":"src/entity/mob.ts","../projectile/arrow":"src/entity/projectile/arrow.ts"}],"src/room/entity_manager.ts":[function(require,module,exports) {
+},{"../../game/renderer":"lyTY","../../util/color":"Mr6S","../../util/vec2":"zLWC","../mob":"Du5n","../projectile/arrow":"KIuJ"}],"iQbR":[function(require,module,exports) {
 "use strict";
 
 function _createForOfIteratorHelper(o, allowArrayLike) { var it = typeof Symbol !== "undefined" && o[Symbol.iterator] || o["@@iterator"]; if (!it) { if (Array.isArray(o) || (it = _unsupportedIterableToArray(o)) || allowArrayLike && o && typeof o.length === "number") { if (it) o = it; var i = 0; var F = function F() {}; return { s: F, n: function n() { if (i >= o.length) return { done: true }; return { done: false, value: o[i++] }; }, e: function e(_e) { throw _e; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var normalCompletion = true, didErr = false, err; return { s: function s() { it = it.call(o); }, n: function n() { var step = it.next(); normalCompletion = step.done; return step; }, e: function e(_e2) { didErr = true; err = _e2; }, f: function f() { try { if (!normalCompletion && it.return != null) it.return(); } finally { if (didErr) throw err; } } }; }
@@ -32051,7 +32051,7 @@ var EntityManager = /*#__PURE__*/function () {
 }();
 
 exports.default = EntityManager;
-},{"../util/random":"src/util/random.ts","../util/vec2":"src/util/vec2.ts","../game/game":"src/game/game.ts","../entity/mob/turret":"src/entity/mob/turret.ts","../entity/mob/swordsman":"src/entity/mob/swordsman.ts","../entity/mob/mage":"src/entity/mob/mage.ts","../entity/mob/archer":"src/entity/mob/archer.ts"}],"src/room/particle_manager.ts":[function(require,module,exports) {
+},{"../util/random":"K9xg","../util/vec2":"zLWC","../game/game":"rwBp","../entity/mob/turret":"rp1r","../entity/mob/swordsman":"xqDY","../entity/mob/mage":"GGUa","../entity/mob/archer":"gH5r"}],"yOxZ":[function(require,module,exports) {
 "use strict";
 
 function _createForOfIteratorHelper(o, allowArrayLike) { var it = typeof Symbol !== "undefined" && o[Symbol.iterator] || o["@@iterator"]; if (!it) { if (Array.isArray(o) || (it = _unsupportedIterableToArray(o)) || allowArrayLike && o && typeof o.length === "number") { if (it) o = it; var i = 0; var F = function F() {}; return { s: F, n: function n() { if (i >= o.length) return { done: true }; return { done: false, value: o[i++] }; }, e: function e(_e) { throw _e; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var normalCompletion = true, didErr = false, err; return { s: function s() { it = it.call(o); }, n: function n() { var step = it.next(); normalCompletion = step.done; return step; }, e: function e(_e2) { didErr = true; err = _e2; }, f: function f() { try { if (!normalCompletion && it.return != null) it.return(); } finally { if (didErr) throw err; } } }; }
@@ -32156,7 +32156,7 @@ var ParticleManager = /*#__PURE__*/function () {
 }();
 
 exports.default = ParticleManager;
-},{"../util/random":"src/util/random.ts"}],"src/tile/tile.ts":[function(require,module,exports) {
+},{"../util/random":"K9xg"}],"NJFX":[function(require,module,exports) {
 "use strict";
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -32205,7 +32205,7 @@ var Tile = /*#__PURE__*/function () {
 }();
 
 exports.default = Tile;
-},{"../game/renderer":"src/game/renderer.ts","../util/vec2":"src/util/vec2.ts"}],"src/tile/wall.ts":[function(require,module,exports) {
+},{"../game/renderer":"lyTY","../util/vec2":"zLWC"}],"MsDH":[function(require,module,exports) {
 "use strict";
 
 function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
@@ -32262,7 +32262,7 @@ var Wall = /*#__PURE__*/function (_tile_1$default) {
 }(tile_1.default);
 
 exports.default = Wall;
-},{"./tile":"src/tile/tile.ts"}],"node_modules/heap/lib/heap.js":[function(require,module,exports) {
+},{"./tile":"NJFX"}],"DPxs":[function(require,module,exports) {
 // Generated by CoffeeScript 1.8.0
 (function() {
   var Heap, defaultCmp, floor, heapify, heappop, heappush, heappushpop, heapreplace, insort, min, nlargest, nsmallest, updateItem, _siftdown, _siftup;
@@ -32633,10 +32633,10 @@ exports.default = Wall;
 
 }).call(this);
 
-},{}],"node_modules/heap/index.js":[function(require,module,exports) {
+},{}],"tAIw":[function(require,module,exports) {
 module.exports = require('./lib/heap');
 
-},{"./lib/heap":"node_modules/heap/lib/heap.js"}],"node_modules/pathfinding/src/core/Node.js":[function(require,module,exports) {
+},{"./lib/heap":"DPxs"}],"m2LD":[function(require,module,exports) {
 /**
  * A node in grid. 
  * This class holds some basic information about a node and custom 
@@ -32666,7 +32666,7 @@ function Node(x, y, walkable) {
 
 module.exports = Node;
 
-},{}],"node_modules/pathfinding/src/core/DiagonalMovement.js":[function(require,module,exports) {
+},{}],"WdVX":[function(require,module,exports) {
 var DiagonalMovement = {
     Always: 1,
     Never: 2,
@@ -32675,7 +32675,7 @@ var DiagonalMovement = {
 };
 
 module.exports = DiagonalMovement;
-},{}],"node_modules/pathfinding/src/core/Grid.js":[function(require,module,exports) {
+},{}],"vMCg":[function(require,module,exports) {
 var Node = require('./Node');
 var DiagonalMovement = require('./DiagonalMovement');
 
@@ -32922,7 +32922,7 @@ Grid.prototype.clone = function() {
 
 module.exports = Grid;
 
-},{"./Node":"node_modules/pathfinding/src/core/Node.js","./DiagonalMovement":"node_modules/pathfinding/src/core/DiagonalMovement.js"}],"node_modules/pathfinding/src/core/Util.js":[function(require,module,exports) {
+},{"./Node":"m2LD","./DiagonalMovement":"WdVX"}],"ez0E":[function(require,module,exports) {
 /**
  * Backtrace according to the parent records and return the path.
  * (including both start and end nodes)
@@ -33170,7 +33170,7 @@ function compressPath(path) {
 }
 exports.compressPath = compressPath;
 
-},{}],"node_modules/pathfinding/src/core/Heuristic.js":[function(require,module,exports) {
+},{}],"hqcn":[function(require,module,exports) {
 /**
  * @namespace PF.Heuristic
  * @description A collection of heuristic functions.
@@ -33220,7 +33220,7 @@ module.exports = {
 
 };
 
-},{}],"node_modules/pathfinding/src/finders/AStarFinder.js":[function(require,module,exports) {
+},{}],"w8qd":[function(require,module,exports) {
 var Heap       = require('heap');
 var Util       = require('../core/Util');
 var Heuristic  = require('../core/Heuristic');
@@ -33348,7 +33348,7 @@ AStarFinder.prototype.findPath = function(startX, startY, endX, endY, grid) {
 
 module.exports = AStarFinder;
 
-},{"heap":"node_modules/heap/index.js","../core/Util":"node_modules/pathfinding/src/core/Util.js","../core/Heuristic":"node_modules/pathfinding/src/core/Heuristic.js","../core/DiagonalMovement":"node_modules/pathfinding/src/core/DiagonalMovement.js"}],"node_modules/pathfinding/src/finders/BestFirstFinder.js":[function(require,module,exports) {
+},{"heap":"tAIw","../core/Util":"ez0E","../core/Heuristic":"hqcn","../core/DiagonalMovement":"WdVX"}],"ruAP":[function(require,module,exports) {
 var AStarFinder = require('./AStarFinder');
 
 /**
@@ -33378,7 +33378,7 @@ BestFirstFinder.prototype.constructor = BestFirstFinder;
 
 module.exports = BestFirstFinder;
 
-},{"./AStarFinder":"node_modules/pathfinding/src/finders/AStarFinder.js"}],"node_modules/pathfinding/src/finders/BreadthFirstFinder.js":[function(require,module,exports) {
+},{"./AStarFinder":"w8qd"}],"yTUG":[function(require,module,exports) {
 var Util = require('../core/Util');
 var DiagonalMovement = require('../core/DiagonalMovement');
 
@@ -33459,7 +33459,7 @@ BreadthFirstFinder.prototype.findPath = function(startX, startY, endX, endY, gri
 
 module.exports = BreadthFirstFinder;
 
-},{"../core/Util":"node_modules/pathfinding/src/core/Util.js","../core/DiagonalMovement":"node_modules/pathfinding/src/core/DiagonalMovement.js"}],"node_modules/pathfinding/src/finders/DijkstraFinder.js":[function(require,module,exports) {
+},{"../core/Util":"ez0E","../core/DiagonalMovement":"WdVX"}],"ivAt":[function(require,module,exports) {
 var AStarFinder = require('./AStarFinder');
 
 /**
@@ -33485,7 +33485,7 @@ DijkstraFinder.prototype.constructor = DijkstraFinder;
 
 module.exports = DijkstraFinder;
 
-},{"./AStarFinder":"node_modules/pathfinding/src/finders/AStarFinder.js"}],"node_modules/pathfinding/src/finders/BiAStarFinder.js":[function(require,module,exports) {
+},{"./AStarFinder":"w8qd"}],"X1Ev":[function(require,module,exports) {
 var Heap       = require('heap');
 var Util       = require('../core/Util');
 var Heuristic  = require('../core/Heuristic');
@@ -33668,7 +33668,7 @@ BiAStarFinder.prototype.findPath = function(startX, startY, endX, endY, grid) {
 
 module.exports = BiAStarFinder;
 
-},{"heap":"node_modules/heap/index.js","../core/Util":"node_modules/pathfinding/src/core/Util.js","../core/Heuristic":"node_modules/pathfinding/src/core/Heuristic.js","../core/DiagonalMovement":"node_modules/pathfinding/src/core/DiagonalMovement.js"}],"node_modules/pathfinding/src/finders/BiBestFirstFinder.js":[function(require,module,exports) {
+},{"heap":"tAIw","../core/Util":"ez0E","../core/Heuristic":"hqcn","../core/DiagonalMovement":"WdVX"}],"N9Fd":[function(require,module,exports) {
 var BiAStarFinder = require('./BiAStarFinder');
 
 /**
@@ -33698,7 +33698,7 @@ BiBestFirstFinder.prototype.constructor = BiBestFirstFinder;
 
 module.exports = BiBestFirstFinder;
 
-},{"./BiAStarFinder":"node_modules/pathfinding/src/finders/BiAStarFinder.js"}],"node_modules/pathfinding/src/finders/BiBreadthFirstFinder.js":[function(require,module,exports) {
+},{"./BiAStarFinder":"X1Ev"}],"mBIn":[function(require,module,exports) {
 var Util = require('../core/Util');
 var DiagonalMovement = require('../core/DiagonalMovement');
 
@@ -33815,7 +33815,7 @@ BiBreadthFirstFinder.prototype.findPath = function(startX, startY, endX, endY, g
 
 module.exports = BiBreadthFirstFinder;
 
-},{"../core/Util":"node_modules/pathfinding/src/core/Util.js","../core/DiagonalMovement":"node_modules/pathfinding/src/core/DiagonalMovement.js"}],"node_modules/pathfinding/src/finders/BiDijkstraFinder.js":[function(require,module,exports) {
+},{"../core/Util":"ez0E","../core/DiagonalMovement":"WdVX"}],"WN2S":[function(require,module,exports) {
 var BiAStarFinder = require('./BiAStarFinder');
 
 /**
@@ -33841,7 +33841,7 @@ BiDijkstraFinder.prototype.constructor = BiDijkstraFinder;
 
 module.exports = BiDijkstraFinder;
 
-},{"./BiAStarFinder":"node_modules/pathfinding/src/finders/BiAStarFinder.js"}],"node_modules/pathfinding/src/finders/IDAStarFinder.js":[function(require,module,exports) {
+},{"./BiAStarFinder":"X1Ev"}],"LiPS":[function(require,module,exports) {
 var Util       = require('../core/Util');
 var Heuristic  = require('../core/Heuristic');
 var Node       = require('../core/Node');
@@ -34052,7 +34052,7 @@ IDAStarFinder.prototype.findPath = function(startX, startY, endX, endY, grid) {
 
 module.exports = IDAStarFinder;
 
-},{"../core/Util":"node_modules/pathfinding/src/core/Util.js","../core/Heuristic":"node_modules/pathfinding/src/core/Heuristic.js","../core/Node":"node_modules/pathfinding/src/core/Node.js","../core/DiagonalMovement":"node_modules/pathfinding/src/core/DiagonalMovement.js"}],"node_modules/pathfinding/src/finders/JumpPointFinderBase.js":[function(require,module,exports) {
+},{"../core/Util":"ez0E","../core/Heuristic":"hqcn","../core/Node":"m2LD","../core/DiagonalMovement":"WdVX"}],"DVK8":[function(require,module,exports) {
 /**
  * @author imor / https://github.com/imor
  */
@@ -34168,7 +34168,7 @@ JumpPointFinderBase.prototype._identifySuccessors = function(node) {
 
 module.exports = JumpPointFinderBase;
 
-},{"heap":"node_modules/heap/index.js","../core/Util":"node_modules/pathfinding/src/core/Util.js","../core/Heuristic":"node_modules/pathfinding/src/core/Heuristic.js","../core/DiagonalMovement":"node_modules/pathfinding/src/core/DiagonalMovement.js"}],"node_modules/pathfinding/src/finders/JPFNeverMoveDiagonally.js":[function(require,module,exports) {
+},{"heap":"tAIw","../core/Util":"ez0E","../core/Heuristic":"hqcn","../core/DiagonalMovement":"WdVX"}],"MqXc":[function(require,module,exports) {
 /**
  * @author imor / https://github.com/imor
  */
@@ -34290,7 +34290,7 @@ JPFNeverMoveDiagonally.prototype._findNeighbors = function(node) {
 
 module.exports = JPFNeverMoveDiagonally;
 
-},{"./JumpPointFinderBase":"node_modules/pathfinding/src/finders/JumpPointFinderBase.js","../core/DiagonalMovement":"node_modules/pathfinding/src/core/DiagonalMovement.js"}],"node_modules/pathfinding/src/finders/JPFAlwaysMoveDiagonally.js":[function(require,module,exports) {
+},{"./JumpPointFinderBase":"DVK8","../core/DiagonalMovement":"WdVX"}],"PtLR":[function(require,module,exports) {
 /**
  * @author imor / https://github.com/imor
  */
@@ -34441,7 +34441,7 @@ JPFAlwaysMoveDiagonally.prototype._findNeighbors = function(node) {
 
 module.exports = JPFAlwaysMoveDiagonally;
 
-},{"./JumpPointFinderBase":"node_modules/pathfinding/src/finders/JumpPointFinderBase.js","../core/DiagonalMovement":"node_modules/pathfinding/src/core/DiagonalMovement.js"}],"node_modules/pathfinding/src/finders/JPFMoveDiagonallyIfNoObstacles.js":[function(require,module,exports) {
+},{"./JumpPointFinderBase":"DVK8","../core/DiagonalMovement":"WdVX"}],"LLTW":[function(require,module,exports) {
 /**
  * @author imor / https://github.com/imor
  */
@@ -34617,7 +34617,7 @@ JPFMoveDiagonallyIfNoObstacles.prototype._findNeighbors = function(node) {
 
 module.exports = JPFMoveDiagonallyIfNoObstacles;
 
-},{"./JumpPointFinderBase":"node_modules/pathfinding/src/finders/JumpPointFinderBase.js","../core/DiagonalMovement":"node_modules/pathfinding/src/core/DiagonalMovement.js"}],"node_modules/pathfinding/src/finders/JPFMoveDiagonallyIfAtMostOneObstacle.js":[function(require,module,exports) {
+},{"./JumpPointFinderBase":"DVK8","../core/DiagonalMovement":"WdVX"}],"iNYD":[function(require,module,exports) {
 /**
  * @author imor / https://github.com/imor
  */
@@ -34774,7 +34774,7 @@ JPFMoveDiagonallyIfAtMostOneObstacle.prototype._findNeighbors = function(node) {
 
 module.exports = JPFMoveDiagonallyIfAtMostOneObstacle;
 
-},{"./JumpPointFinderBase":"node_modules/pathfinding/src/finders/JumpPointFinderBase.js","../core/DiagonalMovement":"node_modules/pathfinding/src/core/DiagonalMovement.js"}],"node_modules/pathfinding/src/finders/JumpPointFinder.js":[function(require,module,exports) {
+},{"./JumpPointFinderBase":"DVK8","../core/DiagonalMovement":"WdVX"}],"ao7B":[function(require,module,exports) {
 /**
  * @author aniero / https://github.com/aniero
  */
@@ -34807,7 +34807,7 @@ function JumpPointFinder(opt) {
 
 module.exports = JumpPointFinder;
 
-},{"../core/DiagonalMovement":"node_modules/pathfinding/src/core/DiagonalMovement.js","./JPFNeverMoveDiagonally":"node_modules/pathfinding/src/finders/JPFNeverMoveDiagonally.js","./JPFAlwaysMoveDiagonally":"node_modules/pathfinding/src/finders/JPFAlwaysMoveDiagonally.js","./JPFMoveDiagonallyIfNoObstacles":"node_modules/pathfinding/src/finders/JPFMoveDiagonallyIfNoObstacles.js","./JPFMoveDiagonallyIfAtMostOneObstacle":"node_modules/pathfinding/src/finders/JPFMoveDiagonallyIfAtMostOneObstacle.js"}],"node_modules/pathfinding/src/PathFinding.js":[function(require,module,exports) {
+},{"../core/DiagonalMovement":"WdVX","./JPFNeverMoveDiagonally":"MqXc","./JPFAlwaysMoveDiagonally":"PtLR","./JPFMoveDiagonallyIfNoObstacles":"LLTW","./JPFMoveDiagonallyIfAtMostOneObstacle":"iNYD"}],"wwQQ":[function(require,module,exports) {
 module.exports = {
     'Heap'                      : require('heap'),
     'Node'                      : require('./core/Node'),
@@ -34827,10 +34827,10 @@ module.exports = {
     'JumpPointFinder'           : require('./finders/JumpPointFinder'),
 };
 
-},{"heap":"node_modules/heap/index.js","./core/Node":"node_modules/pathfinding/src/core/Node.js","./core/Grid":"node_modules/pathfinding/src/core/Grid.js","./core/Util":"node_modules/pathfinding/src/core/Util.js","./core/DiagonalMovement":"node_modules/pathfinding/src/core/DiagonalMovement.js","./core/Heuristic":"node_modules/pathfinding/src/core/Heuristic.js","./finders/AStarFinder":"node_modules/pathfinding/src/finders/AStarFinder.js","./finders/BestFirstFinder":"node_modules/pathfinding/src/finders/BestFirstFinder.js","./finders/BreadthFirstFinder":"node_modules/pathfinding/src/finders/BreadthFirstFinder.js","./finders/DijkstraFinder":"node_modules/pathfinding/src/finders/DijkstraFinder.js","./finders/BiAStarFinder":"node_modules/pathfinding/src/finders/BiAStarFinder.js","./finders/BiBestFirstFinder":"node_modules/pathfinding/src/finders/BiBestFirstFinder.js","./finders/BiBreadthFirstFinder":"node_modules/pathfinding/src/finders/BiBreadthFirstFinder.js","./finders/BiDijkstraFinder":"node_modules/pathfinding/src/finders/BiDijkstraFinder.js","./finders/IDAStarFinder":"node_modules/pathfinding/src/finders/IDAStarFinder.js","./finders/JumpPointFinder":"node_modules/pathfinding/src/finders/JumpPointFinder.js"}],"node_modules/pathfinding/index.js":[function(require,module,exports) {
+},{"heap":"tAIw","./core/Node":"m2LD","./core/Grid":"vMCg","./core/Util":"ez0E","./core/DiagonalMovement":"WdVX","./core/Heuristic":"hqcn","./finders/AStarFinder":"w8qd","./finders/BestFirstFinder":"ruAP","./finders/BreadthFirstFinder":"yTUG","./finders/DijkstraFinder":"ivAt","./finders/BiAStarFinder":"X1Ev","./finders/BiBestFirstFinder":"N9Fd","./finders/BiBreadthFirstFinder":"mBIn","./finders/BiDijkstraFinder":"WN2S","./finders/IDAStarFinder":"LiPS","./finders/JumpPointFinder":"ao7B"}],"VWUg":[function(require,module,exports) {
 module.exports = require('./src/PathFinding');
 
-},{"./src/PathFinding":"node_modules/pathfinding/src/PathFinding.js"}],"src/room/tile_manager.ts":[function(require,module,exports) {
+},{"./src/PathFinding":"wwQQ"}],"mLB7":[function(require,module,exports) {
 "use strict";
 
 function _toConsumableArray(arr) { return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _unsupportedIterableToArray(arr) || _nonIterableSpread(); }
@@ -35028,7 +35028,7 @@ var TileManager = /*#__PURE__*/function () {
 }();
 
 exports.default = TileManager;
-},{"../game/game":"src/game/game.ts","../tile/tile":"src/tile/tile.ts","../tile/wall":"src/tile/wall.ts","../util/random":"src/util/random.ts","../util/vec2":"src/util/vec2.ts","pathfinding":"node_modules/pathfinding/index.js"}],"src/room/room.ts":[function(require,module,exports) {
+},{"../game/game":"rwBp","../tile/tile":"NJFX","../tile/wall":"MsDH","../util/random":"K9xg","../util/vec2":"zLWC","pathfinding":"VWUg"}],"j2HY":[function(require,module,exports) {
 "use strict";
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -35111,7 +35111,7 @@ var Room = /*#__PURE__*/function () {
 }();
 
 exports.default = Room;
-},{"../game/game":"src/game/game.ts","../util/vec2":"src/util/vec2.ts","./entity_manager":"src/room/entity_manager.ts","./particle_manager":"src/room/particle_manager.ts","./tile_manager":"src/room/tile_manager.ts"}],"src/util/direction.ts":[function(require,module,exports) {
+},{"../game/game":"rwBp","../util/vec2":"zLWC","./entity_manager":"iQbR","./particle_manager":"yOxZ","./tile_manager":"mLB7"}],"xKpK":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -35148,7 +35148,7 @@ function weighted(directions, random) {
 }
 
 exports.weighted = weighted;
-},{}],"src/game/room_manager.ts":[function(require,module,exports) {
+},{}],"eDIy":[function(require,module,exports) {
 "use strict";
 
 function _toConsumableArray(arr) { return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _unsupportedIterableToArray(arr) || _nonIterableSpread(); }
@@ -35422,7 +35422,7 @@ var RoomManager = /*#__PURE__*/function () {
 }();
 
 exports.default = RoomManager;
-},{"../room/biome":"src/room/biome.ts","../room/room":"src/room/room.ts","../util/direction":"src/util/direction.ts","../util/random":"src/util/random.ts","../util/vec2":"src/util/vec2.ts","./renderer":"src/game/renderer.ts"}],"src/game/game.ts":[function(require,module,exports) {
+},{"../room/biome":"RDR3","../room/room":"j2HY","../util/direction":"xKpK","../util/random":"K9xg","../util/vec2":"zLWC","./renderer":"lyTY"}],"rwBp":[function(require,module,exports) {
 "use strict";
 
 function _createForOfIteratorHelper(o, allowArrayLike) { var it = typeof Symbol !== "undefined" && o[Symbol.iterator] || o["@@iterator"]; if (!it) { if (Array.isArray(o) || (it = _unsupportedIterableToArray(o)) || allowArrayLike && o && typeof o.length === "number") { if (it) o = it; var i = 0; var F = function F() {}; return { s: F, n: function n() { if (i >= o.length) return { done: true }; return { done: false, value: o[i++] }; }, e: function e(_e) { throw _e; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var normalCompletion = true, didErr = false, err; return { s: function s() { it = it.call(o); }, n: function n() { var step = it.next(); normalCompletion = step.done; return step; }, e: function e(_e2) { didErr = true; err = _e2; }, f: function f() { try { if (!normalCompletion && it.return != null) it.return(); } finally { if (didErr) throw err; } } }; }
@@ -35614,9 +35614,7 @@ exports.default = Game;
 _a = Game;
 Game.width = 15;
 Game.center = _a.width / 2;
-},{"../entity/player":"src/entity/player.ts","../util/random":"src/util/random.ts","../util/vec2":"src/util/vec2.ts","./renderer":"src/game/renderer.ts","./room_manager":"src/game/room_manager.ts"}],"node_modules/parcel-bundler/src/builtins/_empty.js":[function(require,module,exports) {
-
-},{}],"src/main.ts":[function(require,module,exports) {
+},{"../entity/player":"XMVZ","../util/random":"K9xg","../util/vec2":"zLWC","./renderer":"lyTY","./room_manager":"eDIy"}],"jP6t":[function(require,module,exports) {
 "use strict";
 
 var __createBinding = this && this.__createBinding || (Object.create ? function (o, m, k, k2) {
@@ -35669,8 +35667,6 @@ var game_1 = __importStar(require("./game/game"));
 
 var color_1 = __importDefault(require("./util/color"));
 
-var fs = require('fs');
-
 var sketch = function sketch(p5) {
   var game;
   var montserrat;
@@ -35686,7 +35682,6 @@ var sketch = function sketch(p5) {
     p5.textFont('Montserrat', 20);
     p5.textStyle('bold');
     state = game_1.GameStates.MENU;
-    console.log("aaa");
   };
 
   p5.draw = function () {
@@ -35759,209 +35754,5 @@ var sketch = function sketch(p5) {
 };
 
 new p5_1.default(sketch);
-},{"p5":"node_modules/p5/lib/p5.min.js","./game/game":"src/game/game.ts","./util/color":"src/util/color.ts","fs":"node_modules/parcel-bundler/src/builtins/_empty.js"}],"node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
-var global = arguments[3];
-var OVERLAY_ID = '__parcel__error__overlay__';
-var OldModule = module.bundle.Module;
-
-function Module(moduleName) {
-  OldModule.call(this, moduleName);
-  this.hot = {
-    data: module.bundle.hotData,
-    _acceptCallbacks: [],
-    _disposeCallbacks: [],
-    accept: function (fn) {
-      this._acceptCallbacks.push(fn || function () {});
-    },
-    dispose: function (fn) {
-      this._disposeCallbacks.push(fn);
-    }
-  };
-  module.bundle.hotData = null;
-}
-
-module.bundle.Module = Module;
-var checkedAssets, assetsToAccept;
-var parent = module.bundle.parent;
-
-if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
-  var hostname = "" || location.hostname;
-  var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "49593" + '/');
-
-  ws.onmessage = function (event) {
-    checkedAssets = {};
-    assetsToAccept = [];
-    var data = JSON.parse(event.data);
-
-    if (data.type === 'update') {
-      var handled = false;
-      data.assets.forEach(function (asset) {
-        if (!asset.isNew) {
-          var didAccept = hmrAcceptCheck(global.parcelRequire, asset.id);
-
-          if (didAccept) {
-            handled = true;
-          }
-        }
-      }); // Enable HMR for CSS by default.
-
-      handled = handled || data.assets.every(function (asset) {
-        return asset.type === 'css' && asset.generated.js;
-      });
-
-      if (handled) {
-        console.clear();
-        data.assets.forEach(function (asset) {
-          hmrApply(global.parcelRequire, asset);
-        });
-        assetsToAccept.forEach(function (v) {
-          hmrAcceptRun(v[0], v[1]);
-        });
-      } else if (location.reload) {
-        // `location` global exists in a web worker context but lacks `.reload()` function.
-        location.reload();
-      }
-    }
-
-    if (data.type === 'reload') {
-      ws.close();
-
-      ws.onclose = function () {
-        location.reload();
-      };
-    }
-
-    if (data.type === 'error-resolved') {
-      console.log('[parcel] ✨ Error resolved');
-      removeErrorOverlay();
-    }
-
-    if (data.type === 'error') {
-      console.error('[parcel] 🚨  ' + data.error.message + '\n' + data.error.stack);
-      removeErrorOverlay();
-      var overlay = createErrorOverlay(data);
-      document.body.appendChild(overlay);
-    }
-  };
-}
-
-function removeErrorOverlay() {
-  var overlay = document.getElementById(OVERLAY_ID);
-
-  if (overlay) {
-    overlay.remove();
-  }
-}
-
-function createErrorOverlay(data) {
-  var overlay = document.createElement('div');
-  overlay.id = OVERLAY_ID; // html encode message and stack trace
-
-  var message = document.createElement('div');
-  var stackTrace = document.createElement('pre');
-  message.innerText = data.error.message;
-  stackTrace.innerText = data.error.stack;
-  overlay.innerHTML = '<div style="background: black; font-size: 16px; color: white; position: fixed; height: 100%; width: 100%; top: 0px; left: 0px; padding: 30px; opacity: 0.85; font-family: Menlo, Consolas, monospace; z-index: 9999;">' + '<span style="background: red; padding: 2px 4px; border-radius: 2px;">ERROR</span>' + '<span style="top: 2px; margin-left: 5px; position: relative;">🚨</span>' + '<div style="font-size: 18px; font-weight: bold; margin-top: 20px;">' + message.innerHTML + '</div>' + '<pre>' + stackTrace.innerHTML + '</pre>' + '</div>';
-  return overlay;
-}
-
-function getParents(bundle, id) {
-  var modules = bundle.modules;
-
-  if (!modules) {
-    return [];
-  }
-
-  var parents = [];
-  var k, d, dep;
-
-  for (k in modules) {
-    for (d in modules[k][1]) {
-      dep = modules[k][1][d];
-
-      if (dep === id || Array.isArray(dep) && dep[dep.length - 1] === id) {
-        parents.push(k);
-      }
-    }
-  }
-
-  if (bundle.parent) {
-    parents = parents.concat(getParents(bundle.parent, id));
-  }
-
-  return parents;
-}
-
-function hmrApply(bundle, asset) {
-  var modules = bundle.modules;
-
-  if (!modules) {
-    return;
-  }
-
-  if (modules[asset.id] || !bundle.parent) {
-    var fn = new Function('require', 'module', 'exports', asset.generated.js);
-    asset.isNew = !modules[asset.id];
-    modules[asset.id] = [fn, asset.deps];
-  } else if (bundle.parent) {
-    hmrApply(bundle.parent, asset);
-  }
-}
-
-function hmrAcceptCheck(bundle, id) {
-  var modules = bundle.modules;
-
-  if (!modules) {
-    return;
-  }
-
-  if (!modules[id] && bundle.parent) {
-    return hmrAcceptCheck(bundle.parent, id);
-  }
-
-  if (checkedAssets[id]) {
-    return;
-  }
-
-  checkedAssets[id] = true;
-  var cached = bundle.cache[id];
-  assetsToAccept.push([bundle, id]);
-
-  if (cached && cached.hot && cached.hot._acceptCallbacks.length) {
-    return true;
-  }
-
-  return getParents(global.parcelRequire, id).some(function (id) {
-    return hmrAcceptCheck(global.parcelRequire, id);
-  });
-}
-
-function hmrAcceptRun(bundle, id) {
-  var cached = bundle.cache[id];
-  bundle.hotData = {};
-
-  if (cached) {
-    cached.hot.data = bundle.hotData;
-  }
-
-  if (cached && cached.hot && cached.hot._disposeCallbacks.length) {
-    cached.hot._disposeCallbacks.forEach(function (cb) {
-      cb(bundle.hotData);
-    });
-  }
-
-  delete bundle.cache[id];
-  bundle(id);
-  cached = bundle.cache[id];
-
-  if (cached && cached.hot && cached.hot._acceptCallbacks.length) {
-    cached.hot._acceptCallbacks.forEach(function (cb) {
-      cb();
-    });
-
-    return true;
-  }
-}
-},{}]},{},["node_modules/parcel-bundler/src/builtins/hmr-runtime.js","src/main.ts"], null)
-//# sourceMappingURL=/main.b0a109ad.js.map
+},{"p5":"SOQY","./game/game":"rwBp","./util/color":"Mr6S"}]},{},["jP6t"], null)
+//# sourceMappingURL=main.735a99fc.js.map

@@ -1,0 +1,64 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
+
+:root {
+    --bg_main: #000000;
+    --box_bg: #443b777e;
+
+    --accent: #5dd878;
+    --accent_darker: #42a858;
+    --accent_dark: #004422;
+
+    --white: #f1efff;
+    --light_gray: #ccdddd;
+    --gray: #a0aaaa;
+    --black: #0e0f0f;
+
+    --starlight: #c5f8ff;
+}
+
+body {
+	display: block;
+    font-family: 'Montserrat';
+    font-size: 16px;
+    color: var(--white);
+	background: var(--bg_main);
+}
+
+h1 {
+    font-size: 42;
+    font-weight: 800;
+	text-align: center;
+}
+
+a:link {
+    color: var(--accent)
+}
+
+a:visited {
+    color: var(--accent)
+}
+
+#canvas {
+	background: var(--bg_main);
+	display: flex;
+	justify-content: center;
+}
+
+#info {
+	min-width: 300px;
+}
+
+.p5Canvas {
+    border-radius: 10px;
+	margin-right: 10px;
+}
+
+.go_back_button {
+    background-color: var(--box_bg);
+    color: var(--accent);
+    border-radius: 10px;
+    padding: 10px 20px 10px 20px;
+    margin: 10px 10px 10px 10px;
+}
+
+/*# sourceMappingURL=style.8a7d9273.css.map */
