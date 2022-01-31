@@ -28862,56 +28862,56 @@ var Color = /*#__PURE__*/function () {
   _createClass(Color, [{
     key: "set_red",
     value: function set_red(red) {
-      this.red = Math.floor(Math.max(Math.min(red, 255), 0));
+      this._red = Math.floor(Math.max(Math.min(red, 255), 0));
     }
   }, {
     key: "set_green",
     value: function set_green(green) {
-      this.green = Math.floor(Math.max(Math.min(green, 255), 0));
+      this._green = Math.floor(Math.max(Math.min(green, 255), 0));
     }
   }, {
     key: "set_blue",
     value: function set_blue(blue) {
-      this.blue = Math.floor(Math.max(Math.min(blue, 255), 0));
+      this._blue = Math.floor(Math.max(Math.min(blue, 255), 0));
     }
   }, {
     key: "set_alpha",
     value: function set_alpha(alpha) {
-      this.alpha = Math.floor(Math.max(Math.min(alpha, 255), 0));
+      this._alpha = Math.floor(Math.max(Math.min(alpha, 255), 0));
     }
   }, {
-    key: "get_red",
-    value: function get_red() {
-      return this.red;
+    key: "red",
+    get: function get() {
+      return this._red;
     }
   }, {
-    key: "get_green",
-    value: function get_green() {
-      return this.green;
+    key: "green",
+    get: function get() {
+      return this._green;
     }
   }, {
-    key: "get_blue",
-    value: function get_blue() {
-      return this.blue;
+    key: "blue",
+    get: function get() {
+      return this._blue;
     }
   }, {
-    key: "get_alpha",
-    value: function get_alpha() {
-      return this.alpha;
+    key: "alpha",
+    get: function get() {
+      return this._alpha;
     }
   }, {
     key: "lighten",
     value: function lighten(strength) {
       strength = Math.max(Math.min(strength, 1), 0);
-      var red = (this.get_red() * 2 + 255 * strength) / 2;
-      var green = (this.get_green() * 2 + 255 * strength) / 2;
-      var blue = (this.get_blue() * 2 + 255 * strength) / 2;
-      return new Color(red, green, blue, this.alpha);
+      var red = (this.red * 2 + 255 * strength) / 2;
+      var green = (this.green * 2 + 255 * strength) / 2;
+      var blue = (this.blue * 2 + 255 * strength) / 2;
+      return new Color(red, green, blue, this._alpha);
     }
   }, {
     key: "toString",
     value: function toString() {
-      return "".concat(this.red, ",").concat(this.green, ",").concat(this.blue, ",").concat(this.alpha);
+      return "".concat(this._red, ",").concat(this._green, ",").concat(this._blue, ",").concat(this._alpha);
     }
   }], [{
     key: "RGB",
@@ -29063,6 +29063,26 @@ var Vec2 = /*#__PURE__*/function () {
       var rad = angle * Math.PI / 180;
       return new Vec2(Math.cos(rad * this.x) - Math.sin(rad * this.y), Math.cos(rad * this.x) + Math.sin(rad * this.y));
     }
+  }, {
+    key: "left",
+    value: function left() {
+      return new Vec2(this.x - 1, this.y);
+    }
+  }, {
+    key: "right",
+    value: function right() {
+      return new Vec2(this.x + 1, this.y);
+    }
+  }, {
+    key: "up",
+    value: function up() {
+      return new Vec2(this.x, this.y - 1);
+    }
+  }, {
+    key: "down",
+    value: function down() {
+      return new Vec2(this.x, this.y + 1);
+    }
   }], [{
     key: "zero",
     value: function zero() {
@@ -29107,6 +29127,23 @@ var Vec2 = /*#__PURE__*/function () {
     value: function from_angle(angle) {
       return new Vec2(Math.cos(angle * Math.PI / 180), Math.sin(angle * Math.PI / 180));
     }
+  }, {
+    key: "from_direction",
+    value: function from_direction(direction) {
+      switch (direction) {
+        case 'left':
+          return new Vec2(-1, 0);
+
+        case 'right':
+          return new Vec2(1, 0);
+
+        case 'up':
+          return new Vec2(0, -1);
+
+        case 'down':
+          return new Vec2(0, 1);
+      }
+    }
   }]);
 
   return Vec2;
@@ -29150,7 +29187,7 @@ var Renderer = /*#__PURE__*/function () {
   _createClass(Renderer, null, [{
     key: "canvas_coords",
     value: function canvas_coords(vec) {
-      return new vec2_1.default(vec.x * this.scale + 300, vec.y * this.scale);
+      return new vec2_1.default(vec.x * this.scale + 450, vec.y * this.scale);
     }
   }, {
     key: "rect",
@@ -29160,7 +29197,7 @@ var Renderer = /*#__PURE__*/function () {
         rotation: 0
       };
       this.p5.push();
-      this.p5.fill(color.get_red(), color.get_green(), color.get_blue(), color.get_alpha());
+      this.p5.fill(color.red, color.green, color.blue, color.alpha);
       this.p5.translate(this.canvas_coords(position).x, this.canvas_coords(position).y);
       this.p5.rotate(options.rotation);
       this.p5.rect(0, 0, size.x * this.scale * options.scale, size.y * this.scale * options.scale, corner_radius * this.scale);
@@ -29198,7 +29235,7 @@ var Renderer = /*#__PURE__*/function () {
     value: function text(position, size, color, _text) {
       this.p5.push();
       this.p5.textSize(size);
-      this.p5.fill(color.get_red(), color.get_green(), color.get_blue(), color.get_alpha());
+      this.p5.fill(color.red, color.green, color.blue, color.alpha);
       this.p5.text(_text, this.canvas_coords(position).x, this.canvas_coords(position).y);
       this.p5.pop();
     }
@@ -29206,7 +29243,7 @@ var Renderer = /*#__PURE__*/function () {
     key: "map",
     value: function map() {
       this.p5.push();
-      this.p5.translate(100, 300);
+      this.p5.translate(210, 300);
       this.p5.rectMode('corner');
 
       var _iterator = _createForOfIteratorHelper(this.game.room_manager.array()),
@@ -29215,11 +29252,20 @@ var Renderer = /*#__PURE__*/function () {
       try {
         for (_iterator.s(); !(_step = _iterator.n()).done;) {
           var room = _step.value;
-          this.p5.fill(128, 128, 128);
-          if (room.visited) this.p5.fill(192, 192, 192);
-          if (room.cleared) this.p5.fill(64, 220, 64);
+          var color = void 0;
+          color = room.biome.map_color;
+          this.p5.fill(color.red, color.green, color.blue, room.visited ? 255 : 128);
           this.p5.rect(room.position.x * 20, room.position.y * 20, 15, 15);
-          this.p5.fill(96, 96, 96);
+          this.p5.fill(64, 64, 64);
+          this.p5.rect(room.position.x * 20 + 2, room.position.y * 20 + 2, 11, 11);
+
+          if (room.cleared) {
+            this.p5.fill(64, 220, 64);
+            this.p5.rect(room.position.x * 20 + 2, room.position.y * 20 + 2, 11, 11);
+          }
+
+          this.p5.fill(110, 110, 110);
+          if (!room.visited) this.p5.fill(85, 85, 85);
           if (room.has_door('left')) this.p5.rect(room.position.x * 20 - 2.5, room.position.y * 20 + 5, 2.5, 5);
           if (room.has_door('right')) this.p5.rect(room.position.x * 20 + 15, room.position.y * 20 + 5, 2.5, 5);
           if (room.has_door('up')) this.p5.rect(room.position.x * 20 + 5, room.position.y * 20 - 2.5, 5, 2.5);
@@ -29231,8 +29277,10 @@ var Renderer = /*#__PURE__*/function () {
         _iterator.f();
       }
 
-      this.p5.fill(255, 255, 255);
-      this.p5.rect(this.game.room_manager.current_room.position.x * 20 + 5, this.game.room_manager.current_room.position.y * 20 + 5, 5, 5);
+      this.p5.fill(0, 0, 0, 0);
+      this.p5.stroke(255, 255, 255);
+      this.p5.strokeWeight(2);
+      this.p5.rect(this.game.room_manager.current_room.position.x * 20 - 1, this.game.room_manager.current_room.position.y * 20 - 1, 17, 17);
       this.p5.pop();
     }
   }, {
@@ -29248,7 +29296,7 @@ var Renderer = /*#__PURE__*/function () {
       var size_scaled = size.multiply(this.scale).multiply(options.scale);
       this.p5.fill(128, 128, 128);
       this.p5.rect(0, 0, size_scaled.x, size_scaled.y * 0.4, corner_radius * this.scale);
-      this.p5.fill(color.get_red(), color.get_green(), color.get_blue(), color.get_alpha());
+      this.p5.fill(color.red, color.green, color.blue, color.alpha);
       this.p5.rect(size_scaled.x * 0.1, 0, size_scaled.x * 0.8, size_scaled.y, corner_radius * this.scale);
       this.p5.fill(128, 128, 128);
       this.p5.rect(-size_scaled.x * 0.3, 0, size_scaled.x * 0.05, size_scaled.y * 2, corner_radius * this.scale);
@@ -29267,7 +29315,7 @@ var Renderer = /*#__PURE__*/function () {
       var size_scaled = size.multiply(this.scale).multiply(options.scale);
       this.p5.fill(128, 128, 128);
       this.p5.rect(0, 0, size_scaled.x, size_scaled.y * 0.5, corner_radius * this.scale);
-      this.p5.fill(color.get_red(), color.get_green(), color.get_blue(), color.get_alpha());
+      this.p5.fill(color.red, color.green, color.blue, color.alpha);
       this.p5.rect(size_scaled.x * 0.5, 0, size_scaled.x * 0.3, size_scaled.y, corner_radius * this.scale);
       this.p5.pop();
     }
@@ -30179,7 +30227,7 @@ var LivingEntity = /*#__PURE__*/function (_entity_1$default) {
       this.max_damage_invincibility_timer = timer;
       this.damage_invincibility_timer = timer;
       this.manager.room.particles.spawn(new damage_count_1.default(this.position.add(new vec2_1.default(0, this.size.y * -0.5)), _damage));
-      this.last_attacker = source;
+      if (source) this.last_attacker = source;
     }
   }, {
     key: "render",
@@ -30777,9 +30825,9 @@ var FlameParticle = /*#__PURE__*/function (_rect_1$default) {
     value: function tick() {
       _get(_getPrototypeOf(FlameParticle.prototype), "tick", this).call(this);
 
-      this.color.set_alpha(this.color.get_alpha() - 4);
-      this.color.set_green(this.color.get_green() - 4);
-      if (this.color.get_alpha() < 0) this.destroy();
+      this.color.set_alpha(this.color.alpha - 4);
+      this.color.set_green(this.color.green - 4);
+      if (this.color.alpha < 0) this.destroy();
     }
   }]);
 
@@ -31365,7 +31413,49 @@ var Player = /*#__PURE__*/function (_living_entity_1$defa) {
 }(living_entity_1.default);
 
 exports.default = Player;
-},{"../game/game":"src/game/game.ts","../game/renderer":"src/game/renderer.ts","../util/color":"src/util/color.ts","../util/vec2":"src/util/vec2.ts","./living_entity":"src/entity/living_entity.ts","./mob":"src/entity/mob.ts","./projectile/arrow":"src/entity/projectile/arrow.ts","./projectile/bullet":"src/entity/projectile/bullet.ts","./projectile/fireball":"src/entity/projectile/fireball.ts","./projectile/sword":"src/entity/projectile/sword.ts"}],"src/entity/mob/turret.ts":[function(require,module,exports) {
+},{"../game/game":"src/game/game.ts","../game/renderer":"src/game/renderer.ts","../util/color":"src/util/color.ts","../util/vec2":"src/util/vec2.ts","./living_entity":"src/entity/living_entity.ts","./mob":"src/entity/mob.ts","./projectile/arrow":"src/entity/projectile/arrow.ts","./projectile/bullet":"src/entity/projectile/bullet.ts","./projectile/fireball":"src/entity/projectile/fireball.ts","./projectile/sword":"src/entity/projectile/sword.ts"}],"src/room/biome.ts":[function(require,module,exports) {
+"use strict";
+
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); Object.defineProperty(Constructor, "prototype", { writable: false }); return Constructor; }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+var __importDefault = this && this.__importDefault || function (mod) {
+  return mod && mod.__esModule ? mod : {
+    "default": mod
+  };
+};
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.Biome = void 0;
+
+var color_1 = __importDefault(require("../util/color"));
+
+var Biome = /*#__PURE__*/_createClass(function Biome(id, difficulty, background_color, tile_color, wall_color, map_color) {
+  _classCallCheck(this, Biome);
+
+  this.id = id;
+  this.difficulty = difficulty;
+  this.background_color = background_color;
+  this.tile_color = tile_color;
+  this.wall_color = wall_color;
+  this.map_color = map_color;
+});
+
+exports.Biome = Biome;
+var Biomes = {
+  DEFAULT: new Biome('default', 1, color_1.default.RGB(37, 33, 53), color_1.default.RGB(56, 49, 86), color_1.default.RGB(92, 75, 170), color_1.default.RGB(180, 100, 255)),
+  FOREST: new Biome('forest', 1.2, color_1.default.RGB(27, 53, 31), color_1.default.RGB(32, 82, 42), color_1.default.RGB(61, 170, 68), color_1.default.RGB(120, 255, 120)),
+  DESERT: new Biome('desert', 1.42, color_1.default.RGB(53, 49, 27), color_1.default.RGB(86, 80, 32), color_1.default.RGB(170, 140, 64), color_1.default.RGB(255, 220, 64)),
+  SNOW: new Biome('snow', 1.65, color_1.default.RGB(42, 45, 61), color_1.default.RGB(60, 66, 95), color_1.default.RGB(130, 140, 180), color_1.default.RGB(150, 160, 255)),
+  HELL: new Biome('hell', 2.0, color_1.default.RGB(53, 33, 21), color_1.default.RGB(86, 49, 24), color_1.default.RGB(170, 92, 49), color_1.default.RGB(255, 130, 49))
+};
+exports.default = Biomes;
+},{"../util/color":"src/util/color.ts"}],"src/entity/mob/turret.ts":[function(require,module,exports) {
 "use strict";
 
 function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
@@ -31826,19 +31916,19 @@ var EntityManager = /*#__PURE__*/function () {
     this.entities = new Map();
     this.random = new random_1.default();
 
-    for (var i = 0; i < this.random.next_int_ranged(0, 1) + this.random.next_int_ranged(0, Math.sqrt(this.room.position.x * this.room.position.x + this.room.position.y * this.room.position.y)); i++) {
+    for (var i = 0; i < this.random.next_int_ranged(0, 1) + this.random.next_int_ranged(0, this.room.difficulty); i++) {
       var mob = this.random.weighted_random([{
         item: new turret_1.default(),
-        weight: 3
+        weight: Math.max(4, 10 - this.room.difficulty) + this.room.biome.id == 'default' ? 5 : 0
       }, {
         item: new swordsman_1.default(),
-        weight: 1
+        weight: Math.min(6, this.room.difficulty - 2) + this.room.biome.id == 'hell' ? 5 : 0
       }, {
         item: new mage_1.default(),
-        weight: 1
+        weight: Math.min(6, this.room.difficulty - 1) + this.room.biome.id == 'desert' ? 5 : 0
       }, {
         item: new archer_1.default(),
-        weight: 1
+        weight: Math.min(6, this.room.difficulty) + this.room.biome.id == 'snow' ? 5 : 0
       }]);
       var w = game_1.default.width;
       mob.set_position(new vec2_1.default(this.random.next_int_ranged(2, w - 3) + 0.5, this.random.next_int_ranged(2, w - 3) + 0.5));
@@ -32087,16 +32177,15 @@ Object.defineProperty(exports, "__esModule", {
 
 var renderer_1 = __importDefault(require("../game/renderer"));
 
-var color_1 = __importDefault(require("../util/color"));
-
 var vec2_1 = __importDefault(require("../util/vec2"));
 
 var Tile = /*#__PURE__*/function () {
-  function Tile(position) {
+  function Tile(position, manager) {
     _classCallCheck(this, Tile);
 
     this.position = position;
-    this.color = color_1.default.RGB(56, 49, 86);
+    this.manager = manager;
+    this.color = this.manager.room.biome.tile_color;
     this.solid = false;
   }
 
@@ -32116,7 +32205,7 @@ var Tile = /*#__PURE__*/function () {
 }();
 
 exports.default = Tile;
-},{"../game/renderer":"src/game/renderer.ts","../util/color":"src/util/color.ts","../util/vec2":"src/util/vec2.ts"}],"src/tile/wall.ts":[function(require,module,exports) {
+},{"../game/renderer":"src/game/renderer.ts","../util/vec2":"src/util/vec2.ts"}],"src/tile/wall.ts":[function(require,module,exports) {
 "use strict";
 
 function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
@@ -32151,8 +32240,6 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
-var color_1 = __importDefault(require("../util/color"));
-
 var tile_1 = __importDefault(require("./tile"));
 
 var Wall = /*#__PURE__*/function (_tile_1$default) {
@@ -32160,13 +32247,13 @@ var Wall = /*#__PURE__*/function (_tile_1$default) {
 
   var _super = _createSuper(Wall);
 
-  function Wall(position) {
+  function Wall(position, manager) {
     var _this;
 
     _classCallCheck(this, Wall);
 
-    _this = _super.call(this, position);
-    _this.color = color_1.default.RGB(92, 75, 170);
+    _this = _super.call(this, position, manager);
+    _this.color = _this.manager.room.biome.wall_color;
     _this.solid = true;
     return _this;
   }
@@ -32175,7 +32262,7 @@ var Wall = /*#__PURE__*/function (_tile_1$default) {
 }(tile_1.default);
 
 exports.default = Wall;
-},{"../util/color":"src/util/color.ts","./tile":"src/tile/tile.ts"}],"node_modules/heap/lib/heap.js":[function(require,module,exports) {
+},{"./tile":"src/tile/tile.ts"}],"node_modules/heap/lib/heap.js":[function(require,module,exports) {
 // Generated by CoffeeScript 1.8.0
 (function() {
   var Heap, defaultCmp, floor, heapify, heappop, heappush, heappushpop, heapreplace, insort, min, nlargest, nsmallest, updateItem, _siftdown, _siftup;
@@ -34805,14 +34892,14 @@ var TileManager = /*#__PURE__*/function () {
     }
 
     for (var _i = 0; _i < w; _i++) {
-      this.set(new wall_1.default(new vec2_1.default(_i, 0)));
-      this.set(new wall_1.default(new vec2_1.default(0, _i)));
-      this.set(new wall_1.default(new vec2_1.default(_i, w - 1)));
-      this.set(new wall_1.default(new vec2_1.default(w - 1, _i)));
+      this.set(new wall_1.default(new vec2_1.default(_i, 0), this));
+      this.set(new wall_1.default(new vec2_1.default(0, _i), this));
+      this.set(new wall_1.default(new vec2_1.default(_i, w - 1), this));
+      this.set(new wall_1.default(new vec2_1.default(w - 1, _i), this));
     }
 
     for (var _i2 = 0; _i2 < this.random.next_int_ranged(6 + 2 * Math.abs(this.room.position.x) * Math.abs(this.room.position.y), 8 + 4 * Math.abs(this.room.position.x) * Math.abs(this.room.position.y)); _i2++) {
-      this.set(new wall_1.default(new vec2_1.default(this.room.manager.game.random.next_int_ranged(2, w - 3), this.room.manager.game.random.next_int_ranged(2, w - 3))));
+      this.set(new wall_1.default(new vec2_1.default(this.room.manager.game.random.next_int_ranged(2, w - 3), this.room.manager.game.random.next_int_ranged(2, w - 3)), this));
     }
 
     this.pathfinder = new pathfinding_1.default.AStarFinder();
@@ -34856,7 +34943,7 @@ var TileManager = /*#__PURE__*/function () {
   }, {
     key: "clear",
     value: function clear(position) {
-      this.set(new tile_1.default(position));
+      this.set(new tile_1.default(position, this));
     }
     /** Return the tilemap */
 
@@ -34971,11 +35058,13 @@ var particle_manager_1 = __importDefault(require("./particle_manager"));
 var tile_manager_1 = __importDefault(require("./tile_manager"));
 
 var Room = /*#__PURE__*/function () {
-  function Room(position, manager) {
+  function Room(position, manager, biome, difficulty) {
     _classCallCheck(this, Room);
 
     this.position = position;
     this.manager = manager;
+    this.biome = biome;
+    this.difficulty = Math.floor(difficulty);
     this.tiles = new tile_manager_1.default(this);
     this.entities = new entity_manager_1.default(this);
     this.particles = new particle_manager_1.default(this);
@@ -34989,6 +35078,7 @@ var Room = /*#__PURE__*/function () {
       this.entities.tick();
       this.visited = true;
       if (this.entities.size() == 0) this.cleared = true;
+      console.log(this.difficulty);
     }
   }, {
     key: "has_door",
@@ -35021,7 +35111,44 @@ var Room = /*#__PURE__*/function () {
 }();
 
 exports.default = Room;
-},{"../game/game":"src/game/game.ts","../util/vec2":"src/util/vec2.ts","./entity_manager":"src/room/entity_manager.ts","./particle_manager":"src/room/particle_manager.ts","./tile_manager":"src/room/tile_manager.ts"}],"src/game/room_manager.ts":[function(require,module,exports) {
+},{"../game/game":"src/game/game.ts","../util/vec2":"src/util/vec2.ts","./entity_manager":"src/room/entity_manager.ts","./particle_manager":"src/room/particle_manager.ts","./tile_manager":"src/room/tile_manager.ts"}],"src/util/direction.ts":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.weighted = exports.random = exports.opposite = void 0;
+
+function opposite(direction) {
+  switch (direction) {
+    case 'left':
+      return 'right';
+
+    case 'right':
+      return 'left';
+
+    case 'up':
+      return 'down';
+
+    case 'down':
+      return 'up';
+  }
+}
+
+exports.opposite = opposite;
+
+function random(random) {
+  return random.choice(['left', 'right', 'up', 'down']);
+}
+
+exports.random = random;
+
+function weighted(directions, random) {
+  return random.weighted_random(directions);
+}
+
+exports.weighted = weighted;
+},{}],"src/game/room_manager.ts":[function(require,module,exports) {
 "use strict";
 
 function _toConsumableArray(arr) { return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _unsupportedIterableToArray(arr) || _nonIterableSpread(); }
@@ -35054,7 +35181,11 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
+var biome_1 = __importDefault(require("../room/biome"));
+
 var room_1 = __importDefault(require("../room/room"));
+
+var direction_1 = require("../util/direction");
 
 var random_1 = __importDefault(require("../util/random"));
 
@@ -35064,48 +35195,142 @@ var renderer_1 = __importDefault(require("./renderer"));
 
 var RoomManager = /*#__PURE__*/function () {
   function RoomManager(game) {
+    var _this = this;
+
     _classCallCheck(this, RoomManager);
 
     this.game = game;
     this.rooms = new Map();
     this.random = new random_1.default();
-    this.set(new room_1.default(vec2_1.default.zero(), this));
+    this.set(new room_1.default(vec2_1.default.zero(), this, biome_1.default.DEFAULT, 0));
 
-    for (var thread = 0; thread < 7; thread++) {
-      var direction = this.random_direction();
-      var pos = vec2_1.default.zero();
-      var prev_pos = vec2_1.default.zero();
-
-      for (var i = 0; i < 20; i++) {
-        prev_pos = pos.clone();
-
-        switch (direction) {
-          case 'left':
-            pos = pos.add(new vec2_1.default(-1, 0));
-            break;
-
-          case 'right':
-            pos = pos.add(new vec2_1.default(1, 0));
-            break;
-
-          case 'up':
-            pos = pos.add(new vec2_1.default(0, -1));
-            break;
-
-          case 'down':
-            pos = pos.add(new vec2_1.default(0, 1));
-            break;
-        }
-
-        if (!this.get(pos)) {
-          this.set(new room_1.default(pos, this));
-          this.get(pos).tiles.create_door(this.opposite_direction(direction));
-          this.get(prev_pos).tiles.create_door(direction);
-        }
-
-        direction = this.random_direction();
-      }
+    for (var thread = 0; thread < 10; thread++) {
+      this.thread(8);
     }
+
+    this.thread(6, biome_1.default.DEFAULT, vec2_1.default.zero(), [{
+      item: 'right',
+      weight: 15
+    }, {
+      item: 'up',
+      weight: 5
+    }, {
+      item: 'down',
+      weight: 1
+    }], function (i, pos) {
+      if (i < 5) return;
+
+      _this.thread(5, biome_1.default.FOREST, pos, [{
+        item: 'right',
+        weight: 1
+      }], function (di, dpos) {
+        if (di == 2 || di == 4) _this.thread(_this.random.next_int_ranged(5, 6), biome_1.default.FOREST, dpos, [{
+          item: 'up',
+          weight: 2
+        }, {
+          item: 'down',
+          weight: 1
+        }], function (ddi, ddpos) {
+          if (ddi == 1 || ddi == 3 || ddi == 5) _this.thread(_this.random.next_int_ranged(2, 4), biome_1.default.FOREST, ddpos);
+        });
+      });
+    });
+    this.thread(6, biome_1.default.DEFAULT, vec2_1.default.zero(), [{
+      item: 'left',
+      weight: 15
+    }, {
+      item: 'up',
+      weight: 1
+    }, {
+      item: 'down',
+      weight: 5
+    }], function (i, pos) {
+      if (i < 5) return;
+
+      var _loop = function _loop(t) {
+        _this.thread(3, biome_1.default.DESERT, pos, [{
+          item: 'left',
+          weight: 2
+        }, {
+          item: 'up',
+          weight: 1
+        }, {
+          item: 'down',
+          weight: 1
+        }], function (di, dpos) {
+          _this.thread(_this.random.next_int_ranged(3, 4), biome_1.default.DESERT, dpos);
+
+          if (t == 3 && di == 2) _this.thread(_this.random.next_int_ranged(6, 12), biome_1.default.DESERT, dpos, [{
+            item: 'down',
+            weight: 1
+          }]);
+        });
+      };
+
+      for (var t = 0; t < 4; t++) {
+        _loop(t);
+      }
+    });
+    this.thread(4, biome_1.default.DEFAULT, vec2_1.default.zero(), [{
+      item: 'up',
+      weight: 15
+    }, {
+      item: 'left',
+      weight: 1
+    }, {
+      item: 'right',
+      weight: 2
+    }], function (i, pos) {
+      if (i < 3) return;
+
+      _this.thread(10, biome_1.default.SNOW, pos, [{
+        item: 'up',
+        weight: 1
+      }], function (di, dpos) {
+        _this.thread(_this.random.next_int_ranged(3, 4), biome_1.default.SNOW, dpos);
+
+        if (di == 2 || di == 4 || di == 5 || di == 7) _this.thread(_this.random.next_int_ranged(3, 8), biome_1.default.SNOW, dpos, [{
+          item: 'left',
+          weight: 1
+        }, {
+          item: 'right',
+          weight: 1
+        }, {
+          item: 'down',
+          weight: 1
+        }]);
+      });
+    });
+    this.thread(4, biome_1.default.DEFAULT, vec2_1.default.zero(), [{
+      item: 'down',
+      weight: 15
+    }, {
+      item: 'left',
+      weight: 2
+    }, {
+      item: 'right',
+      weight: 1
+    }], function (i, pos) {
+      if (i < 3) return;
+
+      _this.thread(3, biome_1.default.HELL, pos, [{
+        item: 'down',
+        weight: 1
+      }], function (di, dpos) {
+        if (di == 2) for (var t = 0; t < 8; t++) {
+          _this.thread(_this.random.next_int_ranged(4, 10), biome_1.default.HELL, dpos, [{
+            item: 'left',
+            weight: 2
+          }, {
+            item: 'right',
+            weight: 2
+          }, {
+            item: 'down',
+            weight: 1
+          }]);
+        }
+      });
+    });
 
     var _iterator = _createForOfIteratorHelper(this.array()),
         _step;
@@ -35113,27 +35338,8 @@ var RoomManager = /*#__PURE__*/function () {
     try {
       for (_iterator.s(); !(_step = _iterator.n()).done;) {
         var room = _step.value;
-        var _pos = room.position;
-
-        if (this.random.next_float() < 0.1 && this.get(_pos.add(new vec2_1.default(-1, 0)))) {
-          this.get(_pos).tiles.create_door('left');
-          this.get(_pos.add(new vec2_1.default(-1, 0))).tiles.create_door('right');
-        }
-
-        if (this.random.next_float() < 0.1 && this.get(_pos.add(new vec2_1.default(1, 0)))) {
-          this.get(_pos).tiles.create_door('right');
-          this.get(_pos.add(new vec2_1.default(1, 0))).tiles.create_door('left');
-        }
-
-        if (this.random.next_float() < 0.1 && this.get(_pos.add(new vec2_1.default(0, -1)))) {
-          this.get(_pos).tiles.create_door('up');
-          this.get(_pos.add(new vec2_1.default(0, -1))).tiles.create_door('down');
-        }
-
-        if (this.random.next_float() < 0.1 && this.get(_pos.add(new vec2_1.default(0, 1)))) {
-          this.get(_pos).tiles.create_door('down');
-          this.get(_pos.add(new vec2_1.default(0, 1))).tiles.create_door('up');
-        }
+        var pos = room.position;
+        if (this.random.next_float() < 0.2) this.add_door(pos, (0, direction_1.random)(this.random));
       }
     } catch (err) {
       _iterator.e(err);
@@ -35145,26 +35351,35 @@ var RoomManager = /*#__PURE__*/function () {
   }
 
   _createClass(RoomManager, [{
-    key: "random_direction",
-    value: function random_direction() {
-      return this.random.choice(['left', 'right', 'up', 'down']);
+    key: "thread",
+    value: function thread(iterations) {
+      var biome = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : biome_1.default.DEFAULT;
+      var start = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : vec2_1.default.zero();
+      var directions = arguments.length > 3 ? arguments[3] : undefined;
+      var on_iteration = arguments.length > 4 ? arguments[4] : undefined;
+      var direction = directions ? (0, direction_1.weighted)(directions, this.random) : (0, direction_1.random)(this.random);
+      var pos = start;
+
+      for (var i = 0; i < iterations; i++) {
+        pos = pos.add(vec2_1.default.from_direction(direction));
+        if (Math.abs(pos.x) > 10 || Math.abs(pos.y) > 10) return;
+
+        if (!this.get(pos)) {
+          this.set(new room_1.default(pos, this, biome, Math.sqrt(Math.abs(pos.x * pos.y)) + i / 4));
+          this.add_door(pos, (0, direction_1.opposite)(direction));
+        }
+
+        if (on_iteration) on_iteration(i, pos);
+        direction = directions ? (0, direction_1.weighted)(directions, this.random) : (0, direction_1.random)(this.random);
+      }
     }
   }, {
-    key: "opposite_direction",
-    value: function opposite_direction(direction) {
-      switch (direction) {
-        case 'left':
-          return 'right';
-
-        case 'right':
-          return 'left';
-
-        case 'up':
-          return 'down';
-
-        case 'down':
-          return 'up';
-      }
+    key: "add_door",
+    value: function add_door(pos, direction) {
+      var vec = vec2_1.default.from_direction(direction);
+      if (!this.get(pos.add(vec))) return;
+      this.get(pos).tiles.create_door(direction);
+      this.get(pos.add(vec)).tiles.create_door((0, direction_1.opposite)(direction));
     }
   }, {
     key: "array",
@@ -35207,7 +35422,7 @@ var RoomManager = /*#__PURE__*/function () {
 }();
 
 exports.default = RoomManager;
-},{"../room/room":"src/room/room.ts","../util/random":"src/util/random.ts","../util/vec2":"src/util/vec2.ts","./renderer":"src/game/renderer.ts"}],"src/game/game.ts":[function(require,module,exports) {
+},{"../room/biome":"src/room/biome.ts","../room/room":"src/room/room.ts","../util/direction":"src/util/direction.ts","../util/random":"src/util/random.ts","../util/vec2":"src/util/vec2.ts","./renderer":"src/game/renderer.ts"}],"src/game/game.ts":[function(require,module,exports) {
 "use strict";
 
 function _createForOfIteratorHelper(o, allowArrayLike) { var it = typeof Symbol !== "undefined" && o[Symbol.iterator] || o["@@iterator"]; if (!it) { if (Array.isArray(o) || (it = _unsupportedIterableToArray(o)) || allowArrayLike && o && typeof o.length === "number") { if (it) o = it; var i = 0; var F = function F() {}; return { s: F, n: function n() { if (i >= o.length) return { done: true }; return { done: false, value: o[i++] }; }, e: function e(_e) { throw _e; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var normalCompletion = true, didErr = false, err; return { s: function s() { it = it.call(o); }, n: function n() { var step = it.next(); normalCompletion = step.done; return step; }, e: function e(_e2) { didErr = true; err = _e2; }, f: function f() { try { if (!normalCompletion && it.return != null) it.return(); } finally { if (didErr) throw err; } } }; }
@@ -35450,13 +35665,15 @@ var p5_1 = __importDefault(require("p5"));
 
 var game_1 = __importStar(require("./game/game"));
 
+var color_1 = __importDefault(require("./util/color"));
+
 var sketch = function sketch(p5) {
   var game;
   var montserrat;
   var state;
 
   p5.setup = function () {
-    var canvas = p5.createCanvas(1200, 600);
+    var canvas = p5.createCanvas(1500, 600);
     canvas.parent('canvas');
     p5.rectMode('center');
     p5.angleMode('degrees');
@@ -35468,7 +35685,11 @@ var sketch = function sketch(p5) {
   };
 
   p5.draw = function () {
-    p5.background(37, 33, 53);
+    var _a;
+
+    var c = color_1.default.RGB(37, 33, 53);
+    if ((_a = game === null || game === void 0 ? void 0 : game.room_manager) === null || _a === void 0 ? void 0 : _a.current_room) c = game.room_manager.current_room.biome.background_color;
+    p5.background(c.red, c.green, c.blue);
     p5.strokeWeight(0);
 
     switch (state) {
@@ -35477,7 +35698,7 @@ var sketch = function sketch(p5) {
         game.tick();
         p5.pop();
         p5.push();
-        p5.translate(1000, 0);
+        p5.translate(1100, 0);
         p5.rectMode('corner');
         p5.fill(64, 128, 64);
         p5.rect(15, 5, 160, 40);
@@ -35533,7 +35754,7 @@ var sketch = function sketch(p5) {
 };
 
 new p5_1.default(sketch);
-},{"p5":"node_modules/p5/lib/p5.min.js","./game/game":"src/game/game.ts"}],"node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
+},{"p5":"node_modules/p5/lib/p5.min.js","./game/game":"src/game/game.ts","./util/color":"src/util/color.ts"}],"node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 var OldModule = module.bundle.Module;
@@ -35561,7 +35782,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "52913" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "58328" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
