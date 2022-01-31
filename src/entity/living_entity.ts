@@ -133,7 +133,8 @@ export default class LivingEntity extends Entity {
 
 		this.manager.room.particles.spawn(new DamageCountParticle(this.position.add(new Vec2(0, this.size.y * -0.5)), damage));
 
-		this.last_attacker = source;
+		if (source)
+			this.last_attacker = source;
 	}
 
 	render(): void {

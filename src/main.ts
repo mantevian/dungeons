@@ -1,5 +1,6 @@
 import P5 from "p5";
 import Game, { GameStates, PlayerClass } from "./game/game";
+import Color from "./util/color";
 
 const sketch = (p5: P5) => {
 	let game: Game;
@@ -8,7 +9,7 @@ const sketch = (p5: P5) => {
 	let state: GameStates;
 
 	p5.setup = () => {
-		const canvas = p5.createCanvas(1200, 600);
+		const canvas = p5.createCanvas(1500, 600);
 		canvas.parent('canvas');
 
 		p5.rectMode('center');
@@ -23,7 +24,10 @@ const sketch = (p5: P5) => {
 	}
 
 	p5.draw = () => {
-		p5.background(37, 33, 53);
+		let c = Color.RGB(37, 33, 53);
+		if (game?.room_manager?.current_room) c = game.room_manager.current_room.biome.background_color;
+		p5.background(c.red, c.green, c.blue);
+
 		p5.strokeWeight(0);
 
 		switch (state) {
@@ -33,7 +37,7 @@ const sketch = (p5: P5) => {
 				p5.pop();
 
 				p5.push();
-				p5.translate(1000, 0);
+				p5.translate(1100, 0);
 				p5.rectMode('corner');
 
 				p5.fill(64, 128, 64);
@@ -77,15 +81,15 @@ const sketch = (p5: P5) => {
 							case 'swordsman':
 								player_class = PlayerClass.SWORDSMAN;
 								break;
-							
+
 							case 'mage':
 								player_class = PlayerClass.MAGE;
 								break;
-							
+
 							case 'archer':
 								player_class = PlayerClass.ARCHER;
 								break;
-							
+
 							default:
 								player_class = PlayerClass.TURRET;
 								break;

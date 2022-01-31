@@ -1,6 +1,7 @@
 import Game from "../game/game";
 import RoomManager from "../game/room_manager";
 import Vec2 from "../util/vec2";
+import { Biome } from "./biome";
 import EntityManager from "./entity_manager";
 import ParticleManager from "./particle_manager";
 import TileManager from "./tile_manager";
@@ -13,12 +14,17 @@ export default class Room {
 	readonly entities: EntityManager;
 	readonly particles: ParticleManager;
 
+	readonly biome: Biome;
+
+	readonly difficulty: number;
 	visited: boolean;
 	cleared: boolean;
 
-	constructor(position: Vec2, manager: RoomManager) {
+	constructor(position: Vec2, manager: RoomManager, biome: Biome, difficulty: number) {
 		this.position = position;
 		this.manager = manager;
+		this.biome = biome;
+		this.difficulty = Math.floor(difficulty);
 		this.tiles = new TileManager(this);
 		this.entities = new EntityManager(this);
 		this.particles = new ParticleManager(this);
@@ -33,6 +39,8 @@ export default class Room {
 
 		if (this.entities.size() == 0)
 			this.cleared = true;
+		
+		console.log(this.difficulty)
 	}
 
 	has_door(direction: 'left' | 'right' | 'up' | 'down'): boolean {

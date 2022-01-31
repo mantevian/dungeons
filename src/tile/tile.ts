@@ -6,14 +6,14 @@ import Vec2 from "../util/vec2";
 export default class Tile {
 	manager: TileManager;
 	solid: boolean;
-	
+
 	readonly position: Vec2;
 	color: Color;
 
-	constructor(position: Vec2) {
+	constructor(position: Vec2, manager: TileManager) {
 		this.position = position;
-		this.color = Color.RGB(56, 49, 86);
-
+		this.manager = manager;
+		this.color = this.manager.room.biome.tile_color;
 		this.solid = false;
 	}
 

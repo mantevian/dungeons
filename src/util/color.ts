@@ -1,8 +1,8 @@
 export default class Color {
-	private red: number;
-	private green: number;
-	private blue: number;
-	private alpha: number;
+	private _red: number;
+	private _green: number;
+	private _blue: number;
+	private _alpha: number;
 
 	constructor(red: number, green: number, blue: number, alpha?: number) {
 		this.set_red(red);
@@ -20,48 +20,48 @@ export default class Color {
 	}
 
 	set_red(red: number): void {
-		this.red = Math.floor(Math.max(Math.min(red, 255), 0));
+		this._red = Math.floor(Math.max(Math.min(red, 255), 0));
 	}
 
 	set_green(green: number): void {
-		this.green = Math.floor(Math.max(Math.min(green, 255), 0));
+		this._green = Math.floor(Math.max(Math.min(green, 255), 0));
 	}
 
 	set_blue(blue: number): void {
-		this.blue = Math.floor(Math.max(Math.min(blue, 255), 0));
+		this._blue = Math.floor(Math.max(Math.min(blue, 255), 0));
 	}
 
 	set_alpha(alpha: number): void {
-		this.alpha = Math.floor(Math.max(Math.min(alpha, 255), 0));
+		this._alpha = Math.floor(Math.max(Math.min(alpha, 255), 0));
 	}
 
-	get_red(): number {
-		return this.red;
+	get red(): number {
+		return this._red;
 	}
 
-	get_green(): number {
-		return this.green;
+	get green(): number {
+		return this._green;
 	}
 
-	get_blue(): number {
-		return this.blue;
+	get blue(): number {
+		return this._blue;
 	}
 
-	get_alpha(): number {
-		return this.alpha;
+	get alpha(): number {
+		return this._alpha;
 	}
 
 	lighten(strength: number): Color {
 		strength = Math.max(Math.min(strength, 1), 0);
 		
-		let red = (this.get_red() * 2 + 255 * strength) / 2;
-		let green = (this.get_green() * 2 + 255 * strength) / 2;
-		let blue = (this.get_blue() * 2 + 255 * strength) / 2;
+		let red = (this.red * 2 + 255 * strength) / 2;
+		let green = (this.green * 2 + 255 * strength) / 2;
+		let blue = (this.blue * 2 + 255 * strength) / 2;
 
-		return new Color(red, green, blue, this.alpha);
+		return new Color(red, green, blue, this._alpha);
 	}
 
 	toString(): string {
-		return `${this.red},${this.green},${this.blue},${this.alpha}`;
+		return `${this._red},${this._green},${this._blue},${this._alpha}`;
 	}
 }

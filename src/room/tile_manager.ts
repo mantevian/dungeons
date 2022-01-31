@@ -28,14 +28,14 @@ export default class TileManager {
 			}
 
 		for (let i = 0; i < w; i++) {
-			this.set(new Wall(new Vec2(i, 0)));
-			this.set(new Wall(new Vec2(0, i)));
-			this.set(new Wall(new Vec2(i, w - 1)));
-			this.set(new Wall(new Vec2(w - 1, i)));
+			this.set(new Wall(new Vec2(i, 0), this));
+			this.set(new Wall(new Vec2(0, i), this));
+			this.set(new Wall(new Vec2(i, w - 1), this));
+			this.set(new Wall(new Vec2(w - 1, i), this));
 		}
 
 		for (let i = 0; i < this.random.next_int_ranged(6 + 2 * Math.abs(this.room.position.x) * Math.abs(this.room.position.y), 8 + 4 * Math.abs(this.room.position.x) * Math.abs(this.room.position.y)); i++)
-			this.set(new Wall(new Vec2(this.room.manager.game.random.next_int_ranged(2, w - 3), this.room.manager.game.random.next_int_ranged(2, w - 3))));
+			this.set(new Wall(new Vec2(this.room.manager.game.random.next_int_ranged(2, w - 3), this.room.manager.game.random.next_int_ranged(2, w - 3)), this));
 
 		this.pathfinder = new PF.AStarFinder();
 	}
@@ -59,7 +59,7 @@ export default class TileManager {
 
 	/** Remove a tile by its position */
 	clear(position: Vec2): void {
-		this.set(new Tile(position));
+		this.set(new Tile(position, this));
 	}
 
 	/** Return the tilemap */

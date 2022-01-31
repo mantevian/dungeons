@@ -14,9 +14,9 @@ export default class FlameParticle extends RectangleParticle {
 
 	tick(): void {
 		super.tick();
-		this.color.set_alpha(this.color.get_alpha() - 4);
-		this.color.set_green(this.color.get_green() - 4);
-		if (this.color.get_alpha() < 0)
+		this.color.set_alpha(this.color.alpha - 4);
+		this.color.set_green(this.color.green - 4);
+		if (this.color.alpha < 0)
 			this.destroy();
 	}
 }

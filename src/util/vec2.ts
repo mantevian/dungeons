@@ -144,4 +144,29 @@ export default class Vec2 {
 		let rad = angle * Math.PI / 180;
 		return new Vec2(Math.cos(rad * this.x) - Math.sin(rad * this.y), Math.cos(rad * this.x) + Math.sin(rad * this.y));
 	}
+
+	static from_direction(direction: 'left' | 'right' | 'up' | 'down'): Vec2 {
+		switch (direction) {
+			case 'left': return new Vec2(-1, 0);
+			case 'right': return new Vec2(1, 0);
+			case 'up': return new Vec2(0, -1);
+			case 'down': return new Vec2(0, 1);
+		}
+	}
+
+	left(): Vec2 {
+		return new Vec2(this.x - 1, this.y);
+	}
+
+	right(): Vec2 {
+		return new Vec2(this.x + 1, this.y);
+	}
+
+	up(): Vec2 {
+		return new Vec2(this.x, this.y - 1);
+	}
+
+	down(): Vec2 {
+		return new Vec2(this.x, this.y + 1);
+	}
 }

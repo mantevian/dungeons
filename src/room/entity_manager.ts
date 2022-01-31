@@ -20,23 +20,23 @@ export default class EntityManager {
 		this.entities = new Map<string, Entity>();
 		this.random = new Random();
 
-		for (let i = 0; i < this.random.next_int_ranged(0, 1) + this.random.next_int_ranged(0, Math.sqrt(this.room.position.x * this.room.position.x + this.room.position.y * this.room.position.y)); i++) {
+		for (let i = 0; i < this.random.next_int_ranged(0, 1) + this.random.next_int_ranged(0, this.room.difficulty); i++) {
 			let mob = this.random.weighted_random([
 				{
 					item: new Turret(),
-					weight: 3
+					weight: Math.max(4, 10 - this.room.difficulty) + this.room.biome.id == 'default' ? 5 : 0
 				},
 				{
 					item: new Swordsman(),
-					weight: 1
+					weight: Math.min(6, this.room.difficulty - 2) + this.room.biome.id == 'hell' ? 5 : 0
 				},
 				{
 					item: new Mage(),
-					weight: 1
+					weight: Math.min(6, this.room.difficulty - 1) + this.room.biome.id == 'desert' ? 5 : 0
 				},
 				{
 					item: new Archer(),
-					weight: 1
+					weight: Math.min(6, this.room.difficulty) + this.room.biome.id == 'snow' ? 5 : 0
 				}
 			]);
 			let w = Game.width;
