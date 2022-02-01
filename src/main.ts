@@ -1,5 +1,6 @@
 import P5 from "p5";
-import Game, { GameStates, PlayerClass } from "./game/game";
+import PlayerClasses, { PlayerClass } from "./entity/player_class";
+import Game, { GameStates } from "./game/game";
 import Color from "./util/color";
 
 const sketch = (p5: P5) => {
@@ -41,16 +42,24 @@ const sketch = (p5: P5) => {
 				p5.rectMode('corner');
 
 				p5.fill(64, 128, 64);
-				p5.rect(15, 5, 160, 40);
+				p5.rect(15, 5, 100 + game.player.max_health / 2, 40);
 
 				p5.fill(64, 256, 64);
-				p5.rect(20, 10, 150 * game.player.health / game.player.max_health, 30);
+				p5.rect(20, 10, (100 + game.player.max_health / 2) * game.player.health / game.player.max_health - 10, 30);
 
 				p5.fill(0, 0, 0);
 				p5.text(`${game.player.health} / ${game.player.max_health}`, 30, 32);
 
+				p5.fill(255, 255, 64);
+				p5.rect(20, 50, 25, 25, 25);
+
 				p5.fill(255, 255, 255);
-				p5.text(`XP: ${game.player.xp}`, 30, 70);
+				p5.text(game.player.gold, 55, 70);
+
+				p5.textSize(15);
+				p5.text(`vitality: ${game.player.vitality}`, 20, 210);
+				p5.text(`strength: ${game.player.strength}`, 20, 240);
+				p5.text(`intelligence: ${game.player.intelligence}`, 20, 270);
 				p5.pop();
 
 				state = game.state;
@@ -75,30 +84,50 @@ const sketch = (p5: P5) => {
 					.style('color', '#33ff33')
 					.style('background', '#5c4baa')
 					.mousePressed(() => {
-						let player_class: PlayerClass;
-
-						switch (selector.value()) {
-							case 'swordsman':
-								player_class = PlayerClass.SWORDSMAN;
-								break;
-
-							case 'mage':
-								player_class = PlayerClass.MAGE;
-								break;
-
-							case 'archer':
-								player_class = PlayerClass.ARCHER;
-								break;
-
-							default:
-								player_class = PlayerClass.TURRET;
-								break;
-						}
-
-						game = new Game(p5, player_class);
+						game = new Game(p5, selector.value().toString());
 						menu.remove();
 						state = GameStates.RUNNING;
 						p5.loop();
+
+						let upgrade_health_button = p5.createButton('+1 vitality & heal 20% ($5)')
+							.style('font-family', 'Montserrat')
+							.style('font-weight', '600')
+							.style('color', '#33ff33')
+							.style('background', '#5c4baa')
+							.position(1130, 200)
+							.mousePressed(() => {
+								if (game.player.gold >= 3) {
+									game.player.gold -= 3;
+									game.player.set_vitality(game.player.vitality + 1);
+									game.player.health += game.player.max_health * 0.2;
+								}
+							});
+
+						let upgrade_damage_button = p5.createButton('+1 strength ($3)')
+							.style('font-family', 'Montserrat')
+							.style('font-weight', '600')
+							.style('color', '#33ff33')
+							.style('background', '#5c4baa')
+							.position(1130, 230)
+							.mousePressed(() => {
+								if (game.player.gold >= 3) {
+									game.player.gold -= 3;
+									game.player.strength++;
+								}
+							});
+						
+						let upgrade_intelligence_button = p5.createButton('+1 intelligence ($3)')
+							.style('font-family', 'Montserrat')
+							.style('font-weight', '600')
+							.style('color', '#33ff33')
+							.style('background', '#5c4baa')
+							.position(1130, 260)
+							.mousePressed(() => {
+								if (game.player.gold >= 3) {
+									game.player.gold -= 3;
+									game.player.intelligence++;
+								}
+							});
 					});
 
 				menu = p5.createDiv()

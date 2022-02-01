@@ -21,6 +21,10 @@ export default class EntityManager {
 			if (!entry[1])
 				mob = Mobs.from_id(this.room.biome.next_mob());
 			mob.set_position(pos.add(new Vec2(0.5, 0.5)));
+
+			mob.max_health = Math.floor(mob.max_health * (1 + this.room.difficulty / 10));
+			mob.attack_damage = Math.floor(mob.attack_damage * (1 + this.room.difficulty / 10));
+
 			this.spawn(mob);
 		}
 	}

@@ -10,7 +10,7 @@ export default class Mage extends Mob {
 	constructor() {
 		super();
 
-		this.max_health = 30;
+		this.max_health = 20;
 		this.start_prepare_attack = 40;
 		this.attack_damage = 0;
 

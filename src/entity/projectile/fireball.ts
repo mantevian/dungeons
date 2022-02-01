@@ -11,15 +11,15 @@ export default class Fireball extends Projectile {
 	burn_level: number;
 	burn_speed: number;
 
-	constructor(parent: Entity, damage = 5) {
+	constructor(parent: Entity, damage = 5, burn_duration = 180, burn_speed = 30) {
 		super(parent, damage);
 
 		this.size = new Vec2(0.35, 0.35);
 		this.color = Color.RGB(255, 192, 0);
 		this.corner_radius = 0.5;
-		this.burn_duration = 180;
+		this.burn_duration = burn_duration;
 		this.burn_level = 1;
-		this.burn_speed = 30;
+		this.burn_speed = burn_speed;
 	}
 
 	tick(): void {

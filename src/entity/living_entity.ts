@@ -17,10 +17,6 @@ export default class LivingEntity extends Entity {
 	damage_invincibility_timer: number;
 	max_damage_invincibility_timer: number;
 
-	attack_damage: number;
-	prepare_attack: number;
-	start_prepare_attack: number;
-
 	last_attacker: Entity;
 
 	effects: StatusEffectManager;
@@ -38,10 +34,6 @@ export default class LivingEntity extends Entity {
 
 		this.health = 50;
 		this.max_health = 50;
-
-		this.attack_damage = 5;
-		this.prepare_attack = -1;
-		this.start_prepare_attack = 1;
 
 		this.max_damage_invincibility_timer = 20;
 		this.damage_invincibility_timer = 0;
@@ -65,12 +57,6 @@ export default class LivingEntity extends Entity {
 		}
 		else
 			this.moving = Vec2.zero();
-
-		if (this.prepare_attack > -1)
-			this.prepare_attack--;
-
-		if (this.prepare_attack == 0)
-			this.attack();
 
 		if (this.health > this.max_health)
 			this.health = this.max_health;
@@ -114,8 +100,7 @@ export default class LivingEntity extends Entity {
 	}
 
 	try_attack(): void {
-		this.prepare_attack = this.start_prepare_attack;
-		this.scale_over_time(1.1, this.start_prepare_attack);
+
 	}
 
 	attack(): void {

@@ -17,7 +17,7 @@ export default class BurnEffect extends StatusEffect {
 		super.tick();
 
 		if (this.ticks % this.speed == 0)
-			this.manager.owner.damage(this.damage);
+			this.manager.owner.damage(this.damage, null, 10);
 
 		if (this.ticks % Math.floor(this.speed / 3) == 0)
 			this.manager.owner.manager.room.particles.spawn(new FlameParticle(this.manager.owner.position, 0.05, this.manager.owner.manager.room.particles));

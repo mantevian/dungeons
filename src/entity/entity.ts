@@ -80,8 +80,14 @@ export default class Entity {
 
 		if (!this.noclip) {
 			for (let entity of this.manager.with_player().filter(e => !e.noclip)) {
-				if (this.collides_with_entity(entity) && !entity.equals(this.parent))
-					this.on_entity_collision(entity);
+				if (this.parent) {
+					if (this.collides_with_entity(entity) && !entity.equals(this.parent))
+						this.on_entity_collision(entity);
+				}
+				else {
+					if (this.collides_with_entity(entity))
+						this.on_entity_collision(entity);
+				}
 			}
 		}
 

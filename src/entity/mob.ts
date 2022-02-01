@@ -1,14 +1,19 @@
 import Renderer from "../game/renderer";
 import Color from "../util/color";
 import Vec2 from "../util/vec2";
+import Coin from "./coin";
+import entity from "./entity";
 import LivingEntity from "./living_entity";
 
 export default class Mob extends LivingEntity {
 	path: Array<Vec2>;
 	current_path_progress: number;
 
-	xp: number;
-	money: number;
+	attack_damage: number;
+	prepare_attack: number;
+	start_prepare_attack: number;
+
+	gold: number;
 
 	constructor() {
 		super();
@@ -24,12 +29,17 @@ export default class Mob extends LivingEntity {
 		this.path = new Array<Vec2>();
 		this.current_path_progress = 0;
 
-		this.xp = 1;
-		this.money = 1;
+		this.gold = 1;
 	}
 
 	tick(): void {
 		super.tick();
+
+		if (this.prepare_attack > -1)
+			this.prepare_attack--;
+
+		if (this.prepare_attack == 0)
+			this.attack();
 	}
 
 	render(): void {
@@ -41,6 +51,13 @@ export default class Mob extends LivingEntity {
 
 	update_path(): void {
 		this.current_path_progress = 1;
+	}
+
+	try_attack(): void {
+		super.try_attack();
+		
+		this.prepare_attack = this.start_prepare_attack;
+		this.scale_over_time(1.1, this.start_prepare_attack);
 	}
 
 	walk(): void {
@@ -61,5 +78,12 @@ export default class Mob extends LivingEntity {
 		else
 			this.current_path_progress = 0;
 	}
-}
 
+	destroy(source?: entity): void {
+		let coin = new Coin(this.gold);
+		coin.set_position(this.position);
+		this.manager.spawn(coin);
+
+		super.destroy(source);
+	}
+}

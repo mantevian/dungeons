@@ -8,7 +8,7 @@ export default class Turret extends Mob {
 	constructor() {
 		super();
 
-		this.max_health = 25;
+		this.max_health = 20;
 		this.start_prepare_attack = 30;
 		this.attack_damage = 4;
 
@@ -23,7 +23,7 @@ export default class Turret extends Mob {
 		if (this.lifetime % 45 == 0)
 			this.walk();
 
-		if (this.lifetime % 75 == 0)
+		if (this.lifetime % 90 == 0)
 			this.try_attack();
 	}
 

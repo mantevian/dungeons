@@ -1,16 +1,10 @@
 import p5 from "p5";
 import Player from "../entity/player";
+import { PlayerClass } from "../entity/player_class";
 import Random from "../util/random";
 import Vec2 from "../util/vec2";
 import Renderer from "./renderer";
 import RoomManager from "./room_manager";
-
-export enum PlayerClass {
-	TURRET = 'turret',
-	SWORDSMAN = 'swordsman',
-	MAGE = 'mage',
-	ARCHER = 'archer'
-}
 
 export enum GameStates {
 	MENU = 'menu',
@@ -28,13 +22,13 @@ export default class Game {
 	static readonly center = this.width / 2;
 
 	state: GameStates
-	player_class: PlayerClass;
+	player_class: string;
 
 	keys_down: Map<string, number>;
 
 	mouse_pos: Vec2;
 
-	constructor(p5: p5, player_class: PlayerClass) {
+	constructor(p5: p5, player_class: string) {
 		this.random = new Random();
 		this.room_manager = new RoomManager(this);
 		this.time = 0;
