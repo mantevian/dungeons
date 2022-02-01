@@ -29254,7 +29254,7 @@ var Renderer = /*#__PURE__*/function () {
           var room = _step.value;
           var color = void 0;
           color = room.biome.map_color;
-          this.p5.fill(color.red, color.green, color.blue, room.visited ? 255 : 128);
+          this.p5.fill(color.red, color.green, color.blue, room.visited ? 255 : 140);
           this.p5.rect(room.position.x * 20, room.position.y * 20, 15, 15);
           this.p5.fill(64, 64, 64);
           this.p5.rect(room.position.x * 20 + 2, room.position.y * 20 + 2, 11, 11);
@@ -31416,11 +31416,11 @@ exports.default = Player;
 },{"../game/game":"src/game/game.ts","../game/renderer":"src/game/renderer.ts","../util/color":"src/util/color.ts","../util/vec2":"src/util/vec2.ts","./living_entity":"src/entity/living_entity.ts","./mob":"src/entity/mob.ts","./projectile/arrow":"src/entity/projectile/arrow.ts","./projectile/bullet":"src/entity/projectile/bullet.ts","./projectile/fireball":"src/entity/projectile/fireball.ts","./projectile/sword":"src/entity/projectile/sword.ts"}],"src/room/biome.ts":[function(require,module,exports) {
 "use strict";
 
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
 function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
 
 function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); Object.defineProperty(Constructor, "prototype", { writable: false }); return Constructor; }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 var __importDefault = this && this.__importDefault || function (mod) {
   return mod && mod.__esModule ? mod : {
@@ -31435,327 +31435,72 @@ exports.Biome = void 0;
 
 var color_1 = __importDefault(require("../util/color"));
 
-var Biome = /*#__PURE__*/_createClass(function Biome(id, difficulty, background_color, tile_color, wall_color, map_color) {
-  _classCallCheck(this, Biome);
+var random_1 = __importDefault(require("../util/random"));
 
-  this.id = id;
-  this.difficulty = difficulty;
-  this.background_color = background_color;
-  this.tile_color = tile_color;
-  this.wall_color = wall_color;
-  this.map_color = map_color;
-});
+var Biome = /*#__PURE__*/function () {
+  function Biome(id, difficulty, background_color, tile_color, wall_color, map_color, mob_picker) {
+    _classCallCheck(this, Biome);
+
+    this.id = id;
+    this.difficulty = difficulty;
+    this.background_color = background_color;
+    this.tile_color = tile_color;
+    this.wall_color = wall_color;
+    this.map_color = map_color;
+    this.mob_picker = mob_picker;
+    this.random = new random_1.default();
+  }
+
+  _createClass(Biome, [{
+    key: "next_mob",
+    value: function next_mob() {
+      return this.random.weighted_random(this.mob_picker);
+    }
+  }]);
+
+  return Biome;
+}();
 
 exports.Biome = Biome;
 var Biomes = {
-  DEFAULT: new Biome('default', 1, color_1.default.RGB(37, 33, 53), color_1.default.RGB(56, 49, 86), color_1.default.RGB(92, 75, 170), color_1.default.RGB(180, 100, 255)),
-  FOREST: new Biome('forest', 1.2, color_1.default.RGB(27, 53, 31), color_1.default.RGB(32, 82, 42), color_1.default.RGB(61, 170, 68), color_1.default.RGB(120, 255, 120)),
-  DESERT: new Biome('desert', 1.42, color_1.default.RGB(53, 49, 27), color_1.default.RGB(86, 80, 32), color_1.default.RGB(170, 140, 64), color_1.default.RGB(255, 220, 64)),
-  SNOW: new Biome('snow', 1.65, color_1.default.RGB(42, 45, 61), color_1.default.RGB(60, 66, 95), color_1.default.RGB(130, 140, 180), color_1.default.RGB(150, 160, 255)),
-  HELL: new Biome('hell', 2.0, color_1.default.RGB(53, 33, 21), color_1.default.RGB(86, 49, 24), color_1.default.RGB(170, 92, 49), color_1.default.RGB(255, 130, 49))
+  DEFAULT: new Biome('default', 1, color_1.default.RGB(37, 33, 53), color_1.default.RGB(56, 49, 86), color_1.default.RGB(92, 75, 170), color_1.default.RGB(180, 100, 255), [{
+    item: 'turret',
+    weight: 5
+  }, {
+    item: 'swordsman',
+    weight: 1
+  }]),
+  FOREST: new Biome('forest', 1.2, color_1.default.RGB(53, 43, 38), color_1.default.RGB(82, 65, 58), color_1.default.RGB(61, 170, 68), color_1.default.RGB(120, 255, 120), [{
+    item: 'turret',
+    weight: 2
+  }, {
+    item: 'archer',
+    weight: 4
+  }]),
+  DESERT: new Biome('desert', 1.42, color_1.default.RGB(53, 49, 27), color_1.default.RGB(86, 80, 32), color_1.default.RGB(170, 140, 64), color_1.default.RGB(255, 220, 64), [{
+    item: 'archer',
+    weight: 1
+  }, {
+    item: 'mage',
+    weight: 2
+  }]),
+  SNOW: new Biome('snow', 1.65, color_1.default.RGB(34, 36, 56), color_1.default.RGB(56, 60, 95), color_1.default.RGB(130, 140, 180), color_1.default.RGB(155, 165, 255), [{
+    item: 'turret',
+    weight: 5
+  }, {
+    item: 'swordsman',
+    weight: 5
+  }]),
+  HELL: new Biome('hell', 2.0, color_1.default.RGB(53, 33, 21), color_1.default.RGB(86, 49, 24), color_1.default.RGB(170, 92, 49), color_1.default.RGB(255, 130, 49), [{
+    item: 'swordsman',
+    weight: 1
+  }, {
+    item: 'mage',
+    weight: 1
+  }])
 };
 exports.default = Biomes;
-},{"../util/color":"src/util/color.ts"}],"src/entity/mob/turret.ts":[function(require,module,exports) {
-"use strict";
-
-function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
-
-function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); Object.defineProperty(Constructor, "prototype", { writable: false }); return Constructor; }
-
-function _get() { if (typeof Reflect !== "undefined" && Reflect.get) { _get = Reflect.get; } else { _get = function _get(target, property, receiver) { var base = _superPropBase(target, property); if (!base) return; var desc = Object.getOwnPropertyDescriptor(base, property); if (desc.get) { return desc.get.call(arguments.length < 3 ? target : receiver); } return desc.value; }; } return _get.apply(this, arguments); }
-
-function _superPropBase(object, property) { while (!Object.prototype.hasOwnProperty.call(object, property)) { object = _getPrototypeOf(object); if (object === null) break; } return object; }
-
-function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); Object.defineProperty(subClass, "prototype", { writable: false }); if (superClass) _setPrototypeOf(subClass, superClass); }
-
-function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
-
-function _createSuper(Derived) { var hasNativeReflectConstruct = _isNativeReflectConstruct(); return function _createSuperInternal() { var Super = _getPrototypeOf(Derived), result; if (hasNativeReflectConstruct) { var NewTarget = _getPrototypeOf(this).constructor; result = Reflect.construct(Super, arguments, NewTarget); } else { result = Super.apply(this, arguments); } return _possibleConstructorReturn(this, result); }; }
-
-function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } else if (call !== void 0) { throw new TypeError("Derived constructors may only return object or undefined"); } return _assertThisInitialized(self); }
-
-function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
-
-function _isNativeReflectConstruct() { if (typeof Reflect === "undefined" || !Reflect.construct) return false; if (Reflect.construct.sham) return false; if (typeof Proxy === "function") return true; try { Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function () {})); return true; } catch (e) { return false; } }
-
-function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
-
-var __importDefault = this && this.__importDefault || function (mod) {
-  return mod && mod.__esModule ? mod : {
-    "default": mod
-  };
-};
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-
-var renderer_1 = __importDefault(require("../../game/renderer"));
-
-var color_1 = __importDefault(require("../../util/color"));
-
-var vec2_1 = __importDefault(require("../../util/vec2"));
-
-var mob_1 = __importDefault(require("../mob"));
-
-var bullet_1 = __importDefault(require("../projectile/bullet"));
-
-var Turret = /*#__PURE__*/function (_mob_1$default) {
-  _inherits(Turret, _mob_1$default);
-
-  var _super = _createSuper(Turret);
-
-  function Turret() {
-    var _this;
-
-    _classCallCheck(this, Turret);
-
-    _this = _super.call(this);
-    _this.max_health = 25;
-    _this.start_prepare_attack = 30;
-    _this.attack_damage = 4;
-    _this.color = color_1.default.RGB(64, 92, 255);
-    return _this;
-  }
-
-  _createClass(Turret, [{
-    key: "tick",
-    value: function tick() {
-      _get(_getPrototypeOf(Turret.prototype), "tick", this).call(this);
-
-      this.look(renderer_1.default.canvas_coords(this.manager.room.manager.game.player.position));
-      if (this.lifetime % 45 == 0) this.walk();
-      if (this.lifetime % 75 == 0) this.try_attack();
-    }
-  }, {
-    key: "attack",
-    value: function attack() {
-      this.manager.spawn_projectile(new bullet_1.default(this, this.attack_damage), this.facing, 0.3, this.position);
-      this.scale = 1.1;
-      this.scale_over_time(1, 10);
-    }
-  }, {
-    key: "update_path",
-    value: function update_path() {
-      _get(_getPrototypeOf(Turret.prototype), "update_path", this).call(this);
-
-      this.path = this.manager.room.tiles.find_path(this.position, this.manager.room.manager.game.player.position.add(new vec2_1.default(this.manager.random.next_int_ranged(-1, 1), this.manager.random.next_int_ranged(-1, 1))));
-    }
-  }]);
-
-  return Turret;
-}(mob_1.default);
-
-exports.default = Turret;
-},{"../../game/renderer":"src/game/renderer.ts","../../util/color":"src/util/color.ts","../../util/vec2":"src/util/vec2.ts","../mob":"src/entity/mob.ts","../projectile/bullet":"src/entity/projectile/bullet.ts"}],"src/entity/mob/swordsman.ts":[function(require,module,exports) {
-"use strict";
-
-function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
-
-function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); Object.defineProperty(Constructor, "prototype", { writable: false }); return Constructor; }
-
-function _get() { if (typeof Reflect !== "undefined" && Reflect.get) { _get = Reflect.get; } else { _get = function _get(target, property, receiver) { var base = _superPropBase(target, property); if (!base) return; var desc = Object.getOwnPropertyDescriptor(base, property); if (desc.get) { return desc.get.call(arguments.length < 3 ? target : receiver); } return desc.value; }; } return _get.apply(this, arguments); }
-
-function _superPropBase(object, property) { while (!Object.prototype.hasOwnProperty.call(object, property)) { object = _getPrototypeOf(object); if (object === null) break; } return object; }
-
-function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); Object.defineProperty(subClass, "prototype", { writable: false }); if (superClass) _setPrototypeOf(subClass, superClass); }
-
-function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
-
-function _createSuper(Derived) { var hasNativeReflectConstruct = _isNativeReflectConstruct(); return function _createSuperInternal() { var Super = _getPrototypeOf(Derived), result; if (hasNativeReflectConstruct) { var NewTarget = _getPrototypeOf(this).constructor; result = Reflect.construct(Super, arguments, NewTarget); } else { result = Super.apply(this, arguments); } return _possibleConstructorReturn(this, result); }; }
-
-function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } else if (call !== void 0) { throw new TypeError("Derived constructors may only return object or undefined"); } return _assertThisInitialized(self); }
-
-function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
-
-function _isNativeReflectConstruct() { if (typeof Reflect === "undefined" || !Reflect.construct) return false; if (Reflect.construct.sham) return false; if (typeof Proxy === "function") return true; try { Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function () {})); return true; } catch (e) { return false; } }
-
-function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
-
-var __importDefault = this && this.__importDefault || function (mod) {
-  return mod && mod.__esModule ? mod : {
-    "default": mod
-  };
-};
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-
-var renderer_1 = __importDefault(require("../../game/renderer"));
-
-var color_1 = __importDefault(require("../../util/color"));
-
-var vec2_1 = __importDefault(require("../../util/vec2"));
-
-var mob_1 = __importDefault(require("../mob"));
-
-var sword_1 = __importDefault(require("../projectile/sword"));
-
-var Swordsman = /*#__PURE__*/function (_mob_1$default) {
-  _inherits(Swordsman, _mob_1$default);
-
-  var _super = _createSuper(Swordsman);
-
-  function Swordsman() {
-    var _this;
-
-    _classCallCheck(this, Swordsman);
-
-    _this = _super.call(this);
-    _this.color = color_1.default.RGB(210, 160, 120);
-    _this.size = new vec2_1.default(0.85, 0.85);
-    _this.corner_radius = 0.1;
-    _this.max_health = 45;
-    _this.health = 45;
-    _this.start_prepare_attack = 10;
-    _this.attack_damage = 6;
-    _this.xp = 3;
-    _this.money = 3;
-    return _this;
-  }
-
-  _createClass(Swordsman, [{
-    key: "tick",
-    value: function tick() {
-      _get(_getPrototypeOf(Swordsman.prototype), "tick", this).call(this);
-
-      this.look(renderer_1.default.canvas_coords(this.manager.room.manager.game.player.position));
-      if (this.lifetime % 120 == 0) this.walk();
-      if (this.lifetime % 120 == 0) this.try_attack();
-    }
-  }, {
-    key: "attack",
-    value: function attack() {
-      this.manager.spawn_projectile(new sword_1.default(this, this.attack_damage), this.facing);
-      this.scale = 1.1;
-      this.scale_over_time(1, 10);
-      this.move(vec2_1.default.step(vec2_1.default.from_angle(this.facing)));
-    }
-  }, {
-    key: "update_path",
-    value: function update_path() {
-      _get(_getPrototypeOf(Swordsman.prototype), "update_path", this).call(this);
-
-      this.path = this.manager.room.tiles.find_path(this.position, this.manager.room.manager.game.player.position);
-    }
-  }]);
-
-  return Swordsman;
-}(mob_1.default);
-
-exports.default = Swordsman;
-},{"../../game/renderer":"src/game/renderer.ts","../../util/color":"src/util/color.ts","../../util/vec2":"src/util/vec2.ts","../mob":"src/entity/mob.ts","../projectile/sword":"src/entity/projectile/sword.ts"}],"src/entity/mob/mage.ts":[function(require,module,exports) {
-"use strict";
-
-function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
-
-function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); Object.defineProperty(Constructor, "prototype", { writable: false }); return Constructor; }
-
-function _get() { if (typeof Reflect !== "undefined" && Reflect.get) { _get = Reflect.get; } else { _get = function _get(target, property, receiver) { var base = _superPropBase(target, property); if (!base) return; var desc = Object.getOwnPropertyDescriptor(base, property); if (desc.get) { return desc.get.call(arguments.length < 3 ? target : receiver); } return desc.value; }; } return _get.apply(this, arguments); }
-
-function _superPropBase(object, property) { while (!Object.prototype.hasOwnProperty.call(object, property)) { object = _getPrototypeOf(object); if (object === null) break; } return object; }
-
-function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); Object.defineProperty(subClass, "prototype", { writable: false }); if (superClass) _setPrototypeOf(subClass, superClass); }
-
-function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
-
-function _createSuper(Derived) { var hasNativeReflectConstruct = _isNativeReflectConstruct(); return function _createSuperInternal() { var Super = _getPrototypeOf(Derived), result; if (hasNativeReflectConstruct) { var NewTarget = _getPrototypeOf(this).constructor; result = Reflect.construct(Super, arguments, NewTarget); } else { result = Super.apply(this, arguments); } return _possibleConstructorReturn(this, result); }; }
-
-function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } else if (call !== void 0) { throw new TypeError("Derived constructors may only return object or undefined"); } return _assertThisInitialized(self); }
-
-function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
-
-function _isNativeReflectConstruct() { if (typeof Reflect === "undefined" || !Reflect.construct) return false; if (Reflect.construct.sham) return false; if (typeof Proxy === "function") return true; try { Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function () {})); return true; } catch (e) { return false; } }
-
-function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
-
-var __importDefault = this && this.__importDefault || function (mod) {
-  return mod && mod.__esModule ? mod : {
-    "default": mod
-  };
-};
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-
-var renderer_1 = __importDefault(require("../../game/renderer"));
-
-var color_1 = __importDefault(require("../../util/color"));
-
-var vec2_1 = __importDefault(require("../../util/vec2"));
-
-var mob_1 = __importDefault(require("../mob"));
-
-var fireball_1 = __importDefault(require("../projectile/fireball"));
-
-var Mage = /*#__PURE__*/function (_mob_1$default) {
-  _inherits(Mage, _mob_1$default);
-
-  var _super = _createSuper(Mage);
-
-  function Mage() {
-    var _this;
-
-    _classCallCheck(this, Mage);
-
-    _this = _super.call(this);
-    _this.max_health = 30;
-    _this.start_prepare_attack = 40;
-    _this.attack_damage = 0;
-    _this.corner_radius = 0.3;
-    _this.color = color_1.default.RGB(255, 128, 16);
-    _this.random_recharge = 0;
-    return _this;
-  }
-
-  _createClass(Mage, [{
-    key: "tick",
-    value: function tick() {
-      _get(_getPrototypeOf(Mage.prototype), "tick", this).call(this);
-
-      this.look(renderer_1.default.canvas_coords(this.manager.room.manager.game.player.position));
-      if (this.lifetime % 90 == 0) this.walk();
-
-      if (this.lifetime % (45 + this.random_recharge) == 0) {
-        this.try_attack();
-        this.random_recharge = this.manager.random.next_int_ranged(0, 45);
-      }
-    }
-  }, {
-    key: "attack",
-    value: function attack() {
-      this.manager.spawn_projectile(new fireball_1.default(this, this.attack_damage), this.facing, 0.15, this.position);
-      this.scale = 1.1;
-      this.scale_over_time(1, 10);
-    }
-  }, {
-    key: "update_path",
-    value: function update_path() {
-      _get(_getPrototypeOf(Mage.prototype), "update_path", this).call(this);
-
-      this.path = this.manager.room.tiles.find_path(this.position, this.manager.room.manager.game.player.position.add(new vec2_1.default(this.manager.random.next_int_ranged(-1, 1), this.manager.random.next_int_ranged(-1, 1))));
-    }
-  }]);
-
-  return Mage;
-}(mob_1.default);
-
-exports.default = Mage;
-},{"../../game/renderer":"src/game/renderer.ts","../../util/color":"src/util/color.ts","../../util/vec2":"src/util/vec2.ts","../mob":"src/entity/mob.ts","../projectile/fireball":"src/entity/projectile/fireball.ts"}],"src/entity/mob/archer.ts":[function(require,module,exports) {
+},{"../util/color":"src/util/color.ts","../util/random":"src/util/random.ts"}],"src/entity/mob/archer.ts":[function(require,module,exports) {
 "use strict";
 
 function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
@@ -31861,20 +31606,394 @@ var Archer = /*#__PURE__*/function (_mob_1$default) {
 }(mob_1.default);
 
 exports.default = Archer;
-},{"../../game/renderer":"src/game/renderer.ts","../../util/color":"src/util/color.ts","../../util/vec2":"src/util/vec2.ts","../mob":"src/entity/mob.ts","../projectile/arrow":"src/entity/projectile/arrow.ts"}],"src/room/entity_manager.ts":[function(require,module,exports) {
+},{"../../game/renderer":"src/game/renderer.ts","../../util/color":"src/util/color.ts","../../util/vec2":"src/util/vec2.ts","../mob":"src/entity/mob.ts","../projectile/arrow":"src/entity/projectile/arrow.ts"}],"src/entity/mob/mage.ts":[function(require,module,exports) {
 "use strict";
 
-function _createForOfIteratorHelper(o, allowArrayLike) { var it = typeof Symbol !== "undefined" && o[Symbol.iterator] || o["@@iterator"]; if (!it) { if (Array.isArray(o) || (it = _unsupportedIterableToArray(o)) || allowArrayLike && o && typeof o.length === "number") { if (it) o = it; var i = 0; var F = function F() {}; return { s: F, n: function n() { if (i >= o.length) return { done: true }; return { done: false, value: o[i++] }; }, e: function e(_e) { throw _e; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var normalCompletion = true, didErr = false, err; return { s: function s() { it = it.call(o); }, n: function n() { var step = it.next(); normalCompletion = step.done; return step; }, e: function e(_e2) { didErr = true; err = _e2; }, f: function f() { try { if (!normalCompletion && it.return != null) it.return(); } finally { if (didErr) throw err; } } }; }
+function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); Object.defineProperty(Constructor, "prototype", { writable: false }); return Constructor; }
+
+function _get() { if (typeof Reflect !== "undefined" && Reflect.get) { _get = Reflect.get; } else { _get = function _get(target, property, receiver) { var base = _superPropBase(target, property); if (!base) return; var desc = Object.getOwnPropertyDescriptor(base, property); if (desc.get) { return desc.get.call(arguments.length < 3 ? target : receiver); } return desc.value; }; } return _get.apply(this, arguments); }
+
+function _superPropBase(object, property) { while (!Object.prototype.hasOwnProperty.call(object, property)) { object = _getPrototypeOf(object); if (object === null) break; } return object; }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); Object.defineProperty(subClass, "prototype", { writable: false }); if (superClass) _setPrototypeOf(subClass, superClass); }
+
+function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
+
+function _createSuper(Derived) { var hasNativeReflectConstruct = _isNativeReflectConstruct(); return function _createSuperInternal() { var Super = _getPrototypeOf(Derived), result; if (hasNativeReflectConstruct) { var NewTarget = _getPrototypeOf(this).constructor; result = Reflect.construct(Super, arguments, NewTarget); } else { result = Super.apply(this, arguments); } return _possibleConstructorReturn(this, result); }; }
+
+function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } else if (call !== void 0) { throw new TypeError("Derived constructors may only return object or undefined"); } return _assertThisInitialized(self); }
+
+function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
+
+function _isNativeReflectConstruct() { if (typeof Reflect === "undefined" || !Reflect.construct) return false; if (Reflect.construct.sham) return false; if (typeof Proxy === "function") return true; try { Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function () {})); return true; } catch (e) { return false; } }
+
+function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
+
+var __importDefault = this && this.__importDefault || function (mod) {
+  return mod && mod.__esModule ? mod : {
+    "default": mod
+  };
+};
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var renderer_1 = __importDefault(require("../../game/renderer"));
+
+var color_1 = __importDefault(require("../../util/color"));
+
+var vec2_1 = __importDefault(require("../../util/vec2"));
+
+var mob_1 = __importDefault(require("../mob"));
+
+var fireball_1 = __importDefault(require("../projectile/fireball"));
+
+var Mage = /*#__PURE__*/function (_mob_1$default) {
+  _inherits(Mage, _mob_1$default);
+
+  var _super = _createSuper(Mage);
+
+  function Mage() {
+    var _this;
+
+    _classCallCheck(this, Mage);
+
+    _this = _super.call(this);
+    _this.max_health = 30;
+    _this.start_prepare_attack = 40;
+    _this.attack_damage = 0;
+    _this.corner_radius = 0.3;
+    _this.color = color_1.default.RGB(255, 128, 16);
+    _this.random_recharge = 0;
+    return _this;
+  }
+
+  _createClass(Mage, [{
+    key: "tick",
+    value: function tick() {
+      _get(_getPrototypeOf(Mage.prototype), "tick", this).call(this);
+
+      this.look(renderer_1.default.canvas_coords(this.manager.room.manager.game.player.position));
+      if (this.lifetime % 90 == 0) this.walk();
+
+      if (this.lifetime % (45 + this.random_recharge) == 0) {
+        this.try_attack();
+        this.random_recharge = this.manager.random.next_int_ranged(0, 45);
+      }
+    }
+  }, {
+    key: "attack",
+    value: function attack() {
+      this.manager.spawn_projectile(new fireball_1.default(this, this.attack_damage), this.facing, 0.15, this.position);
+      this.scale = 1.1;
+      this.scale_over_time(1, 10);
+    }
+  }, {
+    key: "update_path",
+    value: function update_path() {
+      _get(_getPrototypeOf(Mage.prototype), "update_path", this).call(this);
+
+      this.path = this.manager.room.tiles.find_path(this.position, this.manager.room.manager.game.player.position.add(new vec2_1.default(this.manager.random.next_int_ranged(-1, 1), this.manager.random.next_int_ranged(-1, 1))));
+    }
+  }]);
+
+  return Mage;
+}(mob_1.default);
+
+exports.default = Mage;
+},{"../../game/renderer":"src/game/renderer.ts","../../util/color":"src/util/color.ts","../../util/vec2":"src/util/vec2.ts","../mob":"src/entity/mob.ts","../projectile/fireball":"src/entity/projectile/fireball.ts"}],"src/entity/mob/swordsman.ts":[function(require,module,exports) {
+"use strict";
+
+function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); Object.defineProperty(Constructor, "prototype", { writable: false }); return Constructor; }
+
+function _get() { if (typeof Reflect !== "undefined" && Reflect.get) { _get = Reflect.get; } else { _get = function _get(target, property, receiver) { var base = _superPropBase(target, property); if (!base) return; var desc = Object.getOwnPropertyDescriptor(base, property); if (desc.get) { return desc.get.call(arguments.length < 3 ? target : receiver); } return desc.value; }; } return _get.apply(this, arguments); }
+
+function _superPropBase(object, property) { while (!Object.prototype.hasOwnProperty.call(object, property)) { object = _getPrototypeOf(object); if (object === null) break; } return object; }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); Object.defineProperty(subClass, "prototype", { writable: false }); if (superClass) _setPrototypeOf(subClass, superClass); }
+
+function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
+
+function _createSuper(Derived) { var hasNativeReflectConstruct = _isNativeReflectConstruct(); return function _createSuperInternal() { var Super = _getPrototypeOf(Derived), result; if (hasNativeReflectConstruct) { var NewTarget = _getPrototypeOf(this).constructor; result = Reflect.construct(Super, arguments, NewTarget); } else { result = Super.apply(this, arguments); } return _possibleConstructorReturn(this, result); }; }
+
+function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } else if (call !== void 0) { throw new TypeError("Derived constructors may only return object or undefined"); } return _assertThisInitialized(self); }
+
+function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
+
+function _isNativeReflectConstruct() { if (typeof Reflect === "undefined" || !Reflect.construct) return false; if (Reflect.construct.sham) return false; if (typeof Proxy === "function") return true; try { Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function () {})); return true; } catch (e) { return false; } }
+
+function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
+
+var __importDefault = this && this.__importDefault || function (mod) {
+  return mod && mod.__esModule ? mod : {
+    "default": mod
+  };
+};
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var renderer_1 = __importDefault(require("../../game/renderer"));
+
+var color_1 = __importDefault(require("../../util/color"));
+
+var vec2_1 = __importDefault(require("../../util/vec2"));
+
+var mob_1 = __importDefault(require("../mob"));
+
+var sword_1 = __importDefault(require("../projectile/sword"));
+
+var Swordsman = /*#__PURE__*/function (_mob_1$default) {
+  _inherits(Swordsman, _mob_1$default);
+
+  var _super = _createSuper(Swordsman);
+
+  function Swordsman() {
+    var _this;
+
+    _classCallCheck(this, Swordsman);
+
+    _this = _super.call(this);
+    _this.color = color_1.default.RGB(210, 160, 120);
+    _this.size = new vec2_1.default(0.85, 0.85);
+    _this.corner_radius = 0.1;
+    _this.max_health = 45;
+    _this.health = 45;
+    _this.start_prepare_attack = 10;
+    _this.attack_damage = 6;
+    _this.xp = 3;
+    _this.money = 3;
+    return _this;
+  }
+
+  _createClass(Swordsman, [{
+    key: "tick",
+    value: function tick() {
+      _get(_getPrototypeOf(Swordsman.prototype), "tick", this).call(this);
+
+      this.look(renderer_1.default.canvas_coords(this.manager.room.manager.game.player.position));
+      if (this.lifetime % 120 == 0) this.walk();
+      if (this.lifetime % 120 == 0) this.try_attack();
+    }
+  }, {
+    key: "attack",
+    value: function attack() {
+      this.manager.spawn_projectile(new sword_1.default(this, this.attack_damage), this.facing);
+      this.scale = 1.1;
+      this.scale_over_time(1, 10);
+      this.move(vec2_1.default.step(vec2_1.default.from_angle(this.facing)));
+    }
+  }, {
+    key: "update_path",
+    value: function update_path() {
+      _get(_getPrototypeOf(Swordsman.prototype), "update_path", this).call(this);
+
+      this.path = this.manager.room.tiles.find_path(this.position, this.manager.room.manager.game.player.position);
+    }
+  }]);
+
+  return Swordsman;
+}(mob_1.default);
+
+exports.default = Swordsman;
+},{"../../game/renderer":"src/game/renderer.ts","../../util/color":"src/util/color.ts","../../util/vec2":"src/util/vec2.ts","../mob":"src/entity/mob.ts","../projectile/sword":"src/entity/projectile/sword.ts"}],"src/entity/mob/turret.ts":[function(require,module,exports) {
+"use strict";
+
+function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); Object.defineProperty(Constructor, "prototype", { writable: false }); return Constructor; }
+
+function _get() { if (typeof Reflect !== "undefined" && Reflect.get) { _get = Reflect.get; } else { _get = function _get(target, property, receiver) { var base = _superPropBase(target, property); if (!base) return; var desc = Object.getOwnPropertyDescriptor(base, property); if (desc.get) { return desc.get.call(arguments.length < 3 ? target : receiver); } return desc.value; }; } return _get.apply(this, arguments); }
+
+function _superPropBase(object, property) { while (!Object.prototype.hasOwnProperty.call(object, property)) { object = _getPrototypeOf(object); if (object === null) break; } return object; }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); Object.defineProperty(subClass, "prototype", { writable: false }); if (superClass) _setPrototypeOf(subClass, superClass); }
+
+function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
+
+function _createSuper(Derived) { var hasNativeReflectConstruct = _isNativeReflectConstruct(); return function _createSuperInternal() { var Super = _getPrototypeOf(Derived), result; if (hasNativeReflectConstruct) { var NewTarget = _getPrototypeOf(this).constructor; result = Reflect.construct(Super, arguments, NewTarget); } else { result = Super.apply(this, arguments); } return _possibleConstructorReturn(this, result); }; }
+
+function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } else if (call !== void 0) { throw new TypeError("Derived constructors may only return object or undefined"); } return _assertThisInitialized(self); }
+
+function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
+
+function _isNativeReflectConstruct() { if (typeof Reflect === "undefined" || !Reflect.construct) return false; if (Reflect.construct.sham) return false; if (typeof Proxy === "function") return true; try { Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function () {})); return true; } catch (e) { return false; } }
+
+function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
+
+var __importDefault = this && this.__importDefault || function (mod) {
+  return mod && mod.__esModule ? mod : {
+    "default": mod
+  };
+};
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var renderer_1 = __importDefault(require("../../game/renderer"));
+
+var color_1 = __importDefault(require("../../util/color"));
+
+var vec2_1 = __importDefault(require("../../util/vec2"));
+
+var mob_1 = __importDefault(require("../mob"));
+
+var bullet_1 = __importDefault(require("../projectile/bullet"));
+
+var Turret = /*#__PURE__*/function (_mob_1$default) {
+  _inherits(Turret, _mob_1$default);
+
+  var _super = _createSuper(Turret);
+
+  function Turret() {
+    var _this;
+
+    _classCallCheck(this, Turret);
+
+    _this = _super.call(this);
+    _this.max_health = 25;
+    _this.start_prepare_attack = 30;
+    _this.attack_damage = 4;
+    _this.color = color_1.default.RGB(64, 92, 255);
+    return _this;
+  }
+
+  _createClass(Turret, [{
+    key: "tick",
+    value: function tick() {
+      _get(_getPrototypeOf(Turret.prototype), "tick", this).call(this);
+
+      this.look(renderer_1.default.canvas_coords(this.manager.room.manager.game.player.position));
+      if (this.lifetime % 45 == 0) this.walk();
+      if (this.lifetime % 75 == 0) this.try_attack();
+    }
+  }, {
+    key: "attack",
+    value: function attack() {
+      this.manager.spawn_projectile(new bullet_1.default(this, this.attack_damage), this.facing, 0.3, this.position);
+      this.scale = 1.1;
+      this.scale_over_time(1, 10);
+    }
+  }, {
+    key: "update_path",
+    value: function update_path() {
+      _get(_getPrototypeOf(Turret.prototype), "update_path", this).call(this);
+
+      this.path = this.manager.room.tiles.find_path(this.position, this.manager.room.manager.game.player.position.add(new vec2_1.default(this.manager.random.next_int_ranged(-1, 1), this.manager.random.next_int_ranged(-1, 1))));
+    }
+  }]);
+
+  return Turret;
+}(mob_1.default);
+
+exports.default = Turret;
+},{"../../game/renderer":"src/game/renderer.ts","../../util/color":"src/util/color.ts","../../util/vec2":"src/util/vec2.ts","../mob":"src/entity/mob.ts","../projectile/bullet":"src/entity/projectile/bullet.ts"}],"src/entity/mobs.ts":[function(require,module,exports) {
+"use strict";
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); Object.defineProperty(Constructor, "prototype", { writable: false }); return Constructor; }
+
+var __importDefault = this && this.__importDefault || function (mod) {
+  return mod && mod.__esModule ? mod : {
+    "default": mod
+  };
+};
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var archer_1 = __importDefault(require("./mob/archer"));
+
+var mage_1 = __importDefault(require("./mob/mage"));
+
+var swordsman_1 = __importDefault(require("./mob/swordsman"));
+
+var turret_1 = __importDefault(require("./mob/turret"));
+
+var Mobs = /*#__PURE__*/function () {
+  function Mobs() {
+    _classCallCheck(this, Mobs);
+  }
+
+  _createClass(Mobs, null, [{
+    key: "turret",
+    get: function get() {
+      return new turret_1.default();
+    }
+  }, {
+    key: "swordsman",
+    get: function get() {
+      return new swordsman_1.default();
+    }
+  }, {
+    key: "mage",
+    get: function get() {
+      return new mage_1.default();
+    }
+  }, {
+    key: "archer",
+    get: function get() {
+      return new archer_1.default();
+    }
+  }]);
+
+  return Mobs;
+}();
+
+exports.default = Mobs;
+
+Mobs.from_id = function (id) {
+  switch (id) {
+    case 'turret':
+      return Mobs.turret;
+
+    case 'swordsman':
+      return Mobs.swordsman;
+
+    case 'mage':
+      return Mobs.mage;
+
+    case 'archer':
+      return Mobs.archer;
+  }
+};
+},{"./mob/archer":"src/entity/mob/archer.ts","./mob/mage":"src/entity/mob/mage.ts","./mob/swordsman":"src/entity/mob/swordsman.ts","./mob/turret":"src/entity/mob/turret.ts"}],"src/room/entity_manager.ts":[function(require,module,exports) {
+"use strict";
 
 function _toConsumableArray(arr) { return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _unsupportedIterableToArray(arr) || _nonIterableSpread(); }
 
 function _nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
 
-function _unsupportedIterableToArray(o, minLen) { if (!o) return; if (typeof o === "string") return _arrayLikeToArray(o, minLen); var n = Object.prototype.toString.call(o).slice(8, -1); if (n === "Object" && o.constructor) n = o.constructor.name; if (n === "Map" || n === "Set") return Array.from(o); if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray(o, minLen); }
-
 function _iterableToArray(iter) { if (typeof Symbol !== "undefined" && iter[Symbol.iterator] != null || iter["@@iterator"] != null) return Array.from(iter); }
 
 function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) return _arrayLikeToArray(arr); }
+
+function _createForOfIteratorHelper(o, allowArrayLike) { var it = typeof Symbol !== "undefined" && o[Symbol.iterator] || o["@@iterator"]; if (!it) { if (Array.isArray(o) || (it = _unsupportedIterableToArray(o)) || allowArrayLike && o && typeof o.length === "number") { if (it) o = it; var i = 0; var F = function F() {}; return { s: F, n: function n() { if (i >= o.length) return { done: true }; return { done: false, value: o[i++] }; }, e: function e(_e) { throw _e; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var normalCompletion = true, didErr = false, err; return { s: function s() { it = it.call(o); }, n: function n() { var step = it.next(); normalCompletion = step.done; return step; }, e: function e(_e2) { didErr = true; err = _e2; }, f: function f() { try { if (!normalCompletion && it.return != null) it.return(); } finally { if (didErr) throw err; } } }; }
+
+function _unsupportedIterableToArray(o, minLen) { if (!o) return; if (typeof o === "string") return _arrayLikeToArray(o, minLen); var n = Object.prototype.toString.call(o).slice(8, -1); if (n === "Object" && o.constructor) n = o.constructor.name; if (n === "Map" || n === "Set") return Array.from(o); if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray(o, minLen); }
 
 function _arrayLikeToArray(arr, len) { if (len == null || len > arr.length) len = arr.length; for (var i = 0, arr2 = new Array(len); i < len; i++) { arr2[i] = arr[i]; } return arr2; }
 
@@ -31898,41 +32017,32 @@ var random_1 = __importDefault(require("../util/random"));
 
 var vec2_1 = __importDefault(require("../util/vec2"));
 
-var game_1 = __importDefault(require("../game/game"));
-
-var turret_1 = __importDefault(require("../entity/mob/turret"));
-
-var swordsman_1 = __importDefault(require("../entity/mob/swordsman"));
-
-var mage_1 = __importDefault(require("../entity/mob/mage"));
-
-var archer_1 = __importDefault(require("../entity/mob/archer"));
+var mobs_1 = __importDefault(require("../entity/mobs"));
 
 var EntityManager = /*#__PURE__*/function () {
-  function EntityManager(room) {
+  function EntityManager(room, data) {
     _classCallCheck(this, EntityManager);
 
     this.room = room;
     this.entities = new Map();
     this.random = new random_1.default();
 
-    for (var i = 0; i < this.random.next_int_ranged(0, 1) + this.random.next_int_ranged(0, this.room.difficulty); i++) {
-      var mob = this.random.weighted_random([{
-        item: new turret_1.default(),
-        weight: Math.max(4, 10 - this.room.difficulty) + this.room.biome.id == 'default' ? 5 : 0
-      }, {
-        item: new swordsman_1.default(),
-        weight: Math.min(6, this.room.difficulty - 2) + this.room.biome.id == 'hell' ? 5 : 0
-      }, {
-        item: new mage_1.default(),
-        weight: Math.min(6, this.room.difficulty - 1) + this.room.biome.id == 'desert' ? 5 : 0
-      }, {
-        item: new archer_1.default(),
-        weight: Math.min(6, this.room.difficulty) + this.room.biome.id == 'snow' ? 5 : 0
-      }]);
-      var w = game_1.default.width;
-      mob.set_position(new vec2_1.default(this.random.next_int_ranged(2, w - 3) + 0.5, this.random.next_int_ranged(2, w - 3) + 0.5));
-      this.spawn(mob);
+    var _iterator = _createForOfIteratorHelper(data),
+        _step;
+
+    try {
+      for (_iterator.s(); !(_step = _iterator.n()).done;) {
+        var entry = _step.value;
+        var pos = vec2_1.default.parse(entry[0]);
+        var mob = mobs_1.default.from_id(entry[1]);
+        if (!entry[1]) mob = mobs_1.default.from_id(this.room.biome.next_mob());
+        mob.set_position(pos.add(new vec2_1.default(0.5, 0.5)));
+        this.spawn(mob);
+      }
+    } catch (err) {
+      _iterator.e(err);
+    } finally {
+      _iterator.f();
     }
   }
   /** Get an Entity by a uuid */
@@ -31982,20 +32092,20 @@ var EntityManager = /*#__PURE__*/function () {
   }, {
     key: "prune",
     value: function prune(filter) {
-      var _iterator = _createForOfIteratorHelper(_toConsumableArray(this.entities.entries()).filter(function (value) {
+      var _iterator2 = _createForOfIteratorHelper(_toConsumableArray(this.entities.entries()).filter(function (value) {
         return filter(value[1]);
       })),
-          _step;
+          _step2;
 
       try {
-        for (_iterator.s(); !(_step = _iterator.n()).done;) {
-          var entry = _step.value;
+        for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
+          var entry = _step2.value;
           this.entities.delete(entry[0]);
         }
       } catch (err) {
-        _iterator.e(err);
+        _iterator2.e(err);
       } finally {
-        _iterator.f();
+        _iterator2.f();
       }
     }
     /** Get all Entities that fit the filter condition */
@@ -32026,18 +32136,18 @@ var EntityManager = /*#__PURE__*/function () {
   }, {
     key: "tick",
     value: function tick() {
-      var _iterator2 = _createForOfIteratorHelper(this.array()),
-          _step2;
+      var _iterator3 = _createForOfIteratorHelper(this.array()),
+          _step3;
 
       try {
-        for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
-          var entity = _step2.value;
+        for (_iterator3.s(); !(_step3 = _iterator3.n()).done;) {
+          var entity = _step3.value;
           entity.tick();
         }
       } catch (err) {
-        _iterator2.e(err);
+        _iterator3.e(err);
       } finally {
-        _iterator2.f();
+        _iterator3.f();
       }
     }
   }, {
@@ -32051,7 +32161,7 @@ var EntityManager = /*#__PURE__*/function () {
 }();
 
 exports.default = EntityManager;
-},{"../util/random":"src/util/random.ts","../util/vec2":"src/util/vec2.ts","../game/game":"src/game/game.ts","../entity/mob/turret":"src/entity/mob/turret.ts","../entity/mob/swordsman":"src/entity/mob/swordsman.ts","../entity/mob/mage":"src/entity/mob/mage.ts","../entity/mob/archer":"src/entity/mob/archer.ts"}],"src/room/particle_manager.ts":[function(require,module,exports) {
+},{"../util/random":"src/util/random.ts","../util/vec2":"src/util/vec2.ts","../entity/mobs":"src/entity/mobs.ts"}],"src/room/particle_manager.ts":[function(require,module,exports) {
 "use strict";
 
 function _createForOfIteratorHelper(o, allowArrayLike) { var it = typeof Symbol !== "undefined" && o[Symbol.iterator] || o["@@iterator"]; if (!it) { if (Array.isArray(o) || (it = _unsupportedIterableToArray(o)) || allowArrayLike && o && typeof o.length === "number") { if (it) o = it; var i = 0; var F = function F() {}; return { s: F, n: function n() { if (i >= o.length) return { done: true }; return { done: false, value: o[i++] }; }, e: function e(_e) { throw _e; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var normalCompletion = true, didErr = false, err; return { s: function s() { it = it.call(o); }, n: function n() { var step = it.next(); normalCompletion = step.done; return step; }, e: function e(_e2) { didErr = true; err = _e2; }, f: function f() { try { if (!normalCompletion && it.return != null) it.return(); } finally { if (didErr) throw err; } } }; }
@@ -34876,7 +34986,7 @@ var vec2_1 = __importDefault(require("../util/vec2"));
 var pathfinding_1 = __importDefault(require("pathfinding"));
 
 var TileManager = /*#__PURE__*/function () {
-  function TileManager(room) {
+  function TileManager(room, data) {
     _classCallCheck(this, TileManager);
 
     this.room = room;
@@ -34898,8 +35008,28 @@ var TileManager = /*#__PURE__*/function () {
       this.set(new wall_1.default(new vec2_1.default(w - 1, _i), this));
     }
 
-    for (var _i2 = 0; _i2 < this.random.next_int_ranged(6 + 2 * Math.abs(this.room.position.x) * Math.abs(this.room.position.y), 8 + 4 * Math.abs(this.room.position.x) * Math.abs(this.room.position.y)); _i2++) {
-      this.set(new wall_1.default(new vec2_1.default(this.room.manager.game.random.next_int_ranged(2, w - 3), this.room.manager.game.random.next_int_ranged(2, w - 3)), this));
+    var _iterator = _createForOfIteratorHelper(data),
+        _step;
+
+    try {
+      for (_iterator.s(); !(_step = _iterator.n()).done;) {
+        var entry = _step.value;
+        var pos = vec2_1.default.parse(entry[0]);
+
+        switch (entry[1]) {
+          case 'tile':
+            this.set(new tile_1.default(pos, this));
+            break;
+
+          case 'wall':
+            this.set(new wall_1.default(pos, this));
+            break;
+        }
+      }
+    } catch (err) {
+      _iterator.e(err);
+    } finally {
+      _iterator.f();
     }
 
     this.pathfinder = new pathfinding_1.default.AStarFinder();
@@ -34908,18 +35038,18 @@ var TileManager = /*#__PURE__*/function () {
   _createClass(TileManager, [{
     key: "tick",
     value: function tick() {
-      var _iterator = _createForOfIteratorHelper(this.tiles.values()),
-          _step;
+      var _iterator2 = _createForOfIteratorHelper(this.tiles.values()),
+          _step2;
 
       try {
-        for (_iterator.s(); !(_step = _iterator.n()).done;) {
-          var tile = _step.value;
+        for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
+          var tile = _step2.value;
           tile.tick();
         }
       } catch (err) {
-        _iterator.e(err);
+        _iterator2.e(err);
       } finally {
-        _iterator.f();
+        _iterator2.f();
       }
     }
     /** Get a Tile at a position */
@@ -35058,15 +35188,38 @@ var particle_manager_1 = __importDefault(require("./particle_manager"));
 var tile_manager_1 = __importDefault(require("./tile_manager"));
 
 var Room = /*#__PURE__*/function () {
-  function Room(position, manager, biome, difficulty) {
+  function Room(position, manager, biome, difficulty, data) {
     _classCallCheck(this, Room);
 
     this.position = position;
     this.manager = manager;
     this.biome = biome;
     this.difficulty = Math.floor(difficulty);
-    this.tiles = new tile_manager_1.default(this);
-    this.entities = new entity_manager_1.default(this);
+    var tiles = new Map();
+    var entities = new Map();
+    var rotation = [this.manager.random.next_int_ranged(0, 1), this.manager.random.next_int_ranged(0, 1)];
+
+    for (var i = 0; i < data['data'].length; i++) {
+      var e = data['data'][i];
+      if (rotation[0] == 1) e = data['data'][game_1.default.width * game_1.default.width - i - 1];
+      var key = data['keys'][e];
+      if (key['chance'] && this.manager.random.next_float() > key['chance']) continue;
+      var vec = new vec2_1.default(i % game_1.default.width, Math.floor(i / game_1.default.width));
+      if (rotation[1] == 1) vec = new vec2_1.default(Math.floor(i / game_1.default.width), i % game_1.default.width);
+
+      switch (key['type']) {
+        case 'tile':
+          tiles.set(vec.toString(), key['id']);
+          break;
+
+        case 'entity':
+          entities.set(vec.toString(), key['id']);
+          break;
+      }
+    }
+
+    this.tiles = new tile_manager_1.default(this, tiles);
+    this.entities = new entity_manager_1.default(this, entities);
     this.particles = new particle_manager_1.default(this);
   }
 
@@ -35078,7 +35231,6 @@ var Room = /*#__PURE__*/function () {
       this.entities.tick();
       this.visited = true;
       if (this.entities.size() == 0) this.cleared = true;
-      console.log(this.difficulty);
     }
   }, {
     key: "has_door",
@@ -35148,6 +35300,8 @@ function weighted(directions, random) {
 }
 
 exports.weighted = weighted;
+},{}],"node_modules/parcel-bundler/src/builtins/_empty.js":[function(require,module,exports) {
+
 },{}],"src/game/room_manager.ts":[function(require,module,exports) {
 "use strict";
 
@@ -35193,6 +35347,8 @@ var vec2_1 = __importDefault(require("../util/vec2"));
 
 var renderer_1 = __importDefault(require("./renderer"));
 
+var fs = require('fs');
+
 var RoomManager = /*#__PURE__*/function () {
   function RoomManager(game) {
     var _this = this;
@@ -35202,7 +35358,8 @@ var RoomManager = /*#__PURE__*/function () {
     this.game = game;
     this.rooms = new Map();
     this.random = new random_1.default();
-    this.set(new room_1.default(vec2_1.default.zero(), this, biome_1.default.DEFAULT, 0));
+    this.layouts = JSON.parse("[\r\n\t{\r\n\t\t\"difficulty\": 0,\r\n\t\t\"data\": [\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 1, 1, 1, 1, 1, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 1, 1, 1, 1, 1, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 3, 1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 3, 1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 1, 1, 1, 1, 1, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 1, 1, 1, 1, 1, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2\r\n\t\t],\r\n\t\t\"keys\": {\r\n\t\t\t\"1\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"air\"\r\n\t\t\t},\r\n\t\t\t\"2\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"wall\"\r\n\t\t\t},\r\n\t\t\t\"3\": {\r\n\t\t\t\t\"type\": \"entity\",\r\n\t\t\t\t\"chance\": 0.25\r\n\t\t\t}\r\n\t\t}\r\n\t},\r\n\t{\r\n\t\t\"difficulty\": 0,\r\n\t\t\"data\": [\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 1, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 2,\r\n\t\t\t2, 1, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3, 1, 2,\r\n\t\t\t2, 1, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 2,\r\n\t\t\t2, 2, 1, 2, 2, 1, 1, 1, 1, 1, 2, 2, 1, 2, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 1, 2, 2, 1, 1, 1, 1, 1, 2, 2, 1, 2, 2,\r\n\t\t\t2, 1, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 2,\r\n\t\t\t2, 1, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3, 1, 2,\r\n\t\t\t2, 1, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2\r\n\t\t],\r\n\t\t\"keys\": {\r\n\t\t\t\"1\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"air\"\r\n\t\t\t},\r\n\t\t\t\"2\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"wall\"\r\n\t\t\t},\r\n\t\t\t\"3\": {\r\n\t\t\t\t\"type\": \"entity\",\r\n\t\t\t\t\"chance\": 0.33\r\n\t\t\t}\r\n\t\t}\r\n\t},\r\n\t{\r\n\t\t\"difficulty\": 0,\r\n\t\t\"data\": [\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 2, 2, 2, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 3, 1, 2, 2, 2, 2, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 2, 2, 2, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 2, 2, 2, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 2, 2, 2, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 2, 2, 2, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 2, 2, 2, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 2, 2, 2, 2, 1, 3, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 2, 2, 2, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2\r\n\t\t],\r\n\t\t\"keys\": {\r\n\t\t\t\"1\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"air\"\r\n\t\t\t},\r\n\t\t\t\"2\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"wall\"\r\n\t\t\t},\r\n\t\t\t\"3\": {\r\n\t\t\t\t\"type\": \"entity\",\r\n\t\t\t\t\"chance\": 0.33\r\n\t\t\t}\r\n\t\t}\r\n\t},\r\n\t{\r\n\t\t\"difficulty\": 0,\r\n\t\t\"data\": [\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 2, 2, 1, 1, 1, 2, 2, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 3, 1, 1, 1, 3, 1, 1, 1, 3, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 2, 2, 1, 1, 1, 2, 2, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2\r\n\t\t],\r\n\t\t\"keys\": {\r\n\t\t\t\"1\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"air\"\r\n\t\t\t},\r\n\t\t\t\"2\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"wall\"\r\n\t\t\t},\r\n\t\t\t\"3\": {\r\n\t\t\t\t\"type\": \"entity\",\r\n\t\t\t\t\"chance\": 0.33\r\n\t\t\t}\r\n\t\t}\r\n\t},\r\n\t{\r\n\t\t\"difficulty\": 0,\r\n\t\t\"data\": [\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2,\r\n\t\t\t2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2,\r\n\t\t\t2, 2, 1, 1, 2, 2, 1, 3, 1, 2, 2, 1, 1, 2, 2,\r\n\t\t\t2, 2, 1, 1, 2, 2, 1, 1, 1, 2, 2, 1, 1, 2, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 1, 1, 2, 2, 1, 1, 1, 2, 2, 1, 1, 2, 2,\r\n\t\t\t2, 2, 1, 1, 2, 2, 1, 3, 1, 2, 2, 1, 1, 2, 2,\r\n\t\t\t2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2,\r\n\t\t\t2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2\r\n\t\t],\r\n\t\t\"keys\": {\r\n\t\t\t\"1\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"air\"\r\n\t\t\t},\r\n\t\t\t\"2\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"wall\"\r\n\t\t\t},\r\n\t\t\t\"3\": {\r\n\t\t\t\t\"type\": \"entity\",\r\n\t\t\t\t\"chance\": 0.33\r\n\t\t\t}\r\n\t\t}\r\n\t},\r\n\t{\r\n\t\t\"difficulty\": 0,\r\n\t\t\"data\": [\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 2, 2, 1, 1, 1, 2, 2, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 2, 2, 3, 1, 3, 2, 2, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 2, 2, 1, 1, 1, 2, 2, 2, 1, 2, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 1, 2, 2, 2, 1, 1, 1, 2, 2, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 2, 2, 3, 1, 3, 2, 2, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 2, 2, 1, 1, 1, 2, 2, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2\r\n\t\t],\r\n\t\t\"keys\": {\r\n\t\t\t\"1\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"air\"\r\n\t\t\t},\r\n\t\t\t\"2\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"wall\"\r\n\t\t\t},\r\n\t\t\t\"3\": {\r\n\t\t\t\t\"type\": \"entity\",\r\n\t\t\t\t\"chance\": 0.33\r\n\t\t\t}\r\n\t\t}\r\n\t},\r\n\t{\r\n\t\t\"difficulty\": 0,\r\n\t\t\"data\": [\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 1, 3, 1, 1, 1, 1, 1, 2, 1, 2, 2,\r\n\t\t\t2, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 2,\r\n\t\t\t2, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 2,\r\n\t\t\t2, 2, 1, 2, 1, 1, 1, 1, 1, 3, 1, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2\r\n\t\t],\r\n\t\t\"keys\": {\r\n\t\t\t\"1\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"air\"\r\n\t\t\t},\r\n\t\t\t\"2\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"wall\"\r\n\t\t\t},\r\n\t\t\t\"3\": {\r\n\t\t\t\t\"type\": \"entity\",\r\n\t\t\t\t\"chance\": 0.33\r\n\t\t\t}\r\n\t\t}\r\n\t},\r\n\t{\r\n\t\t\"difficulty\": 0,\r\n\t\t\"data\": [\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2,\r\n\t\t\t2, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 2,\r\n\t\t\t2, 1, 1, 2, 1, 3, 1, 1, 1, 3, 1, 2, 1, 1, 2,\r\n\t\t\t2, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 2,\r\n\t\t\t2, 2, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2\r\n\t\t],\r\n\t\t\"keys\": {\r\n\t\t\t\"1\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"air\"\r\n\t\t\t},\r\n\t\t\t\"2\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"wall\"\r\n\t\t\t},\r\n\t\t\t\"3\": {\r\n\t\t\t\t\"type\": \"entity\",\r\n\t\t\t\t\"chance\": 0.33\r\n\t\t\t}\r\n\t\t}\r\n\t},\r\n\t{\r\n\t\t\"difficulty\": 0,\r\n\t\t\"data\": [\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 1, 1, 3, 1, 1, 1, 1, 1, 1, 1, 2, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2\r\n\t\t],\r\n\t\t\"keys\": {\r\n\t\t\t\"1\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"air\"\r\n\t\t\t},\r\n\t\t\t\"2\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"wall\"\r\n\t\t\t},\r\n\t\t\t\"3\": {\r\n\t\t\t\t\"type\": \"entity\",\r\n\t\t\t\t\"chance\": 0.33\r\n\t\t\t}\r\n\t\t}\r\n\t},\r\n\t{\r\n\t\t\"difficulty\": 0,\r\n\t\t\"data\": [\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 2, 1, 1, 1, 1, 1, 2, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 1, 1, 1, 1, 1, 1, 3, 1, 2, 1, 2, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 2,\r\n\t\t\t2, 2, 1, 1, 1, 3, 1, 1, 1, 3, 1, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2\r\n\t\t],\r\n\t\t\"keys\": {\r\n\t\t\t\"1\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"air\"\r\n\t\t\t},\r\n\t\t\t\"2\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"wall\"\r\n\t\t\t},\r\n\t\t\t\"3\": {\r\n\t\t\t\t\"type\": \"entity\",\r\n\t\t\t\t\"chance\": 0.33\r\n\t\t\t}\r\n\t\t}\r\n\t},\r\n\t{\r\n\t\t\"difficulty\": 0,\r\n\t\t\"data\": [\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 2, 1, 1, 1, 1, 1, 2, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 1, 2, 2, 2, 1, 2, 2, 2, 1, 1, 2, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 1, 1, 1, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 1, 1, 1, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 1, 1, 2, 2, 2, 1, 2, 2, 2, 1, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 2, 1, 1, 1, 1, 1, 2, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2\r\n\t\t],\r\n\t\t\"keys\": {\r\n\t\t\t\"1\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"air\"\r\n\t\t\t},\r\n\t\t\t\"2\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"wall\"\r\n\t\t\t},\r\n\t\t\t\"3\": {\r\n\t\t\t\t\"type\": \"entity\",\r\n\t\t\t\t\"chance\": 0.33\r\n\t\t\t}\r\n\t\t}\r\n\t},\r\n\t{\r\n\t\t\"difficulty\": 0,\r\n\t\t\"data\": [\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2,\r\n\t\t\t2, 1, 2, 2, 1, 1, 1, 3, 1, 1, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 1, 1, 1, 1, 1, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 2, 1, 1, 1, 1, 1, 2, 2, 2, 1, 2,\r\n\t\t\t2, 1, 1, 2, 2, 1, 1, 1, 1, 1, 2, 2, 1, 1, 2,\r\n\t\t\t2, 1, 1, 2, 2, 1, 1, 3, 1, 1, 2, 2, 1, 1, 2,\r\n\t\t\t2, 1, 1, 2, 2, 1, 1, 1, 1, 1, 2, 2, 1, 1, 2,\r\n\t\t\t2, 1, 1, 2, 2, 1, 1, 1, 1, 1, 2, 2, 1, 1, 2,\r\n\t\t\t2, 1, 1, 2, 2, 1, 1, 1, 1, 1, 2, 2, 1, 1, 2,\r\n\t\t\t2, 1, 1, 2, 2, 2, 1, 3, 1, 2, 2, 2, 1, 1, 2,\r\n\t\t\t2, 1, 1, 2, 2, 2, 1, 1, 1, 2, 2, 2, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2\r\n\t\t],\r\n\t\t\"keys\": {\r\n\t\t\t\"1\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"air\"\r\n\t\t\t},\r\n\t\t\t\"2\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"wall\"\r\n\t\t\t},\r\n\t\t\t\"3\": {\r\n\t\t\t\t\"type\": \"entity\",\r\n\t\t\t\t\"chance\": 0.33\r\n\t\t\t}\r\n\t\t}\r\n\t},\r\n\t{\r\n\t\t\"difficulty\": 0,\r\n\t\t\"data\": [\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2,\r\n\t\t\t2, 1, 2, 2, 1, 1, 1, 3, 1, 1, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 1, 1, 1, 1, 1, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 2, 1, 1, 1, 1, 1, 2, 2, 2, 1, 2,\r\n\t\t\t2, 1, 1, 2, 2, 1, 1, 1, 1, 1, 2, 2, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 3, 1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 2, 2, 1, 1, 1, 1, 1, 2, 2, 1, 1, 2,\r\n\t\t\t2, 1, 1, 2, 2, 2, 1, 1, 1, 2, 2, 2, 1, 1, 2,\r\n\t\t\t2, 1, 1, 2, 2, 2, 1, 1, 1, 2, 2, 2, 1, 1, 2,\r\n\t\t\t2, 1, 2, 2, 2, 2, 1, 3, 1, 2, 2, 2, 2, 1, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2\r\n\t\t],\r\n\t\t\"keys\": {\r\n\t\t\t\"1\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"air\"\r\n\t\t\t},\r\n\t\t\t\"2\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"wall\"\r\n\t\t\t},\r\n\t\t\t\"3\": {\r\n\t\t\t\t\"type\": \"entity\",\r\n\t\t\t\t\"chance\": 0.33\r\n\t\t\t}\r\n\t\t}\r\n\t},\r\n\t{\r\n\t\t\"difficulty\": 0,\r\n\t\t\"data\": [\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 2, 2, 2, 1, 1, 1, 1, 1, 2, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 2, 1, 1, 1, 1, 1, 2, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 2, 1, 1, 1, 1, 1, 2, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 2, 1, 1, 1, 1, 1, 2, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 2, 1, 1, 3, 1, 1, 2, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 2, 1, 1, 1, 1, 1, 2, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 2, 1, 1, 1, 1, 1, 2, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 2, 1, 1, 1, 1, 1, 2, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 2, 1, 1, 1, 1, 1, 2, 2, 2, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2\r\n\t\t],\r\n\t\t\"keys\": {\r\n\t\t\t\"1\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"air\"\r\n\t\t\t},\r\n\t\t\t\"2\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"wall\"\r\n\t\t\t},\r\n\t\t\t\"3\": {\r\n\t\t\t\t\"type\": \"entity\",\r\n\t\t\t\t\"chance\": 0.33\r\n\t\t\t}\r\n\t\t}\r\n\t},\r\n\t{\r\n\t\t\"difficulty\": 0,\r\n\t\t\"data\": [\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 1, 1, 2, 2, 2, 1, 1, 1, 2, 2, 2, 1, 1, 2,\r\n\t\t\t2, 1, 2, 2, 2, 1, 1, 1, 1, 1, 2, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 2, 1, 1, 3, 1, 1, 2, 2, 2, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 2, 2, 2, 1, 1, 1, 1, 1, 2, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 2, 1, 1, 1, 1, 1, 2, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 2, 1, 1, 1, 1, 1, 2, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 2, 1, 1, 1, 1, 1, 2, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 2, 1, 1, 1, 1, 1, 2, 2, 2, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 2, 2, 2, 1, 1, 3, 1, 1, 2, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 2, 1, 1, 1, 1, 1, 2, 2, 2, 1, 2,\r\n\t\t\t2, 1, 1, 2, 2, 2, 1, 1, 1, 2, 2, 2, 1, 1, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2\r\n\t\t],\r\n\t\t\"keys\": {\r\n\t\t\t\"1\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"air\"\r\n\t\t\t},\r\n\t\t\t\"2\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"wall\"\r\n\t\t\t},\r\n\t\t\t\"3\": {\r\n\t\t\t\t\"type\": \"entity\",\r\n\t\t\t\t\"chance\": 0.33\r\n\t\t\t}\r\n\t\t}\r\n\t},\r\n\t{\r\n\t\t\"difficulty\": 0,\r\n\t\t\"data\": [\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 2, 1, 2, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 2, 1, 1, 1, 2, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 2, 1, 3, 1, 2, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 1, 1, 1, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 2, 1, 2, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 1, 1, 1, 1, 1, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 1, 1, 1, 1, 1, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2\r\n\t\t],\r\n\t\t\"keys\": {\r\n\t\t\t\"1\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"air\"\r\n\t\t\t},\r\n\t\t\t\"2\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"wall\"\r\n\t\t\t},\r\n\t\t\t\"3\": {\r\n\t\t\t\t\"type\": \"entity\",\r\n\t\t\t\t\"chance\": 0.33\r\n\t\t\t}\r\n\t\t}\r\n\t},\r\n\t{\r\n\t\t\"difficulty\": 0,\r\n\t\t\"data\": [\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 2, 1, 2, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 2, 1, 1, 1, 2, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 2, 1, 3, 1, 2, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 1, 1, 1, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 2, 1, 2, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 2, 1, 2, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 1, 1, 1, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 2, 1, 3, 1, 2, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 2, 1, 1, 1, 2, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 2, 1, 2, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2\r\n\t\t],\r\n\t\t\"keys\": {\r\n\t\t\t\"1\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"air\"\r\n\t\t\t},\r\n\t\t\t\"2\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"wall\"\r\n\t\t\t},\r\n\t\t\t\"3\": {\r\n\t\t\t\t\"type\": \"entity\",\r\n\t\t\t\t\"chance\": 0.33\r\n\t\t\t}\r\n\t\t}\r\n\t},\r\n\t{\r\n\t\t\"difficulty\": 0,\r\n\t\t\"data\": [\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 2, 1, 2, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 2, 1, 1, 1, 2, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 2, 1, 3, 1, 1, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 1, 1, 1, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 2, 1, 2, 2, 2, 1, 2, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 1, 2, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 1, 1, 1, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 1, 1, 3, 1, 2, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 2, 1, 1, 1, 2, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 2, 1, 2, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2\r\n\t\t],\r\n\t\t\"keys\": {\r\n\t\t\t\"1\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"air\"\r\n\t\t\t},\r\n\t\t\t\"2\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"wall\"\r\n\t\t\t},\r\n\t\t\t\"3\": {\r\n\t\t\t\t\"type\": \"entity\",\r\n\t\t\t\t\"chance\": 0.33\r\n\t\t\t}\r\n\t\t}\r\n\t},\r\n\t{\r\n\t\t\"difficulty\": 0,\r\n\t\t\"data\": [\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 2, 1, 2, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 2, 1, 1, 1, 2, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 2, 1, 3, 1, 1, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 1, 1, 1, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 2, 1, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 1, 1, 1, 2, 1, 1, 1, 2, 1, 1, 1, 2, 2,\r\n\t\t\t2, 1, 1, 3, 1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 2,\r\n\t\t\t2, 2, 1, 1, 1, 2, 1, 1, 1, 2, 1, 1, 1, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 1, 2, 2, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 1, 1, 1, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 1, 1, 3, 1, 2, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 2, 1, 1, 1, 2, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 2, 1, 2, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2\r\n\t\t],\r\n\t\t\"keys\": {\r\n\t\t\t\"1\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"air\"\r\n\t\t\t},\r\n\t\t\t\"2\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"wall\"\r\n\t\t\t},\r\n\t\t\t\"3\": {\r\n\t\t\t\t\"type\": \"entity\",\r\n\t\t\t\t\"chance\": 0.33\r\n\t\t\t}\r\n\t\t}\r\n\t},\r\n\t{\r\n\t\t\"difficulty\": 0,\r\n\t\t\"data\": [\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 2, 1, 2, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 2, 1, 1, 1, 2, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 2, 1, 3, 1, 2, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 1, 1, 1, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 1, 2, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 1, 1, 1, 1, 1, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 1, 1, 1, 1, 1, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2\r\n\t\t],\r\n\t\t\"keys\": {\r\n\t\t\t\"1\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"air\"\r\n\t\t\t},\r\n\t\t\t\"2\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"wall\"\r\n\t\t\t},\r\n\t\t\t\"3\": {\r\n\t\t\t\t\"type\": \"entity\",\r\n\t\t\t\t\"chance\": 0.33\r\n\t\t\t}\r\n\t\t}\r\n\t},\r\n\t{\r\n\t\t\"difficulty\": 0,\r\n\t\t\"data\": [\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3, 1, 2, 2, 2,\r\n\t\t\t2, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2,\r\n\t\t\t2, 1, 2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 1, 2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2,\r\n\t\t\t2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2,\r\n\t\t\t2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 2,\r\n\t\t\t2, 2, 2, 1, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2\r\n\t\t],\r\n\t\t\"keys\": {\r\n\t\t\t\"1\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"air\"\r\n\t\t\t},\r\n\t\t\t\"2\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"wall\"\r\n\t\t\t},\r\n\t\t\t\"3\": {\r\n\t\t\t\t\"type\": \"entity\",\r\n\t\t\t\t\"chance\": 0.33\r\n\t\t\t}\r\n\t\t}\r\n\t}\r\n]\r\n");
+    this.set(new room_1.default(vec2_1.default.zero(), this, biome_1.default.DEFAULT, 0, this.layouts[0]));
 
     for (var thread = 0; thread < 10; thread++) {
       this.thread(8);
@@ -35365,7 +35522,7 @@ var RoomManager = /*#__PURE__*/function () {
         if (Math.abs(pos.x) > 10 || Math.abs(pos.y) > 10) return;
 
         if (!this.get(pos)) {
-          this.set(new room_1.default(pos, this, biome, Math.sqrt(Math.abs(pos.x * pos.y)) + i / 4));
+          this.set(new room_1.default(pos, this, biome, Math.sqrt(Math.abs(pos.x * pos.y)) + i / 4, this.random.choice(this.layouts)));
           this.add_door(pos, (0, direction_1.opposite)(direction));
         }
 
@@ -35422,7 +35579,7 @@ var RoomManager = /*#__PURE__*/function () {
 }();
 
 exports.default = RoomManager;
-},{"../room/biome":"src/room/biome.ts","../room/room":"src/room/room.ts","../util/direction":"src/util/direction.ts","../util/random":"src/util/random.ts","../util/vec2":"src/util/vec2.ts","./renderer":"src/game/renderer.ts"}],"src/game/game.ts":[function(require,module,exports) {
+},{"../room/biome":"src/room/biome.ts","../room/room":"src/room/room.ts","../util/direction":"src/util/direction.ts","../util/random":"src/util/random.ts","../util/vec2":"src/util/vec2.ts","./renderer":"src/game/renderer.ts","fs":"node_modules/parcel-bundler/src/builtins/_empty.js"}],"src/game/game.ts":[function(require,module,exports) {
 "use strict";
 
 function _createForOfIteratorHelper(o, allowArrayLike) { var it = typeof Symbol !== "undefined" && o[Symbol.iterator] || o["@@iterator"]; if (!it) { if (Array.isArray(o) || (it = _unsupportedIterableToArray(o)) || allowArrayLike && o && typeof o.length === "number") { if (it) o = it; var i = 0; var F = function F() {}; return { s: F, n: function n() { if (i >= o.length) return { done: true }; return { done: false, value: o[i++] }; }, e: function e(_e) { throw _e; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var normalCompletion = true, didErr = false, err; return { s: function s() { it = it.call(o); }, n: function n() { var step = it.next(); normalCompletion = step.done; return step; }, e: function e(_e2) { didErr = true; err = _e2; }, f: function f() { try { if (!normalCompletion && it.return != null) it.return(); } finally { if (didErr) throw err; } } }; }
@@ -35614,9 +35771,7 @@ exports.default = Game;
 _a = Game;
 Game.width = 15;
 Game.center = _a.width / 2;
-},{"../entity/player":"src/entity/player.ts","../util/random":"src/util/random.ts","../util/vec2":"src/util/vec2.ts","./renderer":"src/game/renderer.ts","./room_manager":"src/game/room_manager.ts"}],"node_modules/parcel-bundler/src/builtins/_empty.js":[function(require,module,exports) {
-
-},{}],"src/main.ts":[function(require,module,exports) {
+},{"../entity/player":"src/entity/player.ts","../util/random":"src/util/random.ts","../util/vec2":"src/util/vec2.ts","./renderer":"src/game/renderer.ts","./room_manager":"src/game/room_manager.ts"}],"src/main.ts":[function(require,module,exports) {
 "use strict";
 
 var __createBinding = this && this.__createBinding || (Object.create ? function (o, m, k, k2) {
@@ -35669,8 +35824,6 @@ var game_1 = __importStar(require("./game/game"));
 
 var color_1 = __importDefault(require("./util/color"));
 
-var fs = require('fs');
-
 var sketch = function sketch(p5) {
   var game;
   var montserrat;
@@ -35682,11 +35835,10 @@ var sketch = function sketch(p5) {
     p5.rectMode('center');
     p5.angleMode('degrees');
     p5.frameRate(60);
-    montserrat = p5.loadFont('//db.onlinewebfonts.com/c/0462590be6674a5827956be5045c54de?family=Montserrat');
+    montserrat = p5.loadFont('./fonts/montserrat.ttf');
     p5.textFont('Montserrat', 20);
     p5.textStyle('bold');
     state = game_1.GameStates.MENU;
-    console.log("aaa");
   };
 
   p5.draw = function () {
@@ -35759,7 +35911,7 @@ var sketch = function sketch(p5) {
 };
 
 new p5_1.default(sketch);
-},{"p5":"node_modules/p5/lib/p5.min.js","./game/game":"src/game/game.ts","./util/color":"src/util/color.ts","fs":"node_modules/parcel-bundler/src/builtins/_empty.js"}],"node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
+},{"p5":"node_modules/p5/lib/p5.min.js","./game/game":"src/game/game.ts","./util/color":"src/util/color.ts"}],"node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 var OldModule = module.bundle.Module;
@@ -35787,7 +35939,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "49593" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "58313" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
