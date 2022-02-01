@@ -29,7 +29,7 @@
 			},
 			"3": {
 				"type": "entity",
-				"chance": 0.25
+				"chance": 0.1
 			}
 		}
 	},
@@ -63,7 +63,7 @@
 			},
 			"3": {
 				"type": "entity",
-				"chance": 0.33
+				"chance": 0.5
 			}
 		}
 	},
@@ -97,7 +97,7 @@
 			},
 			"3": {
 				"type": "entity",
-				"chance": 0.33
+				"chance": 0.5
 			}
 		}
 	},
@@ -131,7 +131,7 @@
 			},
 			"3": {
 				"type": "entity",
-				"chance": 0.33
+				"chance": 0.5
 			}
 		}
 	},
@@ -165,7 +165,7 @@
 			},
 			"3": {
 				"type": "entity",
-				"chance": 0.33
+				"chance": 0.5
 			}
 		}
 	},
@@ -199,7 +199,7 @@
 			},
 			"3": {
 				"type": "entity",
-				"chance": 0.33
+				"chance": 0.5
 			}
 		}
 	},
@@ -233,7 +233,7 @@
 			},
 			"3": {
 				"type": "entity",
-				"chance": 0.33
+				"chance": 0.5
 			}
 		}
 	},
@@ -267,7 +267,7 @@
 			},
 			"3": {
 				"type": "entity",
-				"chance": 0.33
+				"chance": 0.5
 			}
 		}
 	},
@@ -301,7 +301,7 @@
 			},
 			"3": {
 				"type": "entity",
-				"chance": 0.33
+				"chance": 0.5
 			}
 		}
 	},
@@ -335,7 +335,7 @@
 			},
 			"3": {
 				"type": "entity",
-				"chance": 0.33
+				"chance": 0.5
 			}
 		}
 	},
@@ -369,7 +369,7 @@
 			},
 			"3": {
 				"type": "entity",
-				"chance": 0.33
+				"chance": 0.5
 			}
 		}
 	},
@@ -403,7 +403,7 @@
 			},
 			"3": {
 				"type": "entity",
-				"chance": 0.33
+				"chance": 0.5
 			}
 		}
 	},
@@ -437,7 +437,7 @@
 			},
 			"3": {
 				"type": "entity",
-				"chance": 0.33
+				"chance": 0.5
 			}
 		}
 	},
@@ -471,7 +471,7 @@
 			},
 			"3": {
 				"type": "entity",
-				"chance": 0.33
+				"chance": 0.5
 			}
 		}
 	},
@@ -505,7 +505,7 @@
 			},
 			"3": {
 				"type": "entity",
-				"chance": 0.33
+				"chance": 0.5
 			}
 		}
 	},
@@ -539,7 +539,7 @@
 			},
 			"3": {
 				"type": "entity",
-				"chance": 0.33
+				"chance": 0.5
 			}
 		}
 	},
@@ -573,7 +573,7 @@
 			},
 			"3": {
 				"type": "entity",
-				"chance": 0.33
+				"chance": 0.5
 			}
 		}
 	},
@@ -607,7 +607,7 @@
 			},
 			"3": {
 				"type": "entity",
-				"chance": 0.33
+				"chance": 0.5
 			}
 		}
 	},
@@ -641,7 +641,7 @@
 			},
 			"3": {
 				"type": "entity",
-				"chance": 0.33
+				"chance": 0.5
 			}
 		}
 	},
@@ -675,7 +675,7 @@
 			},
 			"3": {
 				"type": "entity",
-				"chance": 0.33
+				"chance": 0.5
 			}
 		}
 	},
@@ -709,7 +709,7 @@
 			},
 			"3": {
 				"type": "entity",
-				"chance": 0.33
+				"chance": 0.75
 			}
 		}
 	}

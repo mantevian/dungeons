@@ -29987,7 +29987,12 @@ var Entity = /*#__PURE__*/function () {
         try {
           for (_iterator.s(); !(_step = _iterator.n()).done;) {
             var entity = _step.value;
-            if (this.collides_with_entity(entity) && !entity.equals(this.parent)) this.on_entity_collision(entity);
+
+            if (this.parent) {
+              if (this.collides_with_entity(entity) && !entity.equals(this.parent)) this.on_entity_collision(entity);
+            } else {
+              if (this.collides_with_entity(entity)) this.on_entity_collision(entity);
+            }
           }
         } catch (err) {
           _iterator.e(err);
@@ -30153,9 +30158,6 @@ var LivingEntity = /*#__PURE__*/function (_entity_1$default) {
     _this.moving = vec2_1.default.zero();
     _this.health = 50;
     _this.max_health = 50;
-    _this.attack_damage = 5;
-    _this.prepare_attack = -1;
-    _this.start_prepare_attack = 1;
     _this.max_damage_invincibility_timer = 20;
     _this.damage_invincibility_timer = 0;
     _this.last_attacker = null;
@@ -30175,8 +30177,6 @@ var LivingEntity = /*#__PURE__*/function (_entity_1$default) {
         this.set_position(this.position.add(this.moving));
       } else this.moving = vec2_1.default.zero();
 
-      if (this.prepare_attack > -1) this.prepare_attack--;
-      if (this.prepare_attack == 0) this.attack();
       if (this.health > this.max_health) this.health = this.max_health;
       if (this.health < 1) this.destroy(this.last_attacker);
       this.render();
@@ -30210,10 +30210,7 @@ var LivingEntity = /*#__PURE__*/function (_entity_1$default) {
     }
   }, {
     key: "try_attack",
-    value: function try_attack() {
-      this.prepare_attack = this.start_prepare_attack;
-      this.scale_over_time(1.1, this.start_prepare_attack);
-    }
+    value: function try_attack() {}
   }, {
     key: "attack",
     value: function attack() {}
@@ -30263,7 +30260,357 @@ var LivingEntity = /*#__PURE__*/function (_entity_1$default) {
 }(entity_1.default);
 
 exports.default = LivingEntity;
-},{"../game/game":"src/game/game.ts","../game/renderer":"src/game/renderer.ts","../particle/damage_count":"src/particle/damage_count.ts","../util/vec2":"src/util/vec2.ts","./effect/status_effect_manager":"src/entity/effect/status_effect_manager.ts","./entity":"src/entity/entity.ts","./player":"src/entity/player.ts"}],"src/entity/mob.ts":[function(require,module,exports) {
+},{"../game/game":"src/game/game.ts","../game/renderer":"src/game/renderer.ts","../particle/damage_count":"src/particle/damage_count.ts","../util/vec2":"src/util/vec2.ts","./effect/status_effect_manager":"src/entity/effect/status_effect_manager.ts","./entity":"src/entity/entity.ts","./player":"src/entity/player.ts"}],"src/entity/player_class.ts":[function(require,module,exports) {
+"use strict";
+
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); Object.defineProperty(Constructor, "prototype", { writable: false }); return Constructor; }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.PlayerClass = void 0;
+
+var PlayerClass = /*#__PURE__*/_createClass(function PlayerClass(id, vitality_multiplier, strength_multiplier, intelligence_multiplier, weapon) {
+  _classCallCheck(this, PlayerClass);
+
+  this.id = id;
+  this.vitality_multiplier = vitality_multiplier;
+  this.strength_multiplier = strength_multiplier;
+  this.intelligence_multiplier = intelligence_multiplier;
+  this.weapon = weapon;
+});
+
+exports.PlayerClass = PlayerClass;
+
+var PlayerClasses = /*#__PURE__*/function () {
+  function PlayerClasses() {
+    _classCallCheck(this, PlayerClasses);
+  }
+
+  _createClass(PlayerClasses, null, [{
+    key: "turret",
+    get: function get() {
+      return new PlayerClass('turret', 10, 1, 1, 'bullet');
+    }
+  }, {
+    key: "swordsman",
+    get: function get() {
+      return new PlayerClass('swordsman', 12, 1.2, 0.8, 'sword');
+    }
+  }, {
+    key: "mage",
+    get: function get() {
+      return new PlayerClass('mage', 9, 1.1, 1.2, 'fireball');
+    }
+  }, {
+    key: "archer",
+    get: function get() {
+      return new PlayerClass('archer', 8, 1.2, 1, 'arrow');
+    }
+  }, {
+    key: "from_id",
+    value: function from_id(id) {
+      switch (id) {
+        case 'turret':
+          return PlayerClasses.turret;
+
+        case 'swordsman':
+          return PlayerClasses.swordsman;
+
+        case 'mage':
+          return PlayerClasses.mage;
+
+        case 'archer':
+          return PlayerClasses.archer;
+      }
+    }
+  }]);
+
+  return PlayerClasses;
+}();
+
+exports.default = PlayerClasses;
+},{}],"src/particle/rect.ts":[function(require,module,exports) {
+"use strict";
+
+function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); Object.defineProperty(Constructor, "prototype", { writable: false }); return Constructor; }
+
+function _get() { if (typeof Reflect !== "undefined" && Reflect.get) { _get = Reflect.get; } else { _get = function _get(target, property, receiver) { var base = _superPropBase(target, property); if (!base) return; var desc = Object.getOwnPropertyDescriptor(base, property); if (desc.get) { return desc.get.call(arguments.length < 3 ? target : receiver); } return desc.value; }; } return _get.apply(this, arguments); }
+
+function _superPropBase(object, property) { while (!Object.prototype.hasOwnProperty.call(object, property)) { object = _getPrototypeOf(object); if (object === null) break; } return object; }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); Object.defineProperty(subClass, "prototype", { writable: false }); if (superClass) _setPrototypeOf(subClass, superClass); }
+
+function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
+
+function _createSuper(Derived) { var hasNativeReflectConstruct = _isNativeReflectConstruct(); return function _createSuperInternal() { var Super = _getPrototypeOf(Derived), result; if (hasNativeReflectConstruct) { var NewTarget = _getPrototypeOf(this).constructor; result = Reflect.construct(Super, arguments, NewTarget); } else { result = Super.apply(this, arguments); } return _possibleConstructorReturn(this, result); }; }
+
+function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } else if (call !== void 0) { throw new TypeError("Derived constructors may only return object or undefined"); } return _assertThisInitialized(self); }
+
+function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
+
+function _isNativeReflectConstruct() { if (typeof Reflect === "undefined" || !Reflect.construct) return false; if (Reflect.construct.sham) return false; if (typeof Proxy === "function") return true; try { Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function () {})); return true; } catch (e) { return false; } }
+
+function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
+
+var __importDefault = this && this.__importDefault || function (mod) {
+  return mod && mod.__esModule ? mod : {
+    "default": mod
+  };
+};
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var renderer_1 = __importDefault(require("../game/renderer"));
+
+var vec2_1 = __importDefault(require("../util/vec2"));
+
+var particle_1 = __importDefault(require("./particle"));
+
+var RectangleParticle = /*#__PURE__*/function (_particle_1$default) {
+  _inherits(RectangleParticle, _particle_1$default);
+
+  var _super = _createSuper(RectangleParticle);
+
+  function RectangleParticle(position, size, color, corner_radius, scale, rotation) {
+    var _this;
+
+    _classCallCheck(this, RectangleParticle);
+
+    _this = _super.call(this);
+    _this.lifetime = 30;
+    _this.position = position;
+    _this.size = size;
+    _this.color = color;
+    _this.corner_radius = corner_radius;
+    _this.scale = scale;
+    _this.rotation = rotation;
+    _this.velocity = vec2_1.default.zero();
+    _this.acceleration = vec2_1.default.zero();
+    return _this;
+  }
+
+  _createClass(RectangleParticle, [{
+    key: "tick",
+    value: function tick() {
+      _get(_getPrototypeOf(RectangleParticle.prototype), "tick", this).call(this);
+
+      this.velocity = this.velocity.multiply_vector(this.acceleration);
+      this.position = this.position.add(this.velocity);
+    }
+  }, {
+    key: "render",
+    value: function render() {
+      renderer_1.default.rect(this.position, this.size, this.color, this.corner_radius, {
+        scale: this.scale,
+        rotation: this.rotation
+      });
+    }
+  }]);
+
+  return RectangleParticle;
+}(particle_1.default);
+
+exports.default = RectangleParticle;
+},{"../game/renderer":"src/game/renderer.ts","../util/vec2":"src/util/vec2.ts","./particle":"src/particle/particle.ts"}],"src/particle/gold.ts":[function(require,module,exports) {
+"use strict";
+
+function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); Object.defineProperty(Constructor, "prototype", { writable: false }); return Constructor; }
+
+function _get() { if (typeof Reflect !== "undefined" && Reflect.get) { _get = Reflect.get; } else { _get = function _get(target, property, receiver) { var base = _superPropBase(target, property); if (!base) return; var desc = Object.getOwnPropertyDescriptor(base, property); if (desc.get) { return desc.get.call(arguments.length < 3 ? target : receiver); } return desc.value; }; } return _get.apply(this, arguments); }
+
+function _superPropBase(object, property) { while (!Object.prototype.hasOwnProperty.call(object, property)) { object = _getPrototypeOf(object); if (object === null) break; } return object; }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); Object.defineProperty(subClass, "prototype", { writable: false }); if (superClass) _setPrototypeOf(subClass, superClass); }
+
+function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
+
+function _createSuper(Derived) { var hasNativeReflectConstruct = _isNativeReflectConstruct(); return function _createSuperInternal() { var Super = _getPrototypeOf(Derived), result; if (hasNativeReflectConstruct) { var NewTarget = _getPrototypeOf(this).constructor; result = Reflect.construct(Super, arguments, NewTarget); } else { result = Super.apply(this, arguments); } return _possibleConstructorReturn(this, result); }; }
+
+function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } else if (call !== void 0) { throw new TypeError("Derived constructors may only return object or undefined"); } return _assertThisInitialized(self); }
+
+function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
+
+function _isNativeReflectConstruct() { if (typeof Reflect === "undefined" || !Reflect.construct) return false; if (Reflect.construct.sham) return false; if (typeof Proxy === "function") return true; try { Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function () {})); return true; } catch (e) { return false; } }
+
+function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
+
+var __importDefault = this && this.__importDefault || function (mod) {
+  return mod && mod.__esModule ? mod : {
+    "default": mod
+  };
+};
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var color_1 = __importDefault(require("../util/color"));
+
+var vec2_1 = __importDefault(require("../util/vec2"));
+
+var rect_1 = __importDefault(require("./rect"));
+
+var GoldParticle = /*#__PURE__*/function (_rect_1$default) {
+  _inherits(GoldParticle, _rect_1$default);
+
+  var _super = _createSuper(GoldParticle);
+
+  function GoldParticle(position, speed, manager) {
+    var _this;
+
+    _classCallCheck(this, GoldParticle);
+
+    _this = _super.call(this, position, new vec2_1.default(0.1, 0.1), color_1.default.RGBA(255, 255, 0, 255), 1, 1, 0);
+    _this.manager = manager;
+    _this.velocity = new vec2_1.default(_this.manager.random.next_float_ranged(-speed, speed), _this.manager.random.next_float_ranged(-speed, speed));
+    _this.acceleration = new vec2_1.default(0.9, 0.9);
+    return _this;
+  }
+
+  _createClass(GoldParticle, [{
+    key: "tick",
+    value: function tick() {
+      _get(_getPrototypeOf(GoldParticle.prototype), "tick", this).call(this);
+
+      this.color.set_alpha(this.color.alpha - 4);
+      if (this.color.alpha < 0) this.destroy();
+    }
+  }]);
+
+  return GoldParticle;
+}(rect_1.default);
+
+exports.default = GoldParticle;
+},{"../util/color":"src/util/color.ts","../util/vec2":"src/util/vec2.ts","./rect":"src/particle/rect.ts"}],"src/entity/coin.ts":[function(require,module,exports) {
+"use strict";
+
+function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); Object.defineProperty(Constructor, "prototype", { writable: false }); return Constructor; }
+
+function _get() { if (typeof Reflect !== "undefined" && Reflect.get) { _get = Reflect.get; } else { _get = function _get(target, property, receiver) { var base = _superPropBase(target, property); if (!base) return; var desc = Object.getOwnPropertyDescriptor(base, property); if (desc.get) { return desc.get.call(arguments.length < 3 ? target : receiver); } return desc.value; }; } return _get.apply(this, arguments); }
+
+function _superPropBase(object, property) { while (!Object.prototype.hasOwnProperty.call(object, property)) { object = _getPrototypeOf(object); if (object === null) break; } return object; }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); Object.defineProperty(subClass, "prototype", { writable: false }); if (superClass) _setPrototypeOf(subClass, superClass); }
+
+function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
+
+function _createSuper(Derived) { var hasNativeReflectConstruct = _isNativeReflectConstruct(); return function _createSuperInternal() { var Super = _getPrototypeOf(Derived), result; if (hasNativeReflectConstruct) { var NewTarget = _getPrototypeOf(this).constructor; result = Reflect.construct(Super, arguments, NewTarget); } else { result = Super.apply(this, arguments); } return _possibleConstructorReturn(this, result); }; }
+
+function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } else if (call !== void 0) { throw new TypeError("Derived constructors may only return object or undefined"); } return _assertThisInitialized(self); }
+
+function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
+
+function _isNativeReflectConstruct() { if (typeof Reflect === "undefined" || !Reflect.construct) return false; if (Reflect.construct.sham) return false; if (typeof Proxy === "function") return true; try { Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function () {})); return true; } catch (e) { return false; } }
+
+function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
+
+var __importDefault = this && this.__importDefault || function (mod) {
+  return mod && mod.__esModule ? mod : {
+    "default": mod
+  };
+};
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var renderer_1 = __importDefault(require("../game/renderer"));
+
+var gold_1 = __importDefault(require("../particle/gold"));
+
+var color_1 = __importDefault(require("../util/color"));
+
+var vec2_1 = __importDefault(require("../util/vec2"));
+
+var entity_1 = __importDefault(require("./entity"));
+
+var player_1 = __importDefault(require("./player"));
+
+var Coin = /*#__PURE__*/function (_entity_1$default) {
+  _inherits(Coin, _entity_1$default);
+
+  var _super = _createSuper(Coin);
+
+  function Coin(value) {
+    var _this;
+
+    _classCallCheck(this, Coin);
+
+    _this = _super.call(this);
+    _this.value = value;
+    _this.size = new vec2_1.default(0.35, 0.35);
+    _this.rotation = 0;
+    _this.color = color_1.default.RGB(255, 255, 64);
+    _this.corner_radius = 1;
+    _this.noclip = false;
+    return _this;
+  }
+
+  _createClass(Coin, [{
+    key: "tick",
+    value: function tick() {
+      _get(_getPrototypeOf(Coin.prototype), "tick", this).call(this);
+
+      this.size.x = Math.cos(this.lifetime / 10) * 0.35;
+    }
+  }, {
+    key: "on_entity_collision",
+    value: function on_entity_collision(entity) {
+      _get(_getPrototypeOf(Coin.prototype), "on_entity_collision", this).call(this, entity);
+
+      if (entity instanceof player_1.default) {
+        entity.gold += this.value;
+        this.destroy();
+      }
+    }
+  }, {
+    key: "destroy",
+    value: function destroy(source) {
+      for (var i = 0; i < 4; i++) {
+        this.manager.room.particles.spawn(new gold_1.default(this.position, 0.07, this.manager.room.particles));
+      }
+
+      _get(_getPrototypeOf(Coin.prototype), "destroy", this).call(this, source);
+    }
+  }, {
+    key: "render",
+    value: function render() {
+      _get(_getPrototypeOf(Coin.prototype), "render", this).call(this);
+
+      renderer_1.default.text(this.position.add(new vec2_1.default(-0.05, 0.1)), 10, color_1.default.RGB(32, 32, 32), this.value.toString());
+    }
+  }]);
+
+  return Coin;
+}(entity_1.default);
+
+exports.default = Coin;
+},{"../game/renderer":"src/game/renderer.ts","../particle/gold":"src/particle/gold.ts","../util/color":"src/util/color.ts","../util/vec2":"src/util/vec2.ts","./entity":"src/entity/entity.ts","./player":"src/entity/player.ts"}],"src/entity/mob.ts":[function(require,module,exports) {
 "use strict";
 
 function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
@@ -30308,6 +30655,8 @@ var color_1 = __importDefault(require("../util/color"));
 
 var vec2_1 = __importDefault(require("../util/vec2"));
 
+var coin_1 = __importDefault(require("./coin"));
+
 var living_entity_1 = __importDefault(require("./living_entity"));
 
 var Mob = /*#__PURE__*/function (_living_entity_1$defa) {
@@ -30329,8 +30678,7 @@ var Mob = /*#__PURE__*/function (_living_entity_1$defa) {
     _this.attack_damage = 1;
     _this.path = new Array();
     _this.current_path_progress = 0;
-    _this.xp = 1;
-    _this.money = 1;
+    _this.gold = 1;
     return _this;
   }
 
@@ -30338,6 +30686,9 @@ var Mob = /*#__PURE__*/function (_living_entity_1$defa) {
     key: "tick",
     value: function tick() {
       _get(_getPrototypeOf(Mob.prototype), "tick", this).call(this);
+
+      if (this.prepare_attack > -1) this.prepare_attack--;
+      if (this.prepare_attack == 0) this.attack();
     }
   }, {
     key: "render",
@@ -30351,6 +30702,14 @@ var Mob = /*#__PURE__*/function (_living_entity_1$defa) {
     key: "update_path",
     value: function update_path() {
       this.current_path_progress = 1;
+    }
+  }, {
+    key: "try_attack",
+    value: function try_attack() {
+      _get(_getPrototypeOf(Mob.prototype), "try_attack", this).call(this);
+
+      this.prepare_attack = this.start_prepare_attack;
+      this.scale_over_time(1.1, this.start_prepare_attack);
     }
   }, {
     key: "walk",
@@ -30369,13 +30728,22 @@ var Mob = /*#__PURE__*/function (_living_entity_1$defa) {
         }
       } else this.current_path_progress = 0;
     }
+  }, {
+    key: "destroy",
+    value: function destroy(source) {
+      var coin = new coin_1.default(this.gold);
+      coin.set_position(this.position);
+      this.manager.spawn(coin);
+
+      _get(_getPrototypeOf(Mob.prototype), "destroy", this).call(this, source);
+    }
   }]);
 
   return Mob;
 }(living_entity_1.default);
 
 exports.default = Mob;
-},{"../game/renderer":"src/game/renderer.ts","../util/color":"src/util/color.ts","../util/vec2":"src/util/vec2.ts","./living_entity":"src/entity/living_entity.ts"}],"src/entity/projectile.ts":[function(require,module,exports) {
+},{"../game/renderer":"src/game/renderer.ts","../util/color":"src/util/color.ts","../util/vec2":"src/util/vec2.ts","./coin":"src/entity/coin.ts","./living_entity":"src/entity/living_entity.ts"}],"src/entity/projectile.ts":[function(require,module,exports) {
 "use strict";
 
 function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
@@ -30668,97 +31036,7 @@ var Bullet = /*#__PURE__*/function (_projectile_1$default) {
 }(projectile_1.default);
 
 exports.default = Bullet;
-},{"../../util/color":"src/util/color.ts","../../util/vec2":"src/util/vec2.ts","../projectile":"src/entity/projectile.ts"}],"src/particle/rect.ts":[function(require,module,exports) {
-"use strict";
-
-function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
-
-function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); Object.defineProperty(Constructor, "prototype", { writable: false }); return Constructor; }
-
-function _get() { if (typeof Reflect !== "undefined" && Reflect.get) { _get = Reflect.get; } else { _get = function _get(target, property, receiver) { var base = _superPropBase(target, property); if (!base) return; var desc = Object.getOwnPropertyDescriptor(base, property); if (desc.get) { return desc.get.call(arguments.length < 3 ? target : receiver); } return desc.value; }; } return _get.apply(this, arguments); }
-
-function _superPropBase(object, property) { while (!Object.prototype.hasOwnProperty.call(object, property)) { object = _getPrototypeOf(object); if (object === null) break; } return object; }
-
-function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); Object.defineProperty(subClass, "prototype", { writable: false }); if (superClass) _setPrototypeOf(subClass, superClass); }
-
-function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
-
-function _createSuper(Derived) { var hasNativeReflectConstruct = _isNativeReflectConstruct(); return function _createSuperInternal() { var Super = _getPrototypeOf(Derived), result; if (hasNativeReflectConstruct) { var NewTarget = _getPrototypeOf(this).constructor; result = Reflect.construct(Super, arguments, NewTarget); } else { result = Super.apply(this, arguments); } return _possibleConstructorReturn(this, result); }; }
-
-function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } else if (call !== void 0) { throw new TypeError("Derived constructors may only return object or undefined"); } return _assertThisInitialized(self); }
-
-function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
-
-function _isNativeReflectConstruct() { if (typeof Reflect === "undefined" || !Reflect.construct) return false; if (Reflect.construct.sham) return false; if (typeof Proxy === "function") return true; try { Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function () {})); return true; } catch (e) { return false; } }
-
-function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
-
-var __importDefault = this && this.__importDefault || function (mod) {
-  return mod && mod.__esModule ? mod : {
-    "default": mod
-  };
-};
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-
-var renderer_1 = __importDefault(require("../game/renderer"));
-
-var vec2_1 = __importDefault(require("../util/vec2"));
-
-var particle_1 = __importDefault(require("./particle"));
-
-var RectangleParticle = /*#__PURE__*/function (_particle_1$default) {
-  _inherits(RectangleParticle, _particle_1$default);
-
-  var _super = _createSuper(RectangleParticle);
-
-  function RectangleParticle(position, size, color, corner_radius, scale, rotation) {
-    var _this;
-
-    _classCallCheck(this, RectangleParticle);
-
-    _this = _super.call(this);
-    _this.lifetime = 30;
-    _this.position = position;
-    _this.size = size;
-    _this.color = color;
-    _this.corner_radius = corner_radius;
-    _this.scale = scale;
-    _this.rotation = rotation;
-    _this.velocity = vec2_1.default.zero();
-    _this.acceleration = vec2_1.default.zero();
-    return _this;
-  }
-
-  _createClass(RectangleParticle, [{
-    key: "tick",
-    value: function tick() {
-      _get(_getPrototypeOf(RectangleParticle.prototype), "tick", this).call(this);
-
-      this.velocity = this.velocity.multiply_vector(this.acceleration);
-      this.position = this.position.add(this.velocity);
-    }
-  }, {
-    key: "render",
-    value: function render() {
-      renderer_1.default.rect(this.position, this.size, this.color, this.corner_radius, {
-        scale: this.scale,
-        rotation: this.rotation
-      });
-    }
-  }]);
-
-  return RectangleParticle;
-}(particle_1.default);
-
-exports.default = RectangleParticle;
-},{"../game/renderer":"src/game/renderer.ts","../util/vec2":"src/util/vec2.ts","./particle":"src/particle/particle.ts"}],"src/particle/flame.ts":[function(require,module,exports) {
+},{"../../util/color":"src/util/color.ts","../../util/vec2":"src/util/vec2.ts","../projectile":"src/entity/projectile.ts"}],"src/particle/flame.ts":[function(require,module,exports) {
 "use strict";
 
 function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
@@ -30943,7 +31221,7 @@ var BurnEffect = /*#__PURE__*/function (_status_effect_1$defa) {
     value: function tick() {
       _get(_getPrototypeOf(BurnEffect.prototype), "tick", this).call(this);
 
-      if (this.ticks % this.speed == 0) this.manager.owner.damage(this.damage);
+      if (this.ticks % this.speed == 0) this.manager.owner.damage(this.damage, null, 10);
       if (this.ticks % Math.floor(this.speed / 3) == 0) this.manager.owner.manager.room.particles.spawn(new flame_1.default(this.manager.owner.position, 0.05, this.manager.owner.manager.room.particles));
     }
   }]);
@@ -31010,6 +31288,8 @@ var Fireball = /*#__PURE__*/function (_projectile_1$default) {
     var _this;
 
     var damage = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 5;
+    var burn_duration = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 180;
+    var burn_speed = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : 30;
 
     _classCallCheck(this, Fireball);
 
@@ -31017,9 +31297,9 @@ var Fireball = /*#__PURE__*/function (_projectile_1$default) {
     _this.size = new vec2_1.default(0.35, 0.35);
     _this.color = color_1.default.RGB(255, 192, 0);
     _this.corner_radius = 0.5;
-    _this.burn_duration = 180;
+    _this.burn_duration = burn_duration;
     _this.burn_level = 1;
-    _this.burn_speed = 30;
+    _this.burn_speed = burn_speed;
     return _this;
   }
 
@@ -31171,7 +31451,134 @@ var Sword = /*#__PURE__*/function (_projectile_1$default) {
 }(projectile_1.default);
 
 exports.default = Sword;
-},{"../../game/renderer":"src/game/renderer.ts","../../util/color":"src/util/color.ts","../../util/vec2":"src/util/vec2.ts","../projectile":"src/entity/projectile.ts"}],"src/entity/player.ts":[function(require,module,exports) {
+},{"../../game/renderer":"src/game/renderer.ts","../../util/color":"src/util/color.ts","../../util/vec2":"src/util/vec2.ts","../projectile":"src/entity/projectile.ts"}],"src/entity/weapon.ts":[function(require,module,exports) {
+"use strict";
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); Object.defineProperty(Constructor, "prototype", { writable: false }); return Constructor; }
+
+var __importDefault = this && this.__importDefault || function (mod) {
+  return mod && mod.__esModule ? mod : {
+    "default": mod
+  };
+};
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.Weapon = void 0;
+
+var arrow_1 = __importDefault(require("./projectile/arrow"));
+
+var bullet_1 = __importDefault(require("./projectile/bullet"));
+
+var fireball_1 = __importDefault(require("./projectile/fireball"));
+
+var sword_1 = __importDefault(require("./projectile/sword"));
+
+var Weapon = /*#__PURE__*/function () {
+  function Weapon(id, owner, base_attack_damage, projectile_anchored, attack, tick) {
+    _classCallCheck(this, Weapon);
+
+    this.id = id;
+    this.owner = owner;
+    this.base_attack_damage = base_attack_damage;
+    this.attack_cooldown = 60;
+    this.attack = attack;
+    this.projectile_anchored = projectile_anchored;
+    this.prepare_attack = -1;
+    this.tick_f = tick;
+  }
+
+  _createClass(Weapon, [{
+    key: "tick",
+    value: function tick() {
+      this.attack_damage = Math.floor(this.base_attack_damage * (1 + this.owner.strength / 10) * this.owner.class.strength_multiplier);
+      this.tick_f();
+    }
+  }]);
+
+  return Weapon;
+}();
+
+exports.Weapon = Weapon;
+
+var Weapons = /*#__PURE__*/function () {
+  function Weapons() {
+    _classCallCheck(this, Weapons);
+  }
+
+  _createClass(Weapons, null, [{
+    key: "bullet",
+    value: function bullet(owner) {
+      return new Weapon('bullet', owner, 7, false, function () {
+        return new bullet_1.default(owner, owner.weapon.attack_damage);
+      }, function () {
+        owner.weapon.projectile_speed = 0.25 + owner.intelligence * 0.002;
+        owner.weapon.max_attack_cooldown = Math.floor(Math.max(15, 30 - owner.intelligence * 0.3));
+        owner.weapon.start_prepare_attack = 1;
+      });
+    }
+  }, {
+    key: "sword",
+    value: function sword(owner) {
+      return new Weapon('sword', owner, 7, true, function () {
+        return new sword_1.default(owner, owner.weapon.attack_damage);
+      }, function () {
+        owner.weapon.projectile_speed = 0;
+        owner.weapon.max_attack_cooldown = Math.floor(Math.max(25, 50 - owner.intelligence * 0.5));
+        owner.weapon.start_prepare_attack = Math.floor(Math.max(1, 5 - owner.intelligence * 0.2));
+      });
+    }
+  }, {
+    key: "fireball",
+    value: function fireball(owner) {
+      return new Weapon('fireball', owner, 7, false, function () {
+        return new fireball_1.default(owner, owner.weapon.attack_damage, 180 + owner.intelligence * 10, Math.max(10, 30 - owner.intelligence));
+      }, function () {
+        owner.weapon.projectile_speed = 0.15;
+        owner.weapon.max_attack_cooldown = Math.floor(Math.max(20, 40 - owner.intelligence * 0.4));
+        owner.weapon.start_prepare_attack = Math.floor(Math.max(3, 8 - owner.intelligence * 0.1));
+      });
+    }
+  }, {
+    key: "arrow",
+    value: function arrow(owner) {
+      return new Weapon('arrow', owner, 7, false, function () {
+        return new arrow_1.default(owner, owner.weapon.attack_damage);
+      }, function () {
+        owner.weapon.projectile_speed = 0.35 + owner.intelligence * 0.002;
+        owner.weapon.max_attack_cooldown = Math.floor(Math.max(15, 30 - owner.intelligence * 0.3));
+        owner.weapon.start_prepare_attack = Math.floor(Math.max(3, 6 - owner.intelligence * 0.2));
+      });
+    }
+  }, {
+    key: "from_id",
+    value: function from_id(id, owner) {
+      switch (id) {
+        case 'bullet':
+          return Weapons.bullet(owner);
+
+        case 'sword':
+          return Weapons.sword(owner);
+
+        case 'fireball':
+          return Weapons.fireball(owner);
+
+        case 'arrow':
+          return Weapons.arrow(owner);
+      }
+    }
+  }]);
+
+  return Weapons;
+}();
+
+exports.default = Weapons;
+},{"./projectile/arrow":"src/entity/projectile/arrow.ts","./projectile/bullet":"src/entity/projectile/bullet.ts","./projectile/fireball":"src/entity/projectile/fireball.ts","./projectile/sword":"src/entity/projectile/sword.ts"}],"src/entity/player.ts":[function(require,module,exports) {
 "use strict";
 
 function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
@@ -31216,8 +31623,6 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
-var game_1 = require("../game/game");
-
 var renderer_1 = __importDefault(require("../game/renderer"));
 
 var color_1 = __importDefault(require("../util/color"));
@@ -31226,15 +31631,9 @@ var vec2_1 = __importDefault(require("../util/vec2"));
 
 var living_entity_1 = __importDefault(require("./living_entity"));
 
-var mob_1 = __importDefault(require("./mob"));
+var player_class_1 = __importDefault(require("./player_class"));
 
-var arrow_1 = __importDefault(require("./projectile/arrow"));
-
-var bullet_1 = __importDefault(require("./projectile/bullet"));
-
-var fireball_1 = __importDefault(require("./projectile/fireball"));
-
-var sword_1 = __importDefault(require("./projectile/sword"));
+var weapon_1 = __importDefault(require("./weapon"));
 
 var Player = /*#__PURE__*/function (_living_entity_1$defa) {
   _inherits(Player, _living_entity_1$defa);
@@ -31251,55 +31650,12 @@ var Player = /*#__PURE__*/function (_living_entity_1$defa) {
     _this.size = new vec2_1.default(0.8, 0.8);
     _this.color = color_1.default.RGB(40, 255, 40);
     _this.corner_radius = 0.35;
-    _this.projectile_anchored = false;
-
-    switch (player_class) {
-      case game_1.PlayerClass.TURRET:
-        _this.attack_cooldown = 12;
-        _this.max_attack_cooldown = 12;
-        _this.attack_damage = 5;
-        _this.attack_scale_duration = 5;
-        _this.attack_projectile = bullet_1.default;
-        _this.projectile_speed = 0.3;
-        _this.start_prepare_attack = 1;
-        break;
-
-      case game_1.PlayerClass.SWORDSMAN:
-        _this.attack_cooldown = 30;
-        _this.max_attack_cooldown = 30;
-        _this.attack_damage = 8;
-        _this.attack_scale_duration = 30;
-        _this.attack_projectile = sword_1.default;
-        _this.projectile_anchored = true;
-        _this.projectile_speed = 0;
-        _this.start_prepare_attack = 3;
-        _this.max_health = 60;
-        break;
-
-      case game_1.PlayerClass.MAGE:
-        _this.attack_cooldown = 20;
-        _this.max_attack_cooldown = 20;
-        _this.attack_damage = 5;
-        _this.attack_scale_duration = 20;
-        _this.attack_projectile = fireball_1.default;
-        _this.projectile_speed = 0.15;
-        _this.start_prepare_attack = 8;
-        break;
-
-      case game_1.PlayerClass.ARCHER:
-        _this.attack_cooldown = 24;
-        _this.max_attack_cooldown = 24;
-        _this.attack_damage = 6;
-        _this.attack_scale_duration = 24;
-        _this.attack_projectile = arrow_1.default;
-        _this.projectile_speed = 0.25;
-        _this.start_prepare_attack = 5;
-        _this.max_health = 40;
-        break;
-    }
-
-    _this.health = _this.max_health;
-    _this.xp = 0;
+    _this.vitality = 5;
+    _this.strength = 1;
+    _this.intelligence = 1;
+    _this.class = player_class_1.default.from_id(player_class);
+    _this.weapon = weapon_1.default.from_id(_this.class.weapon, _assertThisInitialized(_this));
+    _this.gold = 0;
     return _this;
   }
 
@@ -31314,14 +31670,23 @@ var Player = /*#__PURE__*/function (_living_entity_1$defa) {
   }, {
     key: "mouseup",
     value: function mouseup(e) {
-      this.prepare_attack = -1;
+      this.weapon.prepare_attack = -1;
+    }
+  }, {
+    key: "set_vitality",
+    value: function set_vitality(vitality) {
+      this.vitality = vitality;
+      this.max_health = Math.floor(this.vitality * this.class.vitality_multiplier);
     }
   }, {
     key: "tick",
     value: function tick() {
       _get(_getPrototypeOf(Player.prototype), "tick", this).call(this);
 
-      if (this.attack_cooldown > 0) this.attack_cooldown--;
+      this.weapon.tick();
+      if (this.weapon.attack_cooldown > 0) this.weapon.attack_cooldown--;
+      if (this.weapon.prepare_attack > -1) this.weapon.prepare_attack--;
+      if (this.weapon.prepare_attack == 0) this.attack();
       if (this.health < 0) this.manager.room.manager.game.stop_caused_by_death();
     }
   }, {
@@ -31350,25 +31715,23 @@ var Player = /*#__PURE__*/function (_living_entity_1$defa) {
   }, {
     key: "try_attack",
     value: function try_attack() {
-      if (this.attack_cooldown > 0) return;
-
-      _get(_getPrototypeOf(Player.prototype), "try_attack", this).call(this);
+      if (this.weapon.attack_cooldown > 0) return;
+      this.weapon.prepare_attack = this.weapon.start_prepare_attack;
+      this.scale_over_time(1.1, this.weapon.start_prepare_attack);
     }
   }, {
     key: "attack",
     value: function attack() {
       this.scale = 1.1;
-      var projectile = new this.attack_projectile(this, this.attack_damage);
-      if (!this.projectile_anchored) projectile.rotation = this.facing;
-      this.manager.spawn_projectile(projectile, this.facing, this.projectile_speed, this.projectile_anchored ? undefined : this.position);
-      this.scale_over_time(1, this.attack_scale_duration);
-      this.attack_cooldown = this.max_attack_cooldown;
+      var projectile = this.weapon.attack();
+      if (!this.weapon.projectile_anchored) projectile.rotation = this.facing;
+      this.manager.spawn_projectile(projectile, this.facing, this.weapon.projectile_speed, this.weapon.projectile_anchored ? undefined : this.position);
+      this.scale_over_time(1, 5);
+      this.weapon.attack_cooldown = this.weapon.max_attack_cooldown;
     }
   }, {
     key: "on_kill",
-    value: function on_kill(target) {
-      if (target instanceof mob_1.default) this.xp += target.xp;
-    }
+    value: function on_kill(target) {}
   }, {
     key: "keydown",
     value: function keydown(keys) {
@@ -31413,7 +31776,7 @@ var Player = /*#__PURE__*/function (_living_entity_1$defa) {
 }(living_entity_1.default);
 
 exports.default = Player;
-},{"../game/game":"src/game/game.ts","../game/renderer":"src/game/renderer.ts","../util/color":"src/util/color.ts","../util/vec2":"src/util/vec2.ts","./living_entity":"src/entity/living_entity.ts","./mob":"src/entity/mob.ts","./projectile/arrow":"src/entity/projectile/arrow.ts","./projectile/bullet":"src/entity/projectile/bullet.ts","./projectile/fireball":"src/entity/projectile/fireball.ts","./projectile/sword":"src/entity/projectile/sword.ts"}],"src/room/biome.ts":[function(require,module,exports) {
+},{"../game/renderer":"src/game/renderer.ts","../util/color":"src/util/color.ts","../util/vec2":"src/util/vec2.ts","./living_entity":"src/entity/living_entity.ts","./player_class":"src/entity/player_class.ts","./weapon":"src/entity/weapon.ts"}],"src/room/biome.ts":[function(require,module,exports) {
 "use strict";
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -31560,7 +31923,7 @@ var Archer = /*#__PURE__*/function (_mob_1$default) {
     _classCallCheck(this, Archer);
 
     _this = _super.call(this);
-    _this.max_health = 20;
+    _this.max_health = 15;
     _this.start_prepare_attack = 20;
     _this.attack_damage = 5;
     _this.size = new vec2_1.default(0.65, 0.65);
@@ -31666,7 +32029,7 @@ var Mage = /*#__PURE__*/function (_mob_1$default) {
     _classCallCheck(this, Mage);
 
     _this = _super.call(this);
-    _this.max_health = 30;
+    _this.max_health = 20;
     _this.start_prepare_attack = 40;
     _this.attack_damage = 0;
     _this.corner_radius = 0.3;
@@ -31771,12 +32134,10 @@ var Swordsman = /*#__PURE__*/function (_mob_1$default) {
     _this.color = color_1.default.RGB(210, 160, 120);
     _this.size = new vec2_1.default(0.85, 0.85);
     _this.corner_radius = 0.1;
-    _this.max_health = 45;
-    _this.health = 45;
+    _this.max_health = 30;
     _this.start_prepare_attack = 10;
     _this.attack_damage = 6;
-    _this.xp = 3;
-    _this.money = 3;
+    _this.gold = 3;
     return _this;
   }
 
@@ -31870,7 +32231,7 @@ var Turret = /*#__PURE__*/function (_mob_1$default) {
     _classCallCheck(this, Turret);
 
     _this = _super.call(this);
-    _this.max_health = 25;
+    _this.max_health = 20;
     _this.start_prepare_attack = 30;
     _this.attack_damage = 4;
     _this.color = color_1.default.RGB(64, 92, 255);
@@ -31884,7 +32245,7 @@ var Turret = /*#__PURE__*/function (_mob_1$default) {
 
       this.look(renderer_1.default.canvas_coords(this.manager.room.manager.game.player.position));
       if (this.lifetime % 45 == 0) this.walk();
-      if (this.lifetime % 75 == 0) this.try_attack();
+      if (this.lifetime % 90 == 0) this.try_attack();
     }
   }, {
     key: "attack",
@@ -32037,6 +32398,8 @@ var EntityManager = /*#__PURE__*/function () {
         var mob = mobs_1.default.from_id(entry[1]);
         if (!entry[1]) mob = mobs_1.default.from_id(this.room.biome.next_mob());
         mob.set_position(pos.add(new vec2_1.default(0.5, 0.5)));
+        mob.max_health = Math.floor(mob.max_health * (1 + this.room.difficulty / 10));
+        mob.attack_damage = Math.floor(mob.attack_damage * (1 + this.room.difficulty / 10));
         this.spawn(mob);
       }
     } catch (err) {
@@ -35358,7 +35721,7 @@ var RoomManager = /*#__PURE__*/function () {
     this.game = game;
     this.rooms = new Map();
     this.random = new random_1.default();
-    this.layouts = JSON.parse("[\r\n\t{\r\n\t\t\"difficulty\": 0,\r\n\t\t\"data\": [\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 1, 1, 1, 1, 1, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 1, 1, 1, 1, 1, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 3, 1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 3, 1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 1, 1, 1, 1, 1, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 1, 1, 1, 1, 1, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2\r\n\t\t],\r\n\t\t\"keys\": {\r\n\t\t\t\"1\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"air\"\r\n\t\t\t},\r\n\t\t\t\"2\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"wall\"\r\n\t\t\t},\r\n\t\t\t\"3\": {\r\n\t\t\t\t\"type\": \"entity\",\r\n\t\t\t\t\"chance\": 0.25\r\n\t\t\t}\r\n\t\t}\r\n\t},\r\n\t{\r\n\t\t\"difficulty\": 0,\r\n\t\t\"data\": [\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 1, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 2,\r\n\t\t\t2, 1, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3, 1, 2,\r\n\t\t\t2, 1, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 2,\r\n\t\t\t2, 2, 1, 2, 2, 1, 1, 1, 1, 1, 2, 2, 1, 2, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 1, 2, 2, 1, 1, 1, 1, 1, 2, 2, 1, 2, 2,\r\n\t\t\t2, 1, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 2,\r\n\t\t\t2, 1, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3, 1, 2,\r\n\t\t\t2, 1, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2\r\n\t\t],\r\n\t\t\"keys\": {\r\n\t\t\t\"1\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"air\"\r\n\t\t\t},\r\n\t\t\t\"2\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"wall\"\r\n\t\t\t},\r\n\t\t\t\"3\": {\r\n\t\t\t\t\"type\": \"entity\",\r\n\t\t\t\t\"chance\": 0.33\r\n\t\t\t}\r\n\t\t}\r\n\t},\r\n\t{\r\n\t\t\"difficulty\": 0,\r\n\t\t\"data\": [\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 2, 2, 2, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 3, 1, 2, 2, 2, 2, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 2, 2, 2, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 2, 2, 2, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 2, 2, 2, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 2, 2, 2, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 2, 2, 2, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 2, 2, 2, 2, 1, 3, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 2, 2, 2, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2\r\n\t\t],\r\n\t\t\"keys\": {\r\n\t\t\t\"1\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"air\"\r\n\t\t\t},\r\n\t\t\t\"2\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"wall\"\r\n\t\t\t},\r\n\t\t\t\"3\": {\r\n\t\t\t\t\"type\": \"entity\",\r\n\t\t\t\t\"chance\": 0.33\r\n\t\t\t}\r\n\t\t}\r\n\t},\r\n\t{\r\n\t\t\"difficulty\": 0,\r\n\t\t\"data\": [\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 2, 2, 1, 1, 1, 2, 2, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 3, 1, 1, 1, 3, 1, 1, 1, 3, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 2, 2, 1, 1, 1, 2, 2, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2\r\n\t\t],\r\n\t\t\"keys\": {\r\n\t\t\t\"1\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"air\"\r\n\t\t\t},\r\n\t\t\t\"2\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"wall\"\r\n\t\t\t},\r\n\t\t\t\"3\": {\r\n\t\t\t\t\"type\": \"entity\",\r\n\t\t\t\t\"chance\": 0.33\r\n\t\t\t}\r\n\t\t}\r\n\t},\r\n\t{\r\n\t\t\"difficulty\": 0,\r\n\t\t\"data\": [\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2,\r\n\t\t\t2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2,\r\n\t\t\t2, 2, 1, 1, 2, 2, 1, 3, 1, 2, 2, 1, 1, 2, 2,\r\n\t\t\t2, 2, 1, 1, 2, 2, 1, 1, 1, 2, 2, 1, 1, 2, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 1, 1, 2, 2, 1, 1, 1, 2, 2, 1, 1, 2, 2,\r\n\t\t\t2, 2, 1, 1, 2, 2, 1, 3, 1, 2, 2, 1, 1, 2, 2,\r\n\t\t\t2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2,\r\n\t\t\t2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2\r\n\t\t],\r\n\t\t\"keys\": {\r\n\t\t\t\"1\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"air\"\r\n\t\t\t},\r\n\t\t\t\"2\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"wall\"\r\n\t\t\t},\r\n\t\t\t\"3\": {\r\n\t\t\t\t\"type\": \"entity\",\r\n\t\t\t\t\"chance\": 0.33\r\n\t\t\t}\r\n\t\t}\r\n\t},\r\n\t{\r\n\t\t\"difficulty\": 0,\r\n\t\t\"data\": [\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 2, 2, 1, 1, 1, 2, 2, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 2, 2, 3, 1, 3, 2, 2, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 2, 2, 1, 1, 1, 2, 2, 2, 1, 2, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 1, 2, 2, 2, 1, 1, 1, 2, 2, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 2, 2, 3, 1, 3, 2, 2, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 2, 2, 1, 1, 1, 2, 2, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2\r\n\t\t],\r\n\t\t\"keys\": {\r\n\t\t\t\"1\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"air\"\r\n\t\t\t},\r\n\t\t\t\"2\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"wall\"\r\n\t\t\t},\r\n\t\t\t\"3\": {\r\n\t\t\t\t\"type\": \"entity\",\r\n\t\t\t\t\"chance\": 0.33\r\n\t\t\t}\r\n\t\t}\r\n\t},\r\n\t{\r\n\t\t\"difficulty\": 0,\r\n\t\t\"data\": [\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 1, 3, 1, 1, 1, 1, 1, 2, 1, 2, 2,\r\n\t\t\t2, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 2,\r\n\t\t\t2, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 2,\r\n\t\t\t2, 2, 1, 2, 1, 1, 1, 1, 1, 3, 1, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2\r\n\t\t],\r\n\t\t\"keys\": {\r\n\t\t\t\"1\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"air\"\r\n\t\t\t},\r\n\t\t\t\"2\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"wall\"\r\n\t\t\t},\r\n\t\t\t\"3\": {\r\n\t\t\t\t\"type\": \"entity\",\r\n\t\t\t\t\"chance\": 0.33\r\n\t\t\t}\r\n\t\t}\r\n\t},\r\n\t{\r\n\t\t\"difficulty\": 0,\r\n\t\t\"data\": [\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2,\r\n\t\t\t2, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 2,\r\n\t\t\t2, 1, 1, 2, 1, 3, 1, 1, 1, 3, 1, 2, 1, 1, 2,\r\n\t\t\t2, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 2,\r\n\t\t\t2, 2, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2\r\n\t\t],\r\n\t\t\"keys\": {\r\n\t\t\t\"1\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"air\"\r\n\t\t\t},\r\n\t\t\t\"2\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"wall\"\r\n\t\t\t},\r\n\t\t\t\"3\": {\r\n\t\t\t\t\"type\": \"entity\",\r\n\t\t\t\t\"chance\": 0.33\r\n\t\t\t}\r\n\t\t}\r\n\t},\r\n\t{\r\n\t\t\"difficulty\": 0,\r\n\t\t\"data\": [\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 1, 1, 3, 1, 1, 1, 1, 1, 1, 1, 2, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2\r\n\t\t],\r\n\t\t\"keys\": {\r\n\t\t\t\"1\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"air\"\r\n\t\t\t},\r\n\t\t\t\"2\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"wall\"\r\n\t\t\t},\r\n\t\t\t\"3\": {\r\n\t\t\t\t\"type\": \"entity\",\r\n\t\t\t\t\"chance\": 0.33\r\n\t\t\t}\r\n\t\t}\r\n\t},\r\n\t{\r\n\t\t\"difficulty\": 0,\r\n\t\t\"data\": [\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 2, 1, 1, 1, 1, 1, 2, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 1, 1, 1, 1, 1, 1, 3, 1, 2, 1, 2, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 2,\r\n\t\t\t2, 2, 1, 1, 1, 3, 1, 1, 1, 3, 1, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2\r\n\t\t],\r\n\t\t\"keys\": {\r\n\t\t\t\"1\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"air\"\r\n\t\t\t},\r\n\t\t\t\"2\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"wall\"\r\n\t\t\t},\r\n\t\t\t\"3\": {\r\n\t\t\t\t\"type\": \"entity\",\r\n\t\t\t\t\"chance\": 0.33\r\n\t\t\t}\r\n\t\t}\r\n\t},\r\n\t{\r\n\t\t\"difficulty\": 0,\r\n\t\t\"data\": [\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 2, 1, 1, 1, 1, 1, 2, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 1, 2, 2, 2, 1, 2, 2, 2, 1, 1, 2, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 1, 1, 1, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 1, 1, 1, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 1, 1, 2, 2, 2, 1, 2, 2, 2, 1, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 2, 1, 1, 1, 1, 1, 2, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2\r\n\t\t],\r\n\t\t\"keys\": {\r\n\t\t\t\"1\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"air\"\r\n\t\t\t},\r\n\t\t\t\"2\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"wall\"\r\n\t\t\t},\r\n\t\t\t\"3\": {\r\n\t\t\t\t\"type\": \"entity\",\r\n\t\t\t\t\"chance\": 0.33\r\n\t\t\t}\r\n\t\t}\r\n\t},\r\n\t{\r\n\t\t\"difficulty\": 0,\r\n\t\t\"data\": [\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2,\r\n\t\t\t2, 1, 2, 2, 1, 1, 1, 3, 1, 1, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 1, 1, 1, 1, 1, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 2, 1, 1, 1, 1, 1, 2, 2, 2, 1, 2,\r\n\t\t\t2, 1, 1, 2, 2, 1, 1, 1, 1, 1, 2, 2, 1, 1, 2,\r\n\t\t\t2, 1, 1, 2, 2, 1, 1, 3, 1, 1, 2, 2, 1, 1, 2,\r\n\t\t\t2, 1, 1, 2, 2, 1, 1, 1, 1, 1, 2, 2, 1, 1, 2,\r\n\t\t\t2, 1, 1, 2, 2, 1, 1, 1, 1, 1, 2, 2, 1, 1, 2,\r\n\t\t\t2, 1, 1, 2, 2, 1, 1, 1, 1, 1, 2, 2, 1, 1, 2,\r\n\t\t\t2, 1, 1, 2, 2, 2, 1, 3, 1, 2, 2, 2, 1, 1, 2,\r\n\t\t\t2, 1, 1, 2, 2, 2, 1, 1, 1, 2, 2, 2, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2\r\n\t\t],\r\n\t\t\"keys\": {\r\n\t\t\t\"1\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"air\"\r\n\t\t\t},\r\n\t\t\t\"2\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"wall\"\r\n\t\t\t},\r\n\t\t\t\"3\": {\r\n\t\t\t\t\"type\": \"entity\",\r\n\t\t\t\t\"chance\": 0.33\r\n\t\t\t}\r\n\t\t}\r\n\t},\r\n\t{\r\n\t\t\"difficulty\": 0,\r\n\t\t\"data\": [\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2,\r\n\t\t\t2, 1, 2, 2, 1, 1, 1, 3, 1, 1, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 1, 1, 1, 1, 1, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 2, 1, 1, 1, 1, 1, 2, 2, 2, 1, 2,\r\n\t\t\t2, 1, 1, 2, 2, 1, 1, 1, 1, 1, 2, 2, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 3, 1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 2, 2, 1, 1, 1, 1, 1, 2, 2, 1, 1, 2,\r\n\t\t\t2, 1, 1, 2, 2, 2, 1, 1, 1, 2, 2, 2, 1, 1, 2,\r\n\t\t\t2, 1, 1, 2, 2, 2, 1, 1, 1, 2, 2, 2, 1, 1, 2,\r\n\t\t\t2, 1, 2, 2, 2, 2, 1, 3, 1, 2, 2, 2, 2, 1, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2\r\n\t\t],\r\n\t\t\"keys\": {\r\n\t\t\t\"1\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"air\"\r\n\t\t\t},\r\n\t\t\t\"2\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"wall\"\r\n\t\t\t},\r\n\t\t\t\"3\": {\r\n\t\t\t\t\"type\": \"entity\",\r\n\t\t\t\t\"chance\": 0.33\r\n\t\t\t}\r\n\t\t}\r\n\t},\r\n\t{\r\n\t\t\"difficulty\": 0,\r\n\t\t\"data\": [\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 2, 2, 2, 1, 1, 1, 1, 1, 2, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 2, 1, 1, 1, 1, 1, 2, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 2, 1, 1, 1, 1, 1, 2, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 2, 1, 1, 1, 1, 1, 2, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 2, 1, 1, 3, 1, 1, 2, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 2, 1, 1, 1, 1, 1, 2, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 2, 1, 1, 1, 1, 1, 2, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 2, 1, 1, 1, 1, 1, 2, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 2, 1, 1, 1, 1, 1, 2, 2, 2, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2\r\n\t\t],\r\n\t\t\"keys\": {\r\n\t\t\t\"1\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"air\"\r\n\t\t\t},\r\n\t\t\t\"2\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"wall\"\r\n\t\t\t},\r\n\t\t\t\"3\": {\r\n\t\t\t\t\"type\": \"entity\",\r\n\t\t\t\t\"chance\": 0.33\r\n\t\t\t}\r\n\t\t}\r\n\t},\r\n\t{\r\n\t\t\"difficulty\": 0,\r\n\t\t\"data\": [\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 1, 1, 2, 2, 2, 1, 1, 1, 2, 2, 2, 1, 1, 2,\r\n\t\t\t2, 1, 2, 2, 2, 1, 1, 1, 1, 1, 2, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 2, 1, 1, 3, 1, 1, 2, 2, 2, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 2, 2, 2, 1, 1, 1, 1, 1, 2, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 2, 1, 1, 1, 1, 1, 2, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 2, 1, 1, 1, 1, 1, 2, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 2, 1, 1, 1, 1, 1, 2, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 2, 1, 1, 1, 1, 1, 2, 2, 2, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 2, 2, 2, 1, 1, 3, 1, 1, 2, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 2, 1, 1, 1, 1, 1, 2, 2, 2, 1, 2,\r\n\t\t\t2, 1, 1, 2, 2, 2, 1, 1, 1, 2, 2, 2, 1, 1, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2\r\n\t\t],\r\n\t\t\"keys\": {\r\n\t\t\t\"1\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"air\"\r\n\t\t\t},\r\n\t\t\t\"2\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"wall\"\r\n\t\t\t},\r\n\t\t\t\"3\": {\r\n\t\t\t\t\"type\": \"entity\",\r\n\t\t\t\t\"chance\": 0.33\r\n\t\t\t}\r\n\t\t}\r\n\t},\r\n\t{\r\n\t\t\"difficulty\": 0,\r\n\t\t\"data\": [\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 2, 1, 2, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 2, 1, 1, 1, 2, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 2, 1, 3, 1, 2, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 1, 1, 1, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 2, 1, 2, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 1, 1, 1, 1, 1, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 1, 1, 1, 1, 1, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2\r\n\t\t],\r\n\t\t\"keys\": {\r\n\t\t\t\"1\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"air\"\r\n\t\t\t},\r\n\t\t\t\"2\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"wall\"\r\n\t\t\t},\r\n\t\t\t\"3\": {\r\n\t\t\t\t\"type\": \"entity\",\r\n\t\t\t\t\"chance\": 0.33\r\n\t\t\t}\r\n\t\t}\r\n\t},\r\n\t{\r\n\t\t\"difficulty\": 0,\r\n\t\t\"data\": [\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 2, 1, 2, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 2, 1, 1, 1, 2, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 2, 1, 3, 1, 2, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 1, 1, 1, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 2, 1, 2, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 2, 1, 2, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 1, 1, 1, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 2, 1, 3, 1, 2, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 2, 1, 1, 1, 2, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 2, 1, 2, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2\r\n\t\t],\r\n\t\t\"keys\": {\r\n\t\t\t\"1\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"air\"\r\n\t\t\t},\r\n\t\t\t\"2\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"wall\"\r\n\t\t\t},\r\n\t\t\t\"3\": {\r\n\t\t\t\t\"type\": \"entity\",\r\n\t\t\t\t\"chance\": 0.33\r\n\t\t\t}\r\n\t\t}\r\n\t},\r\n\t{\r\n\t\t\"difficulty\": 0,\r\n\t\t\"data\": [\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 2, 1, 2, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 2, 1, 1, 1, 2, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 2, 1, 3, 1, 1, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 1, 1, 1, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 2, 1, 2, 2, 2, 1, 2, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 1, 2, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 1, 1, 1, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 1, 1, 3, 1, 2, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 2, 1, 1, 1, 2, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 2, 1, 2, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2\r\n\t\t],\r\n\t\t\"keys\": {\r\n\t\t\t\"1\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"air\"\r\n\t\t\t},\r\n\t\t\t\"2\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"wall\"\r\n\t\t\t},\r\n\t\t\t\"3\": {\r\n\t\t\t\t\"type\": \"entity\",\r\n\t\t\t\t\"chance\": 0.33\r\n\t\t\t}\r\n\t\t}\r\n\t},\r\n\t{\r\n\t\t\"difficulty\": 0,\r\n\t\t\"data\": [\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 2, 1, 2, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 2, 1, 1, 1, 2, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 2, 1, 3, 1, 1, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 1, 1, 1, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 2, 1, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 1, 1, 1, 2, 1, 1, 1, 2, 1, 1, 1, 2, 2,\r\n\t\t\t2, 1, 1, 3, 1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 2,\r\n\t\t\t2, 2, 1, 1, 1, 2, 1, 1, 1, 2, 1, 1, 1, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 1, 2, 2, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 1, 1, 1, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 1, 1, 3, 1, 2, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 2, 1, 1, 1, 2, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 2, 1, 2, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2\r\n\t\t],\r\n\t\t\"keys\": {\r\n\t\t\t\"1\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"air\"\r\n\t\t\t},\r\n\t\t\t\"2\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"wall\"\r\n\t\t\t},\r\n\t\t\t\"3\": {\r\n\t\t\t\t\"type\": \"entity\",\r\n\t\t\t\t\"chance\": 0.33\r\n\t\t\t}\r\n\t\t}\r\n\t},\r\n\t{\r\n\t\t\"difficulty\": 0,\r\n\t\t\"data\": [\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 2, 1, 2, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 2, 1, 1, 1, 2, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 2, 1, 3, 1, 2, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 1, 1, 1, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 1, 2, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 1, 1, 1, 1, 1, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 1, 1, 1, 1, 1, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2\r\n\t\t],\r\n\t\t\"keys\": {\r\n\t\t\t\"1\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"air\"\r\n\t\t\t},\r\n\t\t\t\"2\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"wall\"\r\n\t\t\t},\r\n\t\t\t\"3\": {\r\n\t\t\t\t\"type\": \"entity\",\r\n\t\t\t\t\"chance\": 0.33\r\n\t\t\t}\r\n\t\t}\r\n\t},\r\n\t{\r\n\t\t\"difficulty\": 0,\r\n\t\t\"data\": [\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3, 1, 2, 2, 2,\r\n\t\t\t2, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2,\r\n\t\t\t2, 1, 2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 1, 2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2,\r\n\t\t\t2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2,\r\n\t\t\t2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 2,\r\n\t\t\t2, 2, 2, 1, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2\r\n\t\t],\r\n\t\t\"keys\": {\r\n\t\t\t\"1\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"air\"\r\n\t\t\t},\r\n\t\t\t\"2\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"wall\"\r\n\t\t\t},\r\n\t\t\t\"3\": {\r\n\t\t\t\t\"type\": \"entity\",\r\n\t\t\t\t\"chance\": 0.33\r\n\t\t\t}\r\n\t\t}\r\n\t}\r\n]\r\n");
+    this.layouts = JSON.parse("[\r\n\t{\r\n\t\t\"difficulty\": 0,\r\n\t\t\"data\": [\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 1, 1, 1, 1, 1, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 1, 1, 1, 1, 1, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 3, 1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 3, 1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 1, 1, 1, 1, 1, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 1, 1, 1, 1, 1, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2\r\n\t\t],\r\n\t\t\"keys\": {\r\n\t\t\t\"1\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"air\"\r\n\t\t\t},\r\n\t\t\t\"2\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"wall\"\r\n\t\t\t},\r\n\t\t\t\"3\": {\r\n\t\t\t\t\"type\": \"entity\",\r\n\t\t\t\t\"chance\": 0.1\r\n\t\t\t}\r\n\t\t}\r\n\t},\r\n\t{\r\n\t\t\"difficulty\": 0,\r\n\t\t\"data\": [\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 1, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 2,\r\n\t\t\t2, 1, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3, 1, 2,\r\n\t\t\t2, 1, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 2,\r\n\t\t\t2, 2, 1, 2, 2, 1, 1, 1, 1, 1, 2, 2, 1, 2, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 1, 2, 2, 1, 1, 1, 1, 1, 2, 2, 1, 2, 2,\r\n\t\t\t2, 1, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 2,\r\n\t\t\t2, 1, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3, 1, 2,\r\n\t\t\t2, 1, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2\r\n\t\t],\r\n\t\t\"keys\": {\r\n\t\t\t\"1\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"air\"\r\n\t\t\t},\r\n\t\t\t\"2\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"wall\"\r\n\t\t\t},\r\n\t\t\t\"3\": {\r\n\t\t\t\t\"type\": \"entity\",\r\n\t\t\t\t\"chance\": 0.5\r\n\t\t\t}\r\n\t\t}\r\n\t},\r\n\t{\r\n\t\t\"difficulty\": 0,\r\n\t\t\"data\": [\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 2, 2, 2, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 3, 1, 2, 2, 2, 2, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 2, 2, 2, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 2, 2, 2, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 2, 2, 2, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 2, 2, 2, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 2, 2, 2, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 2, 2, 2, 2, 1, 3, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 2, 2, 2, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2\r\n\t\t],\r\n\t\t\"keys\": {\r\n\t\t\t\"1\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"air\"\r\n\t\t\t},\r\n\t\t\t\"2\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"wall\"\r\n\t\t\t},\r\n\t\t\t\"3\": {\r\n\t\t\t\t\"type\": \"entity\",\r\n\t\t\t\t\"chance\": 0.5\r\n\t\t\t}\r\n\t\t}\r\n\t},\r\n\t{\r\n\t\t\"difficulty\": 0,\r\n\t\t\"data\": [\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 2, 2, 1, 1, 1, 2, 2, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 3, 1, 1, 1, 3, 1, 1, 1, 3, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 2, 2, 1, 1, 1, 2, 2, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2\r\n\t\t],\r\n\t\t\"keys\": {\r\n\t\t\t\"1\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"air\"\r\n\t\t\t},\r\n\t\t\t\"2\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"wall\"\r\n\t\t\t},\r\n\t\t\t\"3\": {\r\n\t\t\t\t\"type\": \"entity\",\r\n\t\t\t\t\"chance\": 0.5\r\n\t\t\t}\r\n\t\t}\r\n\t},\r\n\t{\r\n\t\t\"difficulty\": 0,\r\n\t\t\"data\": [\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2,\r\n\t\t\t2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2,\r\n\t\t\t2, 2, 1, 1, 2, 2, 1, 3, 1, 2, 2, 1, 1, 2, 2,\r\n\t\t\t2, 2, 1, 1, 2, 2, 1, 1, 1, 2, 2, 1, 1, 2, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 1, 1, 2, 2, 1, 1, 1, 2, 2, 1, 1, 2, 2,\r\n\t\t\t2, 2, 1, 1, 2, 2, 1, 3, 1, 2, 2, 1, 1, 2, 2,\r\n\t\t\t2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2,\r\n\t\t\t2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2\r\n\t\t],\r\n\t\t\"keys\": {\r\n\t\t\t\"1\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"air\"\r\n\t\t\t},\r\n\t\t\t\"2\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"wall\"\r\n\t\t\t},\r\n\t\t\t\"3\": {\r\n\t\t\t\t\"type\": \"entity\",\r\n\t\t\t\t\"chance\": 0.5\r\n\t\t\t}\r\n\t\t}\r\n\t},\r\n\t{\r\n\t\t\"difficulty\": 0,\r\n\t\t\"data\": [\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 2, 2, 1, 1, 1, 2, 2, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 2, 2, 3, 1, 3, 2, 2, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 2, 2, 1, 1, 1, 2, 2, 2, 1, 2, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 1, 2, 2, 2, 1, 1, 1, 2, 2, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 2, 2, 3, 1, 3, 2, 2, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 2, 2, 1, 1, 1, 2, 2, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2\r\n\t\t],\r\n\t\t\"keys\": {\r\n\t\t\t\"1\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"air\"\r\n\t\t\t},\r\n\t\t\t\"2\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"wall\"\r\n\t\t\t},\r\n\t\t\t\"3\": {\r\n\t\t\t\t\"type\": \"entity\",\r\n\t\t\t\t\"chance\": 0.5\r\n\t\t\t}\r\n\t\t}\r\n\t},\r\n\t{\r\n\t\t\"difficulty\": 0,\r\n\t\t\"data\": [\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 1, 3, 1, 1, 1, 1, 1, 2, 1, 2, 2,\r\n\t\t\t2, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 2,\r\n\t\t\t2, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 2,\r\n\t\t\t2, 2, 1, 2, 1, 1, 1, 1, 1, 3, 1, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2\r\n\t\t],\r\n\t\t\"keys\": {\r\n\t\t\t\"1\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"air\"\r\n\t\t\t},\r\n\t\t\t\"2\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"wall\"\r\n\t\t\t},\r\n\t\t\t\"3\": {\r\n\t\t\t\t\"type\": \"entity\",\r\n\t\t\t\t\"chance\": 0.5\r\n\t\t\t}\r\n\t\t}\r\n\t},\r\n\t{\r\n\t\t\"difficulty\": 0,\r\n\t\t\"data\": [\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2,\r\n\t\t\t2, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 2,\r\n\t\t\t2, 1, 1, 2, 1, 3, 1, 1, 1, 3, 1, 2, 1, 1, 2,\r\n\t\t\t2, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 2,\r\n\t\t\t2, 2, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2\r\n\t\t],\r\n\t\t\"keys\": {\r\n\t\t\t\"1\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"air\"\r\n\t\t\t},\r\n\t\t\t\"2\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"wall\"\r\n\t\t\t},\r\n\t\t\t\"3\": {\r\n\t\t\t\t\"type\": \"entity\",\r\n\t\t\t\t\"chance\": 0.5\r\n\t\t\t}\r\n\t\t}\r\n\t},\r\n\t{\r\n\t\t\"difficulty\": 0,\r\n\t\t\"data\": [\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 1, 1, 3, 1, 1, 1, 1, 1, 1, 1, 2, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2\r\n\t\t],\r\n\t\t\"keys\": {\r\n\t\t\t\"1\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"air\"\r\n\t\t\t},\r\n\t\t\t\"2\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"wall\"\r\n\t\t\t},\r\n\t\t\t\"3\": {\r\n\t\t\t\t\"type\": \"entity\",\r\n\t\t\t\t\"chance\": 0.5\r\n\t\t\t}\r\n\t\t}\r\n\t},\r\n\t{\r\n\t\t\"difficulty\": 0,\r\n\t\t\"data\": [\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 2, 1, 1, 1, 1, 1, 2, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 1, 1, 1, 1, 1, 1, 3, 1, 2, 1, 2, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 2,\r\n\t\t\t2, 2, 1, 1, 1, 3, 1, 1, 1, 3, 1, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2\r\n\t\t],\r\n\t\t\"keys\": {\r\n\t\t\t\"1\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"air\"\r\n\t\t\t},\r\n\t\t\t\"2\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"wall\"\r\n\t\t\t},\r\n\t\t\t\"3\": {\r\n\t\t\t\t\"type\": \"entity\",\r\n\t\t\t\t\"chance\": 0.5\r\n\t\t\t}\r\n\t\t}\r\n\t},\r\n\t{\r\n\t\t\"difficulty\": 0,\r\n\t\t\"data\": [\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 2, 1, 1, 1, 1, 1, 2, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 1, 2, 2, 2, 1, 2, 2, 2, 1, 1, 2, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 1, 1, 1, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 1, 1, 1, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 1, 1, 2, 2, 2, 1, 2, 2, 2, 1, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 2, 1, 1, 1, 1, 1, 2, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2\r\n\t\t],\r\n\t\t\"keys\": {\r\n\t\t\t\"1\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"air\"\r\n\t\t\t},\r\n\t\t\t\"2\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"wall\"\r\n\t\t\t},\r\n\t\t\t\"3\": {\r\n\t\t\t\t\"type\": \"entity\",\r\n\t\t\t\t\"chance\": 0.5\r\n\t\t\t}\r\n\t\t}\r\n\t},\r\n\t{\r\n\t\t\"difficulty\": 0,\r\n\t\t\"data\": [\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2,\r\n\t\t\t2, 1, 2, 2, 1, 1, 1, 3, 1, 1, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 1, 1, 1, 1, 1, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 2, 1, 1, 1, 1, 1, 2, 2, 2, 1, 2,\r\n\t\t\t2, 1, 1, 2, 2, 1, 1, 1, 1, 1, 2, 2, 1, 1, 2,\r\n\t\t\t2, 1, 1, 2, 2, 1, 1, 3, 1, 1, 2, 2, 1, 1, 2,\r\n\t\t\t2, 1, 1, 2, 2, 1, 1, 1, 1, 1, 2, 2, 1, 1, 2,\r\n\t\t\t2, 1, 1, 2, 2, 1, 1, 1, 1, 1, 2, 2, 1, 1, 2,\r\n\t\t\t2, 1, 1, 2, 2, 1, 1, 1, 1, 1, 2, 2, 1, 1, 2,\r\n\t\t\t2, 1, 1, 2, 2, 2, 1, 3, 1, 2, 2, 2, 1, 1, 2,\r\n\t\t\t2, 1, 1, 2, 2, 2, 1, 1, 1, 2, 2, 2, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2\r\n\t\t],\r\n\t\t\"keys\": {\r\n\t\t\t\"1\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"air\"\r\n\t\t\t},\r\n\t\t\t\"2\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"wall\"\r\n\t\t\t},\r\n\t\t\t\"3\": {\r\n\t\t\t\t\"type\": \"entity\",\r\n\t\t\t\t\"chance\": 0.5\r\n\t\t\t}\r\n\t\t}\r\n\t},\r\n\t{\r\n\t\t\"difficulty\": 0,\r\n\t\t\"data\": [\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2,\r\n\t\t\t2, 1, 2, 2, 1, 1, 1, 3, 1, 1, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 1, 1, 1, 1, 1, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 2, 1, 1, 1, 1, 1, 2, 2, 2, 1, 2,\r\n\t\t\t2, 1, 1, 2, 2, 1, 1, 1, 1, 1, 2, 2, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 3, 1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 2, 2, 1, 1, 1, 1, 1, 2, 2, 1, 1, 2,\r\n\t\t\t2, 1, 1, 2, 2, 2, 1, 1, 1, 2, 2, 2, 1, 1, 2,\r\n\t\t\t2, 1, 1, 2, 2, 2, 1, 1, 1, 2, 2, 2, 1, 1, 2,\r\n\t\t\t2, 1, 2, 2, 2, 2, 1, 3, 1, 2, 2, 2, 2, 1, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2\r\n\t\t],\r\n\t\t\"keys\": {\r\n\t\t\t\"1\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"air\"\r\n\t\t\t},\r\n\t\t\t\"2\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"wall\"\r\n\t\t\t},\r\n\t\t\t\"3\": {\r\n\t\t\t\t\"type\": \"entity\",\r\n\t\t\t\t\"chance\": 0.5\r\n\t\t\t}\r\n\t\t}\r\n\t},\r\n\t{\r\n\t\t\"difficulty\": 0,\r\n\t\t\"data\": [\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 2, 2, 2, 1, 1, 1, 1, 1, 2, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 2, 1, 1, 1, 1, 1, 2, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 2, 1, 1, 1, 1, 1, 2, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 2, 1, 1, 1, 1, 1, 2, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 2, 1, 1, 3, 1, 1, 2, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 2, 1, 1, 1, 1, 1, 2, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 2, 1, 1, 1, 1, 1, 2, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 2, 1, 1, 1, 1, 1, 2, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 2, 1, 1, 1, 1, 1, 2, 2, 2, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2\r\n\t\t],\r\n\t\t\"keys\": {\r\n\t\t\t\"1\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"air\"\r\n\t\t\t},\r\n\t\t\t\"2\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"wall\"\r\n\t\t\t},\r\n\t\t\t\"3\": {\r\n\t\t\t\t\"type\": \"entity\",\r\n\t\t\t\t\"chance\": 0.5\r\n\t\t\t}\r\n\t\t}\r\n\t},\r\n\t{\r\n\t\t\"difficulty\": 0,\r\n\t\t\"data\": [\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 1, 1, 2, 2, 2, 1, 1, 1, 2, 2, 2, 1, 1, 2,\r\n\t\t\t2, 1, 2, 2, 2, 1, 1, 1, 1, 1, 2, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 2, 1, 1, 3, 1, 1, 2, 2, 2, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 2, 2, 2, 1, 1, 1, 1, 1, 2, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 2, 1, 1, 1, 1, 1, 2, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 2, 1, 1, 1, 1, 1, 2, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 2, 1, 1, 1, 1, 1, 2, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 2, 1, 1, 1, 1, 1, 2, 2, 2, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 2, 2, 2, 1, 1, 3, 1, 1, 2, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 2, 1, 1, 1, 1, 1, 2, 2, 2, 1, 2,\r\n\t\t\t2, 1, 1, 2, 2, 2, 1, 1, 1, 2, 2, 2, 1, 1, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2\r\n\t\t],\r\n\t\t\"keys\": {\r\n\t\t\t\"1\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"air\"\r\n\t\t\t},\r\n\t\t\t\"2\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"wall\"\r\n\t\t\t},\r\n\t\t\t\"3\": {\r\n\t\t\t\t\"type\": \"entity\",\r\n\t\t\t\t\"chance\": 0.5\r\n\t\t\t}\r\n\t\t}\r\n\t},\r\n\t{\r\n\t\t\"difficulty\": 0,\r\n\t\t\"data\": [\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 2, 1, 2, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 2, 1, 1, 1, 2, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 2, 1, 3, 1, 2, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 1, 1, 1, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 2, 1, 2, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 1, 1, 1, 1, 1, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 1, 1, 1, 1, 1, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2\r\n\t\t],\r\n\t\t\"keys\": {\r\n\t\t\t\"1\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"air\"\r\n\t\t\t},\r\n\t\t\t\"2\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"wall\"\r\n\t\t\t},\r\n\t\t\t\"3\": {\r\n\t\t\t\t\"type\": \"entity\",\r\n\t\t\t\t\"chance\": 0.5\r\n\t\t\t}\r\n\t\t}\r\n\t},\r\n\t{\r\n\t\t\"difficulty\": 0,\r\n\t\t\"data\": [\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 2, 1, 2, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 2, 1, 1, 1, 2, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 2, 1, 3, 1, 2, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 1, 1, 1, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 2, 1, 2, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 2, 1, 2, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 1, 1, 1, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 2, 1, 3, 1, 2, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 2, 1, 1, 1, 2, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 2, 1, 2, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2\r\n\t\t],\r\n\t\t\"keys\": {\r\n\t\t\t\"1\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"air\"\r\n\t\t\t},\r\n\t\t\t\"2\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"wall\"\r\n\t\t\t},\r\n\t\t\t\"3\": {\r\n\t\t\t\t\"type\": \"entity\",\r\n\t\t\t\t\"chance\": 0.5\r\n\t\t\t}\r\n\t\t}\r\n\t},\r\n\t{\r\n\t\t\"difficulty\": 0,\r\n\t\t\"data\": [\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 2, 1, 2, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 2, 1, 1, 1, 2, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 2, 1, 3, 1, 1, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 1, 1, 1, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 2, 1, 2, 2, 2, 1, 2, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 1, 2, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 1, 1, 1, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 1, 1, 3, 1, 2, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 2, 1, 1, 1, 2, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 2, 1, 2, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2\r\n\t\t],\r\n\t\t\"keys\": {\r\n\t\t\t\"1\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"air\"\r\n\t\t\t},\r\n\t\t\t\"2\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"wall\"\r\n\t\t\t},\r\n\t\t\t\"3\": {\r\n\t\t\t\t\"type\": \"entity\",\r\n\t\t\t\t\"chance\": 0.5\r\n\t\t\t}\r\n\t\t}\r\n\t},\r\n\t{\r\n\t\t\"difficulty\": 0,\r\n\t\t\"data\": [\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 2, 1, 2, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 2, 1, 1, 1, 2, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 2, 1, 3, 1, 1, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 1, 1, 1, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 2, 1, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 1, 1, 1, 2, 1, 1, 1, 2, 1, 1, 1, 2, 2,\r\n\t\t\t2, 1, 1, 3, 1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 2,\r\n\t\t\t2, 2, 1, 1, 1, 2, 1, 1, 1, 2, 1, 1, 1, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 1, 2, 2, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 1, 1, 1, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 1, 1, 3, 1, 2, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 2, 1, 1, 1, 2, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 2, 1, 2, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2\r\n\t\t],\r\n\t\t\"keys\": {\r\n\t\t\t\"1\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"air\"\r\n\t\t\t},\r\n\t\t\t\"2\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"wall\"\r\n\t\t\t},\r\n\t\t\t\"3\": {\r\n\t\t\t\t\"type\": \"entity\",\r\n\t\t\t\t\"chance\": 0.5\r\n\t\t\t}\r\n\t\t}\r\n\t},\r\n\t{\r\n\t\t\"difficulty\": 0,\r\n\t\t\"data\": [\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 2, 1, 2, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 2, 1, 1, 1, 2, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 2, 1, 3, 1, 2, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 1, 1, 1, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 1, 2, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 1, 1, 1, 1, 1, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 1, 1, 1, 1, 1, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2\r\n\t\t],\r\n\t\t\"keys\": {\r\n\t\t\t\"1\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"air\"\r\n\t\t\t},\r\n\t\t\t\"2\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"wall\"\r\n\t\t\t},\r\n\t\t\t\"3\": {\r\n\t\t\t\t\"type\": \"entity\",\r\n\t\t\t\t\"chance\": 0.5\r\n\t\t\t}\r\n\t\t}\r\n\t},\r\n\t{\r\n\t\t\"difficulty\": 0,\r\n\t\t\"data\": [\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3, 1, 2, 2, 2,\r\n\t\t\t2, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2,\r\n\t\t\t2, 1, 2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 1, 2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2,\r\n\t\t\t2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2,\r\n\t\t\t2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 2,\r\n\t\t\t2, 2, 2, 1, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2\r\n\t\t],\r\n\t\t\"keys\": {\r\n\t\t\t\"1\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"air\"\r\n\t\t\t},\r\n\t\t\t\"2\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"wall\"\r\n\t\t\t},\r\n\t\t\t\"3\": {\r\n\t\t\t\t\"type\": \"entity\",\r\n\t\t\t\t\"chance\": 0.75\r\n\t\t\t}\r\n\t\t}\r\n\t}\r\n]\r\n");
     this.set(new room_1.default(vec2_1.default.zero(), this, biome_1.default.DEFAULT, 0, this.layouts[0]));
 
     for (var thread = 0; thread < 10; thread++) {
@@ -35605,7 +35968,7 @@ var _a;
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.GameStates = exports.PlayerClass = void 0;
+exports.GameStates = void 0;
 
 var player_1 = __importDefault(require("../entity/player"));
 
@@ -35616,15 +35979,6 @@ var vec2_1 = __importDefault(require("../util/vec2"));
 var renderer_1 = __importDefault(require("./renderer"));
 
 var room_manager_1 = __importDefault(require("./room_manager"));
-
-var PlayerClass;
-
-(function (PlayerClass) {
-  PlayerClass["TURRET"] = "turret";
-  PlayerClass["SWORDSMAN"] = "swordsman";
-  PlayerClass["MAGE"] = "mage";
-  PlayerClass["ARCHER"] = "archer";
-})(PlayerClass = exports.PlayerClass || (exports.PlayerClass = {}));
 
 var GameStates;
 
@@ -35858,13 +36212,19 @@ var sketch = function sketch(p5) {
         p5.translate(1100, 0);
         p5.rectMode('corner');
         p5.fill(64, 128, 64);
-        p5.rect(15, 5, 160, 40);
+        p5.rect(15, 5, 100 + game.player.max_health / 2, 40);
         p5.fill(64, 256, 64);
-        p5.rect(20, 10, 150 * game.player.health / game.player.max_health, 30);
+        p5.rect(20, 10, (100 + game.player.max_health / 2) * game.player.health / game.player.max_health - 10, 30);
         p5.fill(0, 0, 0);
         p5.text("".concat(game.player.health, " / ").concat(game.player.max_health), 30, 32);
+        p5.fill(255, 255, 64);
+        p5.rect(20, 50, 25, 25, 25);
         p5.fill(255, 255, 255);
-        p5.text("XP: ".concat(game.player.xp), 30, 70);
+        p5.text(game.player.gold, 55, 70);
+        p5.textSize(15);
+        p5.text("vitality: ".concat(game.player.vitality), 20, 210);
+        p5.text("strength: ".concat(game.player.strength), 20, 240);
+        p5.text("intelligence: ".concat(game.player.intelligence), 20, 270);
         p5.pop();
         state = game.state;
         break;
@@ -35875,30 +36235,29 @@ var sketch = function sketch(p5) {
         var select_text_class = p5.createDiv('choose class');
         var selector = p5.createSelect().child(p5.createElement('option', 'turret').attribute('value', 'turret')).child(p5.createElement('option', 'swordsman').attribute('value', 'swordsman')).child(p5.createElement('option', 'mage').attribute('value', 'mage')).child(p5.createElement('option', 'archer').attribute('value', 'archer'));
         var start_button = p5.createButton('start').style('font-family', 'Montserrat').style('font-weight', '600').style('color', '#33ff33').style('background', '#5c4baa').mousePressed(function () {
-          var player_class;
-
-          switch (selector.value()) {
-            case 'swordsman':
-              player_class = game_1.PlayerClass.SWORDSMAN;
-              break;
-
-            case 'mage':
-              player_class = game_1.PlayerClass.MAGE;
-              break;
-
-            case 'archer':
-              player_class = game_1.PlayerClass.ARCHER;
-              break;
-
-            default:
-              player_class = game_1.PlayerClass.TURRET;
-              break;
-          }
-
-          game = new game_1.default(p5, player_class);
+          game = new game_1.default(p5, selector.value().toString());
           menu.remove();
           state = game_1.GameStates.RUNNING;
           p5.loop();
+          var upgrade_health_button = p5.createButton('+1 vitality & heal 20% ($5)').style('font-family', 'Montserrat').style('font-weight', '600').style('color', '#33ff33').style('background', '#5c4baa').position(1130, 200).mousePressed(function () {
+            if (game.player.gold >= 3) {
+              game.player.gold -= 3;
+              game.player.set_vitality(game.player.vitality + 1);
+              game.player.health += game.player.max_health * 0.2;
+            }
+          });
+          var upgrade_damage_button = p5.createButton('+1 strength ($3)').style('font-family', 'Montserrat').style('font-weight', '600').style('color', '#33ff33').style('background', '#5c4baa').position(1130, 230).mousePressed(function () {
+            if (game.player.gold >= 3) {
+              game.player.gold -= 3;
+              game.player.strength++;
+            }
+          });
+          var upgrade_intelligence_button = p5.createButton('+1 intelligence ($3)').style('font-family', 'Montserrat').style('font-weight', '600').style('color', '#33ff33').style('background', '#5c4baa').position(1130, 260).mousePressed(function () {
+            if (game.player.gold >= 3) {
+              game.player.gold -= 3;
+              game.player.intelligence++;
+            }
+          });
         });
         menu = p5.createDiv().child(select_text_class).child(selector).child(start_button).center();
         break;
@@ -35939,7 +36298,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "58313" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "59866" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
