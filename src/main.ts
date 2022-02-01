@@ -16,7 +16,7 @@ const sketch = (p5: P5) => {
 		p5.angleMode('degrees');
 		p5.frameRate(60);
 
-		montserrat = p5.loadFont('//db.onlinewebfonts.com/c/0462590be6674a5827956be5045c54de?family=Montserrat');
+		montserrat = p5.loadFont('./fonts/montserrat.ttf');
 		p5.textFont('Montserrat', 20);
 		p5.textStyle('bold');
 

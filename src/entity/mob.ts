@@ -62,3 +62,4 @@ export default class Mob extends LivingEntity {
 			this.current_path_progress = 0;
 	}
 }
+

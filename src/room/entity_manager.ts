@@ -1,46 +1,26 @@
 import Entity from "../entity/entity";
 import Room from "./room";
 import Random from "../util/random";
-import Mob from "../entity/mob";
 import Vec2 from "../util/vec2";
-import Game from "../game/game";
 import Projectile from "../entity/projectile";
-import Turret from "../entity/mob/turret";
-import Swordsman from "../entity/mob/swordsman";
-import Mage from "../entity/mob/mage";
-import Archer from "../entity/mob/archer";
+import Mobs from "../entity/mobs";
 
 export default class EntityManager {
 	readonly room: Room;
 	private entities: Map<string, Entity>;
 	readonly random: Random;
 
-	constructor(room: Room) {
+	constructor(room: Room, data: Map<string, string>) {
 		this.room = room;
 		this.entities = new Map<string, Entity>();
 		this.random = new Random();
 
-		for (let i = 0; i < this.random.next_int_ranged(0, 1) + this.random.next_int_ranged(0, this.room.difficulty); i++) {
-			let mob = this.random.weighted_random([
-				{
-					item: new Turret(),
-					weight: Math.max(4, 10 - this.room.difficulty) + this.room.biome.id == 'default' ? 5 : 0
-				},
-				{
-					item: new Swordsman(),
-					weight: Math.min(6, this.room.difficulty - 2) + this.room.biome.id == 'hell' ? 5 : 0
-				},
-				{
-					item: new Mage(),
-					weight: Math.min(6, this.room.difficulty - 1) + this.room.biome.id == 'desert' ? 5 : 0
-				},
-				{
-					item: new Archer(),
-					weight: Math.min(6, this.room.difficulty) + this.room.biome.id == 'snow' ? 5 : 0
-				}
-			]);
-			let w = Game.width;
-			mob.set_position(new Vec2(this.random.next_int_ranged(2, w - 3) + 0.5, this.random.next_int_ranged(2, w - 3) + 0.5));
+		for (let entry of data) {	
+			let pos = Vec2.parse(entry[0]);
+			let mob = Mobs.from_id(entry[1]);
+			if (!entry[1])
+				mob = Mobs.from_id(this.room.biome.next_mob());
+			mob.set_position(pos.add(new Vec2(0.5, 0.5)));
 			this.spawn(mob);
 		}
 	}

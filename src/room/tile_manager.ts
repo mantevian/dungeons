@@ -13,7 +13,7 @@ export default class TileManager {
 	readonly pathfinding_grid: PF.Grid;
 	readonly pathfinder: PF.AStarFinder;
 
-	constructor(room: Room) {
+	constructor(room: Room, data: Map<string, string>) {
 		this.room = room;
 		this.tiles = new Map<string, Tile>();
 		this.random = new Random();
@@ -34,8 +34,18 @@ export default class TileManager {
 			this.set(new Wall(new Vec2(w - 1, i), this));
 		}
 
-		for (let i = 0; i < this.random.next_int_ranged(6 + 2 * Math.abs(this.room.position.x) * Math.abs(this.room.position.y), 8 + 4 * Math.abs(this.room.position.x) * Math.abs(this.room.position.y)); i++)
-			this.set(new Wall(new Vec2(this.room.manager.game.random.next_int_ranged(2, w - 3), this.room.manager.game.random.next_int_ranged(2, w - 3)), this));
+		for (let entry of data) {
+			let pos = Vec2.parse(entry[0]);
+			switch (entry[1]) {
+				case 'tile':
+					this.set(new Tile(pos, this));
+					break;
+				
+				case 'wall':
+					this.set(new Wall(pos, this));
+					break;
+			}
+		}
 
 		this.pathfinder = new PF.AStarFinder();
 	}

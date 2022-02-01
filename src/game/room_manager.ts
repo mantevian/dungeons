@@ -6,18 +6,23 @@ import Vec2 from "../util/vec2";
 import Game from "./game";
 import Renderer from "./renderer";
 
+const fs = require('fs');
+
 export default class RoomManager {
 	readonly game: Game;
 	private rooms: Map<string, Room>;
 	current_room: Room;
 	readonly random: Random;
+	readonly layouts: Array<Object>;
 
 	constructor(game: Game) {
 		this.game = game;
 		this.rooms = new Map<string, Room>();
 		this.random = new Random();
 
-		this.set(new Room(Vec2.zero(), this, Biomes.DEFAULT, 0));
+		this.layouts = JSON.parse(fs.readFileSync('./assets/rooms.json', 'utf8'));
+
+		this.set(new Room(Vec2.zero(), this, Biomes.DEFAULT, 0, this.layouts[0]));
 
 		for (let thread = 0; thread < 10; thread++)
 			this.thread(8);
@@ -105,7 +110,7 @@ export default class RoomManager {
 				return;
 
 			if (!this.get(pos)) {
-				this.set(new Room(pos, this, biome, Math.sqrt(Math.abs(pos.x * pos.y)) + i / 4));
+				this.set(new Room(pos, this, biome, Math.sqrt(Math.abs(pos.x * pos.y)) + i / 4, this.random.choice(this.layouts)));
 				this.add_door(pos, opposite(direction));
 			}
 

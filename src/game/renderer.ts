@@ -59,7 +59,7 @@ export default class Renderer {
 			let color: Color;
 			color = room.biome.map_color;
 
-			this.p5.fill(color.red, color.green, color.blue, room.visited ? 255 : 128);
+			this.p5.fill(color.red, color.green, color.blue, room.visited ? 255 : 140);
 			this.p5.rect(room.position.x * 20, room.position.y * 20, 15, 15);
 
 			this.p5.fill(64, 64, 64);
