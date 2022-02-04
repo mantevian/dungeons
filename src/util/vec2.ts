@@ -1,4 +1,5 @@
 import Game from "../game/game";
+import SAT from "sat";
 
 export default class Vec2 {
 	x: number;
@@ -9,13 +10,13 @@ export default class Vec2 {
 		this.y = y ?? 0;
 	}
 
-	/** Set this Vector by coordinates */
+
 	set(x: number, y: number): void {
 		this.x = x;
 		this.y = y;
 	}
 
-	/** Copy from another Vector */
+
 	copy(vec: Vec2): void {
 		this.x = vec.x;
 		this.y = vec.y;
@@ -25,17 +26,17 @@ export default class Vec2 {
 		return new Vec2(this.x, this.y);
 	}
 
-	/** (0, 0) */
+
 	static zero(): Vec2 {
 		return new Vec2(0, 0);
 	}
 
-	/** (1, 0) */
+
 	static i(): Vec2 {
 		return new Vec2(1, 0);
 	}
 
-	/** (0, 1) */
+
 	static j(): Vec2 {
 		return new Vec2(0, 1);
 	}
@@ -95,7 +96,7 @@ export default class Vec2 {
 
 		if (new_vec.y < 0)
 			new_vec.y = -1;
-		
+
 		return new_vec;
 	}
 
@@ -127,16 +128,16 @@ export default class Vec2 {
 		let vec = this.clone();
 		if (vec.x < 0)
 			vec.x = 0;
-		
+
 		if (vec.y < 0)
 			vec.y = 0;
-		
+
 		if (vec.x > Game.width - 1)
 			vec.x = Game.width - 1;
-		
+
 		if (vec.y > Game.width - 1)
 			vec.y = Game.width - 1;
-		
+
 		return vec;
 	}
 
@@ -168,5 +169,17 @@ export default class Vec2 {
 
 	down(): Vec2 {
 		return new Vec2(this.x, this.y + 1);
+	}
+
+	sat_vector(): SAT.Vector {
+		return new SAT.Vector(this.x, this.y);
+	}
+
+	get rotation(): number {
+		return Math.atan2(this.y, this.x) * 180 / Math.PI;
+	}
+
+	is_effectively_zero(): boolean {
+		return Math.abs(this.x) < 0.001 && Math.abs(this.y) < 0.001;
 	}
 }

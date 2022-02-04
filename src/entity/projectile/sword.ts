@@ -47,9 +47,6 @@ export default class Sword extends Projectile {
 			this.rotation += this.rotation_speed;
 			this.rotation_speed += 0.5;
 		}
-
-		if (this.health <= 0)
-			this.destroy();
 	}
 
 	follow(): void {
@@ -58,5 +55,9 @@ export default class Sword extends Projectile {
 
 	render(): void {
 		Renderer.sword(this.position, this.size, this.color, this.corner_radius, { scale: this.scale, rotation: this.rotation });
+	}
+
+	on_tile_collision(): void {
+		
 	}
 }

@@ -5,6 +5,7 @@ import Random from "../util/random";
 import Vec2 from "../util/vec2";
 import Game from "./game";
 import Renderer from "./renderer";
+import SAT from "sat";
 
 const fs = require('fs');
 
@@ -139,21 +140,15 @@ export default class RoomManager {
 		Renderer.map();
 	}
 
-	/** Get a Room by position */
 	get(position: Vec2): Room {
 		return this.rooms.get(position.toString());
 	}
 
-	/** Set a new Room */
 	set(room: Room): void {
 		this.rooms.set(room.position.toString(), room);
 	}
 
 	enter(position: Vec2): void {
 		this.current_room = this.get(position);
-	}
-
-	passable(position: Vec2, size: Vec2): boolean {
-		return this.current_room.tiles.passable(position, size);
 	}
 }

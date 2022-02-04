@@ -4,6 +4,7 @@ import Color from "../util/color";
 import Vec2 from "../util/vec2";
 import { v4 as uuid } from "uuid";
 import Game from "../game/game";
+import SAT from 'sat';
 
 export default class Entity {
 	manager: EntityManager;
@@ -49,22 +50,20 @@ export default class Entity {
 	}
 
 	move(vec: Vec2): void {
-		if (vec.equals(Vec2.zero()))
-			return;
+		if (vec.is_effectively_zero()) return;
+
+		let new_length = this.trace_tiles(vec.rotation, vec.length, 0.001) * 1.001;
+		vec = vec.multiply(new_length / vec.length);
+		if (vec.is_effectively_zero()) return;
 
 		let new_position = this.position.add(vec);
-		let new_position_no_x = this.position.add(vec.multiply_vector(new Vec2(0, 1)));
-		let new_position_no_y = this.position.add(vec.multiply_vector(new Vec2(1, 0)));
 
-		if (new_position.x > Game.width - 1 || new_position.x < 0 || new_position.y > Game.width - 1 || new_position.y < 0) {
+		if (new_position.x > Game.width || new_position.x < 0 || new_position.y > Game.width || new_position.y < 0) {
 			this.on_tile_collision();
 			return;
 		}
 
-		if ((this.can_go_through(new_position) && this.can_go_through(new_position_no_x) && this.can_go_through(new_position_no_y)) || this.noclip)
-			this.set_position(new_position);
-		else
-			this.on_tile_collision();
+		this.set_position(new_position);
 	}
 
 	move_to(vec: Vec2): void {
@@ -91,18 +90,27 @@ export default class Entity {
 			}
 		}
 
+		if (!this.can_go_through(this.position) && !this.noclip)
+			this.on_tile_collision();
+
 		this.render();
 
 		if (this.anchored)
 			this.follow();
+		
+		if (this.health <= 0)
+			this.destroy();
+	}
+
+	sat_polygon(): SAT.Polygon {
+		return new SAT.Polygon(this.position.sat_vector(), [new SAT.Vector(-this.size.x * this.scale / 2, -this.size.y * this.scale / 2),
+		new SAT.Vector(this.size.x * this.scale / 2, -this.size.y * this.scale / 2),
+		new SAT.Vector(this.size.x * this.scale / 2, this.size.y * this.scale / 2),
+		new SAT.Vector(-this.size.x * this.scale / 2, this.size.y * this.scale / 2)]).rotate(this.rotation * Math.PI / 180);
 	}
 
 	collides_with_entity(entity: Entity): boolean {
-		return !this.equals(entity) &&
-			this.position.x - this.size.x * 0.5 < entity.position.x + entity.size.x * 0.5 &&
-			this.position.x + this.size.x * 0.5 > entity.position.x - entity.size.x * 0.5 &&
-			this.position.y - this.size.x * 0.5 < entity.position.y + entity.size.y * 0.5 &&
-			this.position.y + this.size.y * 0.5 > entity.position.y - entity.size.y * 0.5;
+		return !this.equals(entity) && SAT.testPolygonPolygon(this.sat_polygon(), entity.sat_polygon());
 	}
 
 	on_tile_collision(): void {
@@ -114,7 +122,8 @@ export default class Entity {
 	}
 
 	can_go_through(position: Vec2): boolean {
-		return this.manager.room.tiles.passable(position, this.size);
+		let polygon = new SAT.Polygon(position.sat_vector(), this.sat_polygon().points);
+		return this.manager.room.tiles.passable(polygon);
 	}
 
 	destroy(source?: Entity): void {
@@ -161,17 +170,17 @@ export default class Entity {
 
 	}
 
-	trace_tiles(angle: number, max_distance = 10): number {
+	trace_tiles(angle: number, max_distance = 10, step = 0.05): number {
 		let current = this.position;
-		let vec = Vec2.from_angle(angle).multiply(0.05);
+		let vec = Vec2.from_angle(angle).multiply(step);
 
 		let distance = 0;
 
 		while (distance < max_distance) {
 			current = current.add(vec);
-			distance += 0.05;
-			if (this.manager.room.tiles.solid(current.floor()))
-				break;
+			distance += step;
+			let polygon = new SAT.Polygon(current.sat_vector(), this.sat_polygon().points)
+			if (!this.manager.room.tiles.passable(polygon)) break;
 		}
 
 		return distance;

@@ -9,6 +9,9 @@ export default class Arrow extends Projectile {
 	constructor(parent: Entity, damage = 9) {
 		super(parent, damage);
 
+		this.max_health = 20;
+		this.health = 20;
+
 		this.size = new Vec2(0.5, 0.2);
 		this.color = Color.RGB(64, 255, 192);
 		this.corner_radius = 0.3;
@@ -23,6 +26,10 @@ export default class Arrow extends Projectile {
 	on_enemy_collision(entity: LivingEntity): void {
 		super.on_enemy_collision(entity);
 		this.attack_damage *= 0.98;
+	}
+
+	on_tile_collision(): void {
+		this.health--;
 	}
 
 	render(): void {

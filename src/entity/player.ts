@@ -70,10 +70,6 @@ export default class Player extends LivingEntity {
 			this.manager.room.manager.game.stop_caused_by_death();
 	}
 
-	can_go_through(position: Vec2): boolean {
-		return this.manager.room.manager.passable(position, this.size);
-	}
-
 	render(): void {
 		if (this.scale_time > 0) {
 			this.scale_time--;

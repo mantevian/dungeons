@@ -50,7 +50,7 @@ export default class Game {
 		window.addEventListener('mouseup', (e: MouseEvent) => this.mouseup(e));
 		document.getElementById('defaultCanvas0').addEventListener('mousemove', (e: MouseEvent) => this.mousemove(e));
 
-		this.start();	
+		this.start();
 	}
 
 	start(): void {
@@ -80,14 +80,13 @@ export default class Game {
 		this.mouse_pos = new Vec2(e.x - canvas.offsetLeft, e.y - canvas.offsetTop);
 	}
 
-	/** The main tick function for this Game */
 	tick(): void {
 		if (this.player.position.x < 0)
 			this.room_manager.enter(this.room_manager.current_room.position.add(new Vec2(-1, 0)));
-		
+
 		if (this.player.position.x > Game.width)
 			this.room_manager.enter(this.room_manager.current_room.position.add(new Vec2(1, 0)));
-		
+
 		if (this.player.position.y < 0)
 			this.room_manager.enter(this.room_manager.current_room.position.add(new Vec2(0, -1)));
 
@@ -118,7 +117,6 @@ export default class Game {
 		this.state = GameStates.DEAD;
 	}
 
-	/** The amount of ticks since this Game's start */
 	get_time(): number {
 		return this.time;
 	}

@@ -38,7 +38,7 @@ export class Weapon {
 
 export default class Weapons {
 	static bullet(owner: Player) {
-		return new Weapon('bullet', owner, 7, false, () => {
+		return new Weapon('bullet', owner, 6, false, () => {
 			return new Bullet(owner, owner.weapon.attack_damage);
 		}, () => {
 			owner.weapon.projectile_speed = 0.25 + owner.intelligence * 0.002;
@@ -48,7 +48,7 @@ export default class Weapons {
 	}
 
 	static sword(owner: Player) {
-		return new Weapon('sword', owner, 7, true, () => {
+		return new Weapon('sword', owner, 6, true, () => {
 			return new Sword(owner, owner.weapon.attack_damage);
 		}, () => {
 			owner.weapon.projectile_speed = 0;
@@ -58,7 +58,7 @@ export default class Weapons {
 	}
 
 	static fireball(owner: Player) {
-		return new Weapon('fireball', owner, 7, false, () => {
+		return new Weapon('fireball', owner, 5, false, () => {
 			return new Fireball(owner, owner.weapon.attack_damage, 180 + owner.intelligence * 10, Math.max(10, 30 - owner.intelligence));
 		}, () => {
 			owner.weapon.projectile_speed = 0.15;
@@ -68,7 +68,7 @@ export default class Weapons {
 	}
 
 	static arrow(owner: Player) {
-		return new Weapon('arrow', owner, 7, false, () => {
+		return new Weapon('arrow', owner, 5, false, () => {
 			return new Arrow(owner, owner.weapon.attack_damage);
 		}, () => {
 			owner.weapon.projectile_speed = 0.35 + owner.intelligence * 0.002;

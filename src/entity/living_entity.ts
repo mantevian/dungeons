@@ -88,9 +88,8 @@ export default class LivingEntity extends Entity {
 			this.moving = vec.multiply(1 / this.max_move_timeout);
 			this.move_timeout = this.max_move_timeout;
 		}
-		else {
+		else
 			this.on_tile_collision();
-		}
 	}
 
 	look(pos: Vec2): void {
@@ -135,7 +134,7 @@ export default class LivingEntity extends Entity {
 		Renderer.rect(this.position, this.size, this.color.lighten(this.damage_invincibility_timer / this.max_damage_invincibility_timer), this.corner_radius, { scale: this.scale, rotation: this.rotation });
 	}
 
-	apply_status_effect(effect: StatusEffect) {
+	apply_status_effect(effect: StatusEffect): void {
 		let current = this.effects.find(e => e.id == effect.id);
 		if (current) {
 			current.ticks = 0;
