@@ -1,22 +1,22 @@
 import Game from "../game/game";
-import Tile from "../tile/tile";
-import Wall from "../tile/wall";
 import Random from "../util/random";
 import Vec2 from "../util/vec2";
 import Room from "./room";
 import PF from 'pathfinding';
 import SAT from "sat";
+import WorldTile from "../tile/world_tile";
+import { TileTypes } from "../tile/tile";
 
 export default class TileManager {
 	readonly room: Room;
-	private tiles: Map<string, Tile>;
+	private tiles: Map<string, WorldTile>;
 	readonly random: Random;
 	readonly pathfinding_grid: PF.Grid;
 	readonly pathfinder: PF.AStarFinder;
 
 	constructor(room: Room, data: Map<string, string>) {
 		this.room = room;
-		this.tiles = new Map<string, Tile>();
+		this.tiles = new Map<string, WorldTile>();
 		this.random = new Random();
 
 		let w = Game.width;
@@ -32,11 +32,11 @@ export default class TileManager {
 			let pos = Vec2.parse(entry[0]);
 			switch (entry[1]) {
 				case 'tile':
-					this.set(new Tile(pos, this));
+					this.set(new WorldTile(TileTypes.tile(this.room.biome), pos));
 					break;
 
 				case 'wall':
-					this.set(new Wall(pos, this));
+					this.set(new WorldTile(TileTypes.wall(this.room.biome), pos));
 					break;
 			}
 		}
@@ -49,26 +49,26 @@ export default class TileManager {
 			tile.tick();
 	}
 
-	get(position: Vec2): Tile {
+	get(position: Vec2): WorldTile {
 		return this.tiles.get(position.floor().toString());
 	}
 
-	set(tile: Tile): void {
+	set(tile: WorldTile): void {
 		tile.manager = this;
 		this.tiles.set(tile.position.toString(), tile);
-		this.pathfinding_grid.setWalkableAt(tile.position.x, tile.position.y, !tile.solid);
+		this.pathfinding_grid.setWalkableAt(tile.position.x, tile.position.y, !tile.tile_type.solid);
 	}
 
 	clear(position: Vec2): void {
-		this.set(new Tile(position, this));
+		this.set(new WorldTile(TileTypes.tile(this.room.biome), position));
 	}
 
-	get_tiles(): Map<string, Tile> {
+	get_tiles(): Map<string, WorldTile> {
 		return this.tiles;
 	}
 
 	solid(position: Vec2): boolean {
-		return this.get(position) && this.get(position).solid;
+		return this.get(position) && this.get(position).tile_type.solid;
 	}
 
 	passable(polygon: SAT.Polygon): boolean {
@@ -82,7 +82,7 @@ export default class TileManager {
 		return true;
 	}
 
-	array(): Array<Tile> {
+	array(): Array<WorldTile> {
 		return [...this.tiles.values()];
 	}
 

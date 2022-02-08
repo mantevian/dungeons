@@ -19,6 +19,8 @@ export default class Mage extends Mob {
 		this.color = Color.RGB(255, 128, 16);
 
 		this.random_recharge = 0;
+
+		this.gold = 15;
 	}
 
 	tick(): void {

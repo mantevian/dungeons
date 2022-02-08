@@ -12,7 +12,7 @@ export default class Coin extends Entity {
 		super();
 
 		this.value = value;
-		this.size = new Vec2(0.35, 0.35);
+		this.size = new Vec2(0.4, 0.4);
 		this.rotation = 0;
 		this.color = Color.RGB(255, 255, 64);
 		this.corner_radius = 1;
@@ -44,6 +44,6 @@ export default class Coin extends Entity {
 	render(): void {
 		super.render();
 
-		Renderer.text(this.position.add(new Vec2(-0.05, 0.1)), 10, Color.RGB(32, 32, 32), this.value.toString());
+		Renderer.text(this.position, 9, Color.RGB(32, 32, 32), this.value.toString(), true);
 	}
 }

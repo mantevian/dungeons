@@ -52,7 +52,7 @@ export default class Entity {
 	move(vec: Vec2): void {
 		if (vec.is_effectively_zero()) return;
 
-		let new_length = this.trace_tiles(vec.rotation, vec.length, 0.001) * 1.001;
+		let new_length = this.trace_tiles(vec.rotation, vec.length, 0.001) * 1.05;
 		vec = vec.multiply(new_length / vec.length);
 		if (vec.is_effectively_zero()) return;
 

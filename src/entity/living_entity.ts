@@ -14,6 +14,7 @@ export default class LivingEntity extends Entity {
 	max_move_timeout: number;
 	moving: Vec2;
 
+	last_taken_damage: number;
 	damage_invincibility_timer: number;
 	max_damage_invincibility_timer: number;
 
@@ -50,6 +51,8 @@ export default class LivingEntity extends Entity {
 
 		if (this.damage_invincibility_timer > 0)
 			this.damage_invincibility_timer--;
+		else
+			this.last_taken_damage = 0;
 
 		if (this.move_timeout > 0) {
 			this.move_timeout--;
@@ -107,11 +110,10 @@ export default class LivingEntity extends Entity {
 	}
 
 	damage(damage: number, source?: Entity, timer = this.max_damage_invincibility_timer): void {
-		if (this.damage_invincibility_timer > 0)
-			return;
-
 		damage = Math.floor(damage);
-		this.health -= damage;
+		let actual_damage = damage - this.last_taken_damage;
+
+		this.health -= actual_damage;
 		this.max_damage_invincibility_timer = timer;
 		this.damage_invincibility_timer = timer;
 

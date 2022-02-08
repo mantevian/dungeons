@@ -10,9 +10,11 @@ export default class Turret extends Mob {
 
 		this.max_health = 20;
 		this.start_prepare_attack = 30;
-		this.attack_damage = 4;
+		this.attack_damage = 3;
 
 		this.color = Color.RGB(64, 92, 255);
+
+		this.gold = 10;
 	}
 
 	tick(): void {
@@ -23,7 +25,7 @@ export default class Turret extends Mob {
 		if (this.lifetime % 45 == 0)
 			this.walk();
 
-		if (this.lifetime % 90 == 0)
+		if (this.lifetime % 120 == 0)
 			this.try_attack();
 	}
 

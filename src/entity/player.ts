@@ -66,7 +66,7 @@ export default class Player extends LivingEntity {
 		if (this.weapon.prepare_attack == 0)
 			this.attack();
 
-		if (this.health < 0)
+		if (this.health <= 0)
 			this.manager.room.manager.game.stop_caused_by_death();
 	}
 

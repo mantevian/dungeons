@@ -1,8 +1,9 @@
 import p5 from "p5";
 import Player from "../entity/player";
-import { PlayerClass } from "../entity/player_class";
 import Random from "../util/random";
 import Vec2 from "../util/vec2";
+import Button from "./button";
+import ButtonManager from "./button_manager";
 import Renderer from "./renderer";
 import RoomManager from "./room_manager";
 
@@ -14,6 +15,7 @@ export enum GameStates {
 
 export default class Game {
 	readonly room_manager: RoomManager;
+	readonly button_manager: ButtonManager;
 	private time: number;
 	readonly player: Player;
 	readonly random: Random;
@@ -31,6 +33,8 @@ export default class Game {
 	constructor(p5: p5, player_class: string) {
 		this.random = new Random();
 		this.room_manager = new RoomManager(this);
+		this.button_manager = new ButtonManager(this);
+		
 		this.time = 0;
 		this.player_class = player_class;
 		this.player = new Player(this, player_class);
@@ -68,7 +72,8 @@ export default class Game {
 	}
 
 	mousedown(e: MouseEvent): void {
-		this.player.mousedown(e);
+		if (!this.button_manager.click_buttons())
+			this.player.mousedown(e);
 	}
 
 	mouseup(e: MouseEvent): void {
@@ -96,6 +101,7 @@ export default class Game {
 		this.player.position = this.player.position.modulus_room();
 		this.player.manager = this.room_manager.current_room.entities;
 		this.room_manager.tick();
+		this.button_manager.tick();
 		this.player.look(this.mouse_pos);
 		this.player.tick();
 		this.time++;

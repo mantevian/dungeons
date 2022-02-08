@@ -12,7 +12,7 @@ export default class Archer extends Mob {
 
 		this.max_health = 15;
 		this.start_prepare_attack = 20;
-		this.attack_damage = 5;
+		this.attack_damage = 4;
 
 		this.size = new Vec2(0.65, 0.65);
 		this.corner_radius = 0.15;
@@ -20,6 +20,8 @@ export default class Archer extends Mob {
 		this.color = Color.RGB(16, 255, 192);
 
 		this.random_recharge = 0;
+
+		this.gold = 15;
 	}
 
 	tick(): void {
@@ -32,7 +34,7 @@ export default class Archer extends Mob {
 			this.random_recharge = this.manager.random.next_int_ranged(0, 45);
 		}
 
-		if (this.lifetime % 60 == 0)
+		if (this.lifetime % 75 == 0)
 			this.try_attack();
 	}
 

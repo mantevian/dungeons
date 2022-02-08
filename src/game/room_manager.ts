@@ -5,7 +5,6 @@ import Random from "../util/random";
 import Vec2 from "../util/vec2";
 import Game from "./game";
 import Renderer from "./renderer";
-import SAT from "sat";
 
 const fs = require('fs');
 

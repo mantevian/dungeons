@@ -13,6 +13,10 @@ export default class Renderer {
 		return new Vec2(vec.x * this.scale + 450, vec.y * this.scale);
 	}
 
+	static game_coords(vec: Vec2): Vec2 {
+		return new Vec2((vec.x - 450) / this.scale, vec.y / this.scale);
+	}
+
 	static rect(position: Vec2, size: Vec2, color: Color, corner_radius: number, options = { scale: 0.95, rotation: 0 }) {
 		this.p5.push();
 		this.p5.fill(color.red, color.green, color.blue, color.alpha);
@@ -42,8 +46,11 @@ export default class Renderer {
 		this.p5.pop();
 	}
 
-	static text(position: Vec2, size: number, color: Color, text: string): void {
+	static text(position: Vec2, size: number, color: Color, text: string, centered = false): void {
 		this.p5.push();
+		if (centered)
+			this.p5.textAlign('center', 'center');
+
 		this.p5.textSize(size);
 		this.p5.fill(color.red, color.green, color.blue, color.alpha);
 		this.p5.text(text, this.canvas_coords(position).x, this.canvas_coords(position).y);

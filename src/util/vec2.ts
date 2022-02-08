@@ -182,4 +182,11 @@ export default class Vec2 {
 	is_effectively_zero(): boolean {
 		return Math.abs(this.x) < 0.001 && Math.abs(this.y) < 0.001;
 	}
+
+	static point_inside_rect(point: Vec2, pos: Vec2, size: Vec2) {
+		return point.x > pos.x - size.x / 2
+			&& point.x < pos.x + size.x / 2
+			&& point.y > pos.y - size.y / 2
+			&& point.y < pos.y + size.y / 2
+	}
 }

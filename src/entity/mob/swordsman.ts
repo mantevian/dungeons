@@ -17,7 +17,7 @@ export default class Swordsman extends Mob {
 		this.start_prepare_attack = 10;
 		this.attack_damage = 6;
 
-		this.gold = 3;
+		this.gold = 25;
 	}
 
 	tick(): void {

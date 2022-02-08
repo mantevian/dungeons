@@ -13,32 +13,26 @@ export default class ParticleManager {
 		this.random = new Random();
 	}
 
-
 	get(uuid: string): Particle {
 		return this.particles.get(uuid);
 	}
-
 
 	spawn(particle: Particle): void {
 		particle.manager = this;
 		this.particles.set(particle.uuid, particle);
 	}
 
-
 	remove(uuid: string): void {
 		this.particles.delete(uuid);
 	}
-
 
 	size(): number {
 		return this.particles.size;
 	}
 
-
 	array(): Array<Particle> {
 		return [...this.particles.values()];
 	}
-
 
 	tick(): void {
 		for (let particle of this.array())
