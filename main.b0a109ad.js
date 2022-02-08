@@ -28929,7 +28929,558 @@ var Color = /*#__PURE__*/function () {
 }();
 
 exports.default = Color;
-},{}],"node_modules/sat/SAT.js":[function(require,module,exports) {
+},{}],"node_modules/uuid/lib/rng-browser.js":[function(require,module,exports) {
+// Unique ID creation requires a high quality random # generator.  In the
+// browser this is a little complicated due to unknown quality of Math.random()
+// and inconsistent support for the `crypto` API.  We do the best we can via
+// feature-detection
+
+// getRandomValues needs to be invoked in a context where "this" is a Crypto
+// implementation. Also, find the complete implementation of crypto on IE11.
+var getRandomValues = (typeof(crypto) != 'undefined' && crypto.getRandomValues && crypto.getRandomValues.bind(crypto)) ||
+                      (typeof(msCrypto) != 'undefined' && typeof window.msCrypto.getRandomValues == 'function' && msCrypto.getRandomValues.bind(msCrypto));
+
+if (getRandomValues) {
+  // WHATWG crypto RNG - http://wiki.whatwg.org/wiki/Crypto
+  var rnds8 = new Uint8Array(16); // eslint-disable-line no-undef
+
+  module.exports = function whatwgRNG() {
+    getRandomValues(rnds8);
+    return rnds8;
+  };
+} else {
+  // Math.random()-based (RNG)
+  //
+  // If all else fails, use Math.random().  It's fast, but is of unspecified
+  // quality.
+  var rnds = new Array(16);
+
+  module.exports = function mathRNG() {
+    for (var i = 0, r; i < 16; i++) {
+      if ((i & 0x03) === 0) r = Math.random() * 0x100000000;
+      rnds[i] = r >>> ((i & 0x03) << 3) & 0xff;
+    }
+
+    return rnds;
+  };
+}
+
+},{}],"node_modules/uuid/lib/bytesToUuid.js":[function(require,module,exports) {
+/**
+ * Convert array of 16 byte values to UUID string format of the form:
+ * XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
+ */
+var byteToHex = [];
+for (var i = 0; i < 256; ++i) {
+  byteToHex[i] = (i + 0x100).toString(16).substr(1);
+}
+
+function bytesToUuid(buf, offset) {
+  var i = offset || 0;
+  var bth = byteToHex;
+  // join used to fix memory issue caused by concatenation: https://bugs.chromium.org/p/v8/issues/detail?id=3175#c4
+  return ([
+    bth[buf[i++]], bth[buf[i++]],
+    bth[buf[i++]], bth[buf[i++]], '-',
+    bth[buf[i++]], bth[buf[i++]], '-',
+    bth[buf[i++]], bth[buf[i++]], '-',
+    bth[buf[i++]], bth[buf[i++]], '-',
+    bth[buf[i++]], bth[buf[i++]],
+    bth[buf[i++]], bth[buf[i++]],
+    bth[buf[i++]], bth[buf[i++]]
+  ]).join('');
+}
+
+module.exports = bytesToUuid;
+
+},{}],"node_modules/uuid/v1.js":[function(require,module,exports) {
+var rng = require('./lib/rng');
+var bytesToUuid = require('./lib/bytesToUuid');
+
+// **`v1()` - Generate time-based UUID**
+//
+// Inspired by https://github.com/LiosK/UUID.js
+// and http://docs.python.org/library/uuid.html
+
+var _nodeId;
+var _clockseq;
+
+// Previous uuid creation time
+var _lastMSecs = 0;
+var _lastNSecs = 0;
+
+// See https://github.com/uuidjs/uuid for API details
+function v1(options, buf, offset) {
+  var i = buf && offset || 0;
+  var b = buf || [];
+
+  options = options || {};
+  var node = options.node || _nodeId;
+  var clockseq = options.clockseq !== undefined ? options.clockseq : _clockseq;
+
+  // node and clockseq need to be initialized to random values if they're not
+  // specified.  We do this lazily to minimize issues related to insufficient
+  // system entropy.  See #189
+  if (node == null || clockseq == null) {
+    var seedBytes = rng();
+    if (node == null) {
+      // Per 4.5, create and 48-bit node id, (47 random bits + multicast bit = 1)
+      node = _nodeId = [
+        seedBytes[0] | 0x01,
+        seedBytes[1], seedBytes[2], seedBytes[3], seedBytes[4], seedBytes[5]
+      ];
+    }
+    if (clockseq == null) {
+      // Per 4.2.2, randomize (14 bit) clockseq
+      clockseq = _clockseq = (seedBytes[6] << 8 | seedBytes[7]) & 0x3fff;
+    }
+  }
+
+  // UUID timestamps are 100 nano-second units since the Gregorian epoch,
+  // (1582-10-15 00:00).  JSNumbers aren't precise enough for this, so
+  // time is handled internally as 'msecs' (integer milliseconds) and 'nsecs'
+  // (100-nanoseconds offset from msecs) since unix epoch, 1970-01-01 00:00.
+  var msecs = options.msecs !== undefined ? options.msecs : new Date().getTime();
+
+  // Per 4.2.1.2, use count of uuid's generated during the current clock
+  // cycle to simulate higher resolution clock
+  var nsecs = options.nsecs !== undefined ? options.nsecs : _lastNSecs + 1;
+
+  // Time since last uuid creation (in msecs)
+  var dt = (msecs - _lastMSecs) + (nsecs - _lastNSecs)/10000;
+
+  // Per 4.2.1.2, Bump clockseq on clock regression
+  if (dt < 0 && options.clockseq === undefined) {
+    clockseq = clockseq + 1 & 0x3fff;
+  }
+
+  // Reset nsecs if clock regresses (new clockseq) or we've moved onto a new
+  // time interval
+  if ((dt < 0 || msecs > _lastMSecs) && options.nsecs === undefined) {
+    nsecs = 0;
+  }
+
+  // Per 4.2.1.2 Throw error if too many uuids are requested
+  if (nsecs >= 10000) {
+    throw new Error('uuid.v1(): Can\'t create more than 10M uuids/sec');
+  }
+
+  _lastMSecs = msecs;
+  _lastNSecs = nsecs;
+  _clockseq = clockseq;
+
+  // Per 4.1.4 - Convert from unix epoch to Gregorian epoch
+  msecs += 12219292800000;
+
+  // `time_low`
+  var tl = ((msecs & 0xfffffff) * 10000 + nsecs) % 0x100000000;
+  b[i++] = tl >>> 24 & 0xff;
+  b[i++] = tl >>> 16 & 0xff;
+  b[i++] = tl >>> 8 & 0xff;
+  b[i++] = tl & 0xff;
+
+  // `time_mid`
+  var tmh = (msecs / 0x100000000 * 10000) & 0xfffffff;
+  b[i++] = tmh >>> 8 & 0xff;
+  b[i++] = tmh & 0xff;
+
+  // `time_high_and_version`
+  b[i++] = tmh >>> 24 & 0xf | 0x10; // include version
+  b[i++] = tmh >>> 16 & 0xff;
+
+  // `clock_seq_hi_and_reserved` (Per 4.2.2 - include variant)
+  b[i++] = clockseq >>> 8 | 0x80;
+
+  // `clock_seq_low`
+  b[i++] = clockseq & 0xff;
+
+  // `node`
+  for (var n = 0; n < 6; ++n) {
+    b[i + n] = node[n];
+  }
+
+  return buf ? buf : bytesToUuid(b);
+}
+
+module.exports = v1;
+
+},{"./lib/rng":"node_modules/uuid/lib/rng-browser.js","./lib/bytesToUuid":"node_modules/uuid/lib/bytesToUuid.js"}],"node_modules/uuid/v4.js":[function(require,module,exports) {
+var rng = require('./lib/rng');
+var bytesToUuid = require('./lib/bytesToUuid');
+
+function v4(options, buf, offset) {
+  var i = buf && offset || 0;
+
+  if (typeof(options) == 'string') {
+    buf = options === 'binary' ? new Array(16) : null;
+    options = null;
+  }
+  options = options || {};
+
+  var rnds = options.random || (options.rng || rng)();
+
+  // Per 4.4, set bits for version and `clock_seq_hi_and_reserved`
+  rnds[6] = (rnds[6] & 0x0f) | 0x40;
+  rnds[8] = (rnds[8] & 0x3f) | 0x80;
+
+  // Copy bytes to buffer, if provided
+  if (buf) {
+    for (var ii = 0; ii < 16; ++ii) {
+      buf[i + ii] = rnds[ii];
+    }
+  }
+
+  return buf || bytesToUuid(rnds);
+}
+
+module.exports = v4;
+
+},{"./lib/rng":"node_modules/uuid/lib/rng-browser.js","./lib/bytesToUuid":"node_modules/uuid/lib/bytesToUuid.js"}],"node_modules/uuid/index.js":[function(require,module,exports) {
+var v1 = require('./v1');
+var v4 = require('./v4');
+
+var uuid = v4;
+uuid.v1 = v1;
+uuid.v4 = v4;
+
+module.exports = uuid;
+
+},{"./v1":"node_modules/uuid/v1.js","./v4":"node_modules/uuid/v4.js"}],"src/particle/particle.ts":[function(require,module,exports) {
+"use strict";
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); Object.defineProperty(Constructor, "prototype", { writable: false }); return Constructor; }
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var uuid_1 = require("uuid");
+
+var Particle = /*#__PURE__*/function () {
+  function Particle() {
+    _classCallCheck(this, Particle);
+
+    this.uuid = (0, uuid_1.v4)();
+  }
+
+  _createClass(Particle, [{
+    key: "tick",
+    value: function tick() {
+      if (this.lifetime > 0) this.lifetime--;else this.destroy();
+      this.render();
+    }
+  }, {
+    key: "render",
+    value: function render() {}
+  }, {
+    key: "destroy",
+    value: function destroy() {
+      this.manager.remove(this.uuid);
+    }
+  }]);
+
+  return Particle;
+}();
+
+exports.default = Particle;
+},{"uuid":"node_modules/uuid/index.js"}],"src/particle/damage_count.ts":[function(require,module,exports) {
+"use strict";
+
+function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); Object.defineProperty(Constructor, "prototype", { writable: false }); return Constructor; }
+
+function _get() { if (typeof Reflect !== "undefined" && Reflect.get) { _get = Reflect.get; } else { _get = function _get(target, property, receiver) { var base = _superPropBase(target, property); if (!base) return; var desc = Object.getOwnPropertyDescriptor(base, property); if (desc.get) { return desc.get.call(arguments.length < 3 ? target : receiver); } return desc.value; }; } return _get.apply(this, arguments); }
+
+function _superPropBase(object, property) { while (!Object.prototype.hasOwnProperty.call(object, property)) { object = _getPrototypeOf(object); if (object === null) break; } return object; }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); Object.defineProperty(subClass, "prototype", { writable: false }); if (superClass) _setPrototypeOf(subClass, superClass); }
+
+function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
+
+function _createSuper(Derived) { var hasNativeReflectConstruct = _isNativeReflectConstruct(); return function _createSuperInternal() { var Super = _getPrototypeOf(Derived), result; if (hasNativeReflectConstruct) { var NewTarget = _getPrototypeOf(this).constructor; result = Reflect.construct(Super, arguments, NewTarget); } else { result = Super.apply(this, arguments); } return _possibleConstructorReturn(this, result); }; }
+
+function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } else if (call !== void 0) { throw new TypeError("Derived constructors may only return object or undefined"); } return _assertThisInitialized(self); }
+
+function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
+
+function _isNativeReflectConstruct() { if (typeof Reflect === "undefined" || !Reflect.construct) return false; if (Reflect.construct.sham) return false; if (typeof Proxy === "function") return true; try { Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function () {})); return true; } catch (e) { return false; } }
+
+function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
+
+var __importDefault = this && this.__importDefault || function (mod) {
+  return mod && mod.__esModule ? mod : {
+    "default": mod
+  };
+};
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var renderer_1 = __importDefault(require("../game/renderer"));
+
+var color_1 = __importDefault(require("../util/color"));
+
+var vec2_1 = __importDefault(require("../util/vec2"));
+
+var particle_1 = __importDefault(require("./particle"));
+
+var DamageCountParticle = /*#__PURE__*/function (_particle_1$default) {
+  _inherits(DamageCountParticle, _particle_1$default);
+
+  var _super = _createSuper(DamageCountParticle);
+
+  function DamageCountParticle(position, damage) {
+    var _this;
+
+    _classCallCheck(this, DamageCountParticle);
+
+    _this = _super.call(this);
+    _this.lifetime = 40;
+    _this.position = position;
+    _this.damage = damage;
+    return _this;
+  }
+
+  _createClass(DamageCountParticle, [{
+    key: "tick",
+    value: function tick() {
+      _get(_getPrototypeOf(DamageCountParticle.prototype), "tick", this).call(this);
+
+      this.position = this.position.add(new vec2_1.default(0, -0.015));
+    }
+  }, {
+    key: "render",
+    value: function render() {
+      renderer_1.default.text(this.position, 13, color_1.default.RGBA(255, 128, 20, this.lifetime * 255 / 30), this.damage.toString());
+    }
+  }]);
+
+  return DamageCountParticle;
+}(particle_1.default);
+
+exports.default = DamageCountParticle;
+},{"../game/renderer":"src/game/renderer.ts","../util/color":"src/util/color.ts","../util/vec2":"src/util/vec2.ts","./particle":"src/particle/particle.ts"}],"src/util/random.ts":[function(require,module,exports) {
+"use strict";
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); Object.defineProperty(Constructor, "prototype", { writable: false }); return Constructor; }
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var Random = /*#__PURE__*/function () {
+  function Random(seed) {
+    _classCallCheck(this, Random);
+
+    this.m = Math.pow(2, 31) - 1;
+    this.a = 1103515245;
+    this.c = 12345;
+    if (!seed) seed = Math.floor(Math.random() * this.m);
+    this.seed = seed;
+    this.state = seed;
+  }
+
+  _createClass(Random, [{
+    key: "next_int",
+    value: function next_int() {
+      this.state = (this.a * this.state + this.c) % this.m;
+      return this.state;
+    }
+  }, {
+    key: "next_float",
+    value: function next_float() {
+      return this.next_int() / this.m;
+    }
+  }, {
+    key: "next_int_ranged",
+    value: function next_int_ranged(start, end) {
+      var range = end - start + 1;
+      var random_under_1 = this.next_int() / this.m;
+      return start + Math.floor(random_under_1 * range);
+    }
+  }, {
+    key: "next_float_ranged",
+    value: function next_float_ranged(start, end) {
+      var range = end - start;
+      return start + this.next_float() * range;
+    }
+  }, {
+    key: "choice",
+    value: function choice(array) {
+      return array[this.next_int_ranged(0, array.length - 1)];
+    }
+  }, {
+    key: "next_sign",
+    value: function next_sign() {
+      return this.choice([1, -1]);
+    }
+  }, {
+    key: "weighted_random",
+    value: function weighted_random(arr) {
+      var entries = [];
+      var accumulated_weight = 0;
+
+      for (var i = 0; i < arr.length; i++) {
+        accumulated_weight += arr[i].weight;
+        entries.push({
+          item: arr[i].item,
+          accumulated_weight: accumulated_weight
+        });
+      }
+
+      for (var i = 0; i < arr.length; i++) {
+        var r = this.next_float() * accumulated_weight;
+        if (entries[i].accumulated_weight >= r) return entries[i].item;
+      }
+    }
+  }]);
+
+  return Random;
+}();
+
+exports.default = Random;
+},{}],"src/entity/effect/status_effect_manager.ts":[function(require,module,exports) {
+"use strict";
+
+function _createForOfIteratorHelper(o, allowArrayLike) { var it = typeof Symbol !== "undefined" && o[Symbol.iterator] || o["@@iterator"]; if (!it) { if (Array.isArray(o) || (it = _unsupportedIterableToArray(o)) || allowArrayLike && o && typeof o.length === "number") { if (it) o = it; var i = 0; var F = function F() {}; return { s: F, n: function n() { if (i >= o.length) return { done: true }; return { done: false, value: o[i++] }; }, e: function e(_e) { throw _e; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var normalCompletion = true, didErr = false, err; return { s: function s() { it = it.call(o); }, n: function n() { var step = it.next(); normalCompletion = step.done; return step; }, e: function e(_e2) { didErr = true; err = _e2; }, f: function f() { try { if (!normalCompletion && it.return != null) it.return(); } finally { if (didErr) throw err; } } }; }
+
+function _toConsumableArray(arr) { return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _unsupportedIterableToArray(arr) || _nonIterableSpread(); }
+
+function _nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
+
+function _unsupportedIterableToArray(o, minLen) { if (!o) return; if (typeof o === "string") return _arrayLikeToArray(o, minLen); var n = Object.prototype.toString.call(o).slice(8, -1); if (n === "Object" && o.constructor) n = o.constructor.name; if (n === "Map" || n === "Set") return Array.from(o); if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray(o, minLen); }
+
+function _iterableToArray(iter) { if (typeof Symbol !== "undefined" && iter[Symbol.iterator] != null || iter["@@iterator"] != null) return Array.from(iter); }
+
+function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) return _arrayLikeToArray(arr); }
+
+function _arrayLikeToArray(arr, len) { if (len == null || len > arr.length) len = arr.length; for (var i = 0, arr2 = new Array(len); i < len; i++) { arr2[i] = arr[i]; } return arr2; }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); Object.defineProperty(Constructor, "prototype", { writable: false }); return Constructor; }
+
+var __importDefault = this && this.__importDefault || function (mod) {
+  return mod && mod.__esModule ? mod : {
+    "default": mod
+  };
+};
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var random_1 = __importDefault(require("../../util/random"));
+
+var StatusEffectManager = /*#__PURE__*/function () {
+  function StatusEffectManager(owner) {
+    _classCallCheck(this, StatusEffectManager);
+
+    this.owner = owner;
+    this.effects = new Map();
+    this.random = new random_1.default();
+  }
+
+  _createClass(StatusEffectManager, [{
+    key: "get",
+    value: function get(uuid) {
+      return this.effects.get(uuid);
+    }
+  }, {
+    key: "find",
+    value: function find(filter) {
+      if (this.size() == 0) return undefined;
+      return _toConsumableArray(this.effects.entries()).find(function (value) {
+        return filter(value[1]);
+      })[1];
+    }
+  }, {
+    key: "apply",
+    value: function apply(StatusEffect) {
+      StatusEffect.manager = this;
+      this.effects.set(StatusEffect.uuid, StatusEffect);
+    }
+  }, {
+    key: "remove",
+    value: function remove(uuid) {
+      this.effects.delete(uuid);
+    }
+  }, {
+    key: "prune",
+    value: function prune(filter) {
+      var _iterator = _createForOfIteratorHelper(_toConsumableArray(this.effects.entries()).filter(function (value) {
+        return filter(value[1]);
+      })),
+          _step;
+
+      try {
+        for (_iterator.s(); !(_step = _iterator.n()).done;) {
+          var entry = _step.value;
+          this.effects.delete(entry[0]);
+        }
+      } catch (err) {
+        _iterator.e(err);
+      } finally {
+        _iterator.f();
+      }
+    }
+  }, {
+    key: "filter",
+    value: function filter(_filter) {
+      return _toConsumableArray(this.effects.entries()).filter(function (value) {
+        return _filter(value[1]);
+      });
+    }
+  }, {
+    key: "size",
+    value: function size() {
+      return this.effects.size;
+    }
+  }, {
+    key: "array",
+    value: function array() {
+      return _toConsumableArray(this.effects.values());
+    }
+  }, {
+    key: "tick",
+    value: function tick() {
+      var _iterator2 = _createForOfIteratorHelper(this.array()),
+          _step2;
+
+      try {
+        for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
+          var effect = _step2.value;
+          effect.tick();
+        }
+      } catch (err) {
+        _iterator2.e(err);
+      } finally {
+        _iterator2.f();
+      }
+    }
+  }]);
+
+  return StatusEffectManager;
+}();
+
+exports.default = StatusEffectManager;
+},{"../../util/random":"src/util/random.ts"}],"node_modules/sat/SAT.js":[function(require,module,exports) {
 var define;
 // Version 0.9.0 - Copyright 2012 - 2021 -  Jim Riecken <jimr@jimr.ca>
 //
@@ -29990,961 +30541,7 @@ var define;
   return SAT;
 }));
 
-},{}],"src/util/vec2.ts":[function(require,module,exports) {
-"use strict";
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
-
-function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); Object.defineProperty(Constructor, "prototype", { writable: false }); return Constructor; }
-
-var __importDefault = this && this.__importDefault || function (mod) {
-  return mod && mod.__esModule ? mod : {
-    "default": mod
-  };
-};
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-
-var game_1 = __importDefault(require("../game/game"));
-
-var sat_1 = __importDefault(require("sat"));
-
-var Vec2 = /*#__PURE__*/function () {
-  function Vec2(x, y) {
-    _classCallCheck(this, Vec2);
-
-    this.x = x !== null && x !== void 0 ? x : 0;
-    this.y = y !== null && y !== void 0 ? y : 0;
-  }
-
-  _createClass(Vec2, [{
-    key: "set",
-    value: function set(x, y) {
-      this.x = x;
-      this.y = y;
-    }
-  }, {
-    key: "copy",
-    value: function copy(vec) {
-      this.x = vec.x;
-      this.y = vec.y;
-    }
-  }, {
-    key: "clone",
-    value: function clone() {
-      return new Vec2(this.x, this.y);
-    }
-  }, {
-    key: "add",
-    value: function add(vec) {
-      return new Vec2(this.x + vec.x, this.y + vec.y);
-    }
-  }, {
-    key: "subtract",
-    value: function subtract(vec) {
-      return new Vec2(this.x - vec.x, this.y - vec.y);
-    }
-  }, {
-    key: "multiply",
-    value: function multiply(n) {
-      return new Vec2(this.x * n, this.y * n);
-    }
-  }, {
-    key: "multiply_vector",
-    value: function multiply_vector(vec) {
-      return new Vec2(this.x * vec.x, this.y * vec.y);
-    }
-  }, {
-    key: "toString",
-    value: function toString() {
-      return "".concat(this.x, ",").concat(this.y);
-    }
-  }, {
-    key: "modulus_room",
-    value: function modulus_room() {
-      var w = game_1.default.width;
-      return new Vec2(this.x >= 0 ? this.x % w : (w - Math.abs(this.x) % w) % w, this.y >= 0 ? this.y % w : (w - Math.abs(this.y) % w) % w);
-    }
-  }, {
-    key: "to",
-    value: function to(vec) {
-      return new Vec2(vec.x - this.x, vec.y - this.y);
-    }
-  }, {
-    key: "step_to",
-    value: function step_to(vec) {
-      return Vec2.step(this.to(vec));
-    }
-  }, {
-    key: "round",
-    value: function round() {
-      return new Vec2(Math.round(this.x), Math.round(this.y));
-    }
-  }, {
-    key: "length",
-    get: function get() {
-      return Math.sqrt(this.x * this.x + this.y * this.y);
-    }
-  }, {
-    key: "normalize",
-    value: function normalize() {
-      return new Vec2(this.x / this.length, this.y / this.length);
-    }
-  }, {
-    key: "equals",
-    value: function equals(vec) {
-      return this.x == vec.x && this.y == vec.y;
-    }
-  }, {
-    key: "floor",
-    value: function floor() {
-      return new Vec2(Math.floor(this.x), Math.floor(this.y));
-    }
-  }, {
-    key: "constrain_room",
-    value: function constrain_room() {
-      var vec = this.clone();
-      if (vec.x < 0) vec.x = 0;
-      if (vec.y < 0) vec.y = 0;
-      if (vec.x > game_1.default.width - 1) vec.x = game_1.default.width - 1;
-      if (vec.y > game_1.default.width - 1) vec.y = game_1.default.width - 1;
-      return vec;
-    }
-  }, {
-    key: "rotate",
-    value: function rotate(angle) {
-      var rad = angle * Math.PI / 180;
-      return new Vec2(Math.cos(rad * this.x) - Math.sin(rad * this.y), Math.cos(rad * this.x) + Math.sin(rad * this.y));
-    }
-  }, {
-    key: "left",
-    value: function left() {
-      return new Vec2(this.x - 1, this.y);
-    }
-  }, {
-    key: "right",
-    value: function right() {
-      return new Vec2(this.x + 1, this.y);
-    }
-  }, {
-    key: "up",
-    value: function up() {
-      return new Vec2(this.x, this.y - 1);
-    }
-  }, {
-    key: "down",
-    value: function down() {
-      return new Vec2(this.x, this.y + 1);
-    }
-  }, {
-    key: "sat_vector",
-    value: function sat_vector() {
-      return new sat_1.default.Vector(this.x, this.y);
-    }
-  }, {
-    key: "rotation",
-    get: function get() {
-      return Math.atan2(this.y, this.x) * 180 / Math.PI;
-    }
-  }, {
-    key: "is_effectively_zero",
-    value: function is_effectively_zero() {
-      return Math.abs(this.x) < 0.001 && Math.abs(this.y) < 0.001;
-    }
-  }], [{
-    key: "zero",
-    value: function zero() {
-      return new Vec2(0, 0);
-    }
-  }, {
-    key: "i",
-    value: function i() {
-      return new Vec2(1, 0);
-    }
-  }, {
-    key: "j",
-    value: function j() {
-      return new Vec2(0, 1);
-    }
-  }, {
-    key: "one",
-    value: function one() {
-      return new Vec2(1, 1);
-    }
-  }, {
-    key: "parse",
-    value: function parse(str) {
-      return new Vec2(parseInt(str.split(',')[0]), parseInt(str.split(',')[1]));
-    }
-  }, {
-    key: "step",
-    value: function step(vec) {
-      var new_vec = vec;
-      if (new_vec.x > 0) new_vec.x = 1;
-      if (new_vec.x < 0) new_vec.x = -1;
-      if (new_vec.y > 0) new_vec.y = 1;
-      if (new_vec.y < 0) new_vec.y = -1;
-      return new_vec;
-    }
-  }, {
-    key: "from_angle",
-    value: function from_angle(angle) {
-      return new Vec2(Math.cos(angle * Math.PI / 180), Math.sin(angle * Math.PI / 180));
-    }
-  }, {
-    key: "from_direction",
-    value: function from_direction(direction) {
-      switch (direction) {
-        case 'left':
-          return new Vec2(-1, 0);
-
-        case 'right':
-          return new Vec2(1, 0);
-
-        case 'up':
-          return new Vec2(0, -1);
-
-        case 'down':
-          return new Vec2(0, 1);
-      }
-    }
-  }]);
-
-  return Vec2;
-}();
-
-exports.default = Vec2;
-},{"../game/game":"src/game/game.ts","sat":"node_modules/sat/SAT.js"}],"src/game/renderer.ts":[function(require,module,exports) {
-"use strict";
-
-function _createForOfIteratorHelper(o, allowArrayLike) { var it = typeof Symbol !== "undefined" && o[Symbol.iterator] || o["@@iterator"]; if (!it) { if (Array.isArray(o) || (it = _unsupportedIterableToArray(o)) || allowArrayLike && o && typeof o.length === "number") { if (it) o = it; var i = 0; var F = function F() {}; return { s: F, n: function n() { if (i >= o.length) return { done: true }; return { done: false, value: o[i++] }; }, e: function e(_e) { throw _e; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var normalCompletion = true, didErr = false, err; return { s: function s() { it = it.call(o); }, n: function n() { var step = it.next(); normalCompletion = step.done; return step; }, e: function e(_e2) { didErr = true; err = _e2; }, f: function f() { try { if (!normalCompletion && it.return != null) it.return(); } finally { if (didErr) throw err; } } }; }
-
-function _unsupportedIterableToArray(o, minLen) { if (!o) return; if (typeof o === "string") return _arrayLikeToArray(o, minLen); var n = Object.prototype.toString.call(o).slice(8, -1); if (n === "Object" && o.constructor) n = o.constructor.name; if (n === "Map" || n === "Set") return Array.from(o); if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray(o, minLen); }
-
-function _arrayLikeToArray(arr, len) { if (len == null || len > arr.length) len = arr.length; for (var i = 0, arr2 = new Array(len); i < len; i++) { arr2[i] = arr[i]; } return arr2; }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
-
-function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); Object.defineProperty(Constructor, "prototype", { writable: false }); return Constructor; }
-
-var __importDefault = this && this.__importDefault || function (mod) {
-  return mod && mod.__esModule ? mod : {
-    "default": mod
-  };
-};
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-
-var color_1 = __importDefault(require("../util/color"));
-
-var vec2_1 = __importDefault(require("../util/vec2"));
-
-var Renderer = /*#__PURE__*/function () {
-  function Renderer() {
-    _classCallCheck(this, Renderer);
-  }
-
-  _createClass(Renderer, null, [{
-    key: "canvas_coords",
-    value: function canvas_coords(vec) {
-      return new vec2_1.default(vec.x * this.scale + 450, vec.y * this.scale);
-    }
-  }, {
-    key: "rect",
-    value: function rect(position, size, color, corner_radius) {
-      var options = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : {
-        scale: 0.95,
-        rotation: 0
-      };
-      this.p5.push();
-      this.p5.fill(color.red, color.green, color.blue, color.alpha);
-      this.p5.translate(this.canvas_coords(position).x, this.canvas_coords(position).y);
-      this.p5.rotate(options.rotation);
-      this.p5.rect(0, 0, size.x * this.scale * options.scale, size.y * this.scale * options.scale, corner_radius * this.scale);
-      this.p5.pop();
-    }
-  }, {
-    key: "pointer",
-    value: function pointer(entity) {
-      var canvas_pos = this.canvas_coords(entity.position);
-      this.p5.push();
-      this.p5.stroke(255, 255, 255, 64 + (entity.scale - 1) * 128 * 5);
-      this.p5.strokeWeight(5 + (entity.scale - 1) * 20);
-      this.p5.translate(canvas_pos.x, canvas_pos.y);
-      this.p5.rotate(entity.facing);
-      this.p5.line(30 * (entity.size.x + entity.size.y) / 2, 0, 40 * (entity.size.x + entity.size.y) / 2, 0);
-      this.p5.pop();
-    }
-  }, {
-    key: "health_bar",
-    value: function health_bar(position, size, ratio) {
-      this.p5.push();
-      this.p5.rectMode('corner');
-      Renderer.rect(new vec2_1.default(position.x - size.x * 0.5, position.y - size.y * 0.75), new vec2_1.default(size.x, 0.1), color_1.default.RGBA(128, 128, 128, 128), 0.1, {
-        scale: 1,
-        rotation: 0
-      });
-      Renderer.rect(new vec2_1.default(position.x - size.x * 0.5, position.y - size.y * 0.75), new vec2_1.default(size.x * ratio, 0.1), color_1.default.RGB(255, 50, 50), 0.1, {
-        scale: 1,
-        rotation: 0
-      });
-      this.p5.pop();
-    }
-  }, {
-    key: "text",
-    value: function text(position, size, color, _text) {
-      this.p5.push();
-      this.p5.textSize(size);
-      this.p5.fill(color.red, color.green, color.blue, color.alpha);
-      this.p5.text(_text, this.canvas_coords(position).x, this.canvas_coords(position).y);
-      this.p5.pop();
-    }
-  }, {
-    key: "map",
-    value: function map() {
-      this.p5.push();
-      this.p5.translate(210, 300);
-      this.p5.rectMode('corner');
-
-      var _iterator = _createForOfIteratorHelper(this.game.room_manager.array()),
-          _step;
-
-      try {
-        for (_iterator.s(); !(_step = _iterator.n()).done;) {
-          var room = _step.value;
-          var color = void 0;
-          color = room.biome.map_color;
-          this.p5.fill(color.red, color.green, color.blue, room.visited ? 255 : 140);
-          this.p5.rect(room.position.x * 20, room.position.y * 20, 15, 15);
-          this.p5.fill(64, 64, 64);
-          this.p5.rect(room.position.x * 20 + 2, room.position.y * 20 + 2, 11, 11);
-
-          if (room.cleared) {
-            this.p5.fill(64, 220, 64);
-            this.p5.rect(room.position.x * 20 + 2, room.position.y * 20 + 2, 11, 11);
-          }
-
-          this.p5.fill(110, 110, 110);
-          if (!room.visited) this.p5.fill(85, 85, 85);
-          if (room.has_door('left')) this.p5.rect(room.position.x * 20 - 2.5, room.position.y * 20 + 5, 2.5, 5);
-          if (room.has_door('right')) this.p5.rect(room.position.x * 20 + 15, room.position.y * 20 + 5, 2.5, 5);
-          if (room.has_door('up')) this.p5.rect(room.position.x * 20 + 5, room.position.y * 20 - 2.5, 5, 2.5);
-          if (room.has_door('down')) this.p5.rect(room.position.x * 20 + 5, room.position.y * 20 + 15, 5, 2.5);
-        }
-      } catch (err) {
-        _iterator.e(err);
-      } finally {
-        _iterator.f();
-      }
-
-      this.p5.fill(0, 0, 0, 0);
-      this.p5.stroke(255, 255, 255);
-      this.p5.strokeWeight(2);
-      this.p5.rect(this.game.room_manager.current_room.position.x * 20 - 1, this.game.room_manager.current_room.position.y * 20 - 1, 17, 17);
-      this.p5.pop();
-    }
-  }, {
-    key: "sword",
-    value: function sword(position, size, color, corner_radius) {
-      var options = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : {
-        scale: 1,
-        rotation: 0
-      };
-      this.p5.push();
-      this.p5.translate(this.canvas_coords(position).x, this.canvas_coords(position).y);
-      this.p5.rotate(options.rotation);
-      var size_scaled = size.multiply(this.scale).multiply(options.scale);
-      this.p5.fill(128, 128, 128);
-      this.p5.rect(0, 0, size_scaled.x, size_scaled.y * 0.4, corner_radius * this.scale);
-      this.p5.fill(color.red, color.green, color.blue, color.alpha);
-      this.p5.rect(size_scaled.x * 0.1, 0, size_scaled.x * 0.8, size_scaled.y, corner_radius * this.scale);
-      this.p5.fill(128, 128, 128);
-      this.p5.rect(-size_scaled.x * 0.3, 0, size_scaled.x * 0.05, size_scaled.y * 2, corner_radius * this.scale);
-      this.p5.pop();
-    }
-  }, {
-    key: "arrow",
-    value: function arrow(position, size, color, corner_radius) {
-      var options = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : {
-        scale: 1,
-        rotation: 0
-      };
-      this.p5.push();
-      this.p5.translate(this.canvas_coords(position).x, this.canvas_coords(position).y);
-      this.p5.rotate(options.rotation);
-      var size_scaled = size.multiply(this.scale).multiply(options.scale);
-      this.p5.fill(128, 128, 128);
-      this.p5.rect(0, 0, size_scaled.x, size_scaled.y * 0.5, corner_radius * this.scale);
-      this.p5.fill(color.red, color.green, color.blue, color.alpha);
-      this.p5.rect(size_scaled.x * 0.5, 0, size_scaled.x * 0.3, size_scaled.y, corner_radius * this.scale);
-      this.p5.pop();
-    }
-  }]);
-
-  return Renderer;
-}();
-
-exports.default = Renderer;
-},{"../util/color":"src/util/color.ts","../util/vec2":"src/util/vec2.ts"}],"node_modules/uuid/lib/rng-browser.js":[function(require,module,exports) {
-// Unique ID creation requires a high quality random # generator.  In the
-// browser this is a little complicated due to unknown quality of Math.random()
-// and inconsistent support for the `crypto` API.  We do the best we can via
-// feature-detection
-
-// getRandomValues needs to be invoked in a context where "this" is a Crypto
-// implementation. Also, find the complete implementation of crypto on IE11.
-var getRandomValues = (typeof(crypto) != 'undefined' && crypto.getRandomValues && crypto.getRandomValues.bind(crypto)) ||
-                      (typeof(msCrypto) != 'undefined' && typeof window.msCrypto.getRandomValues == 'function' && msCrypto.getRandomValues.bind(msCrypto));
-
-if (getRandomValues) {
-  // WHATWG crypto RNG - http://wiki.whatwg.org/wiki/Crypto
-  var rnds8 = new Uint8Array(16); // eslint-disable-line no-undef
-
-  module.exports = function whatwgRNG() {
-    getRandomValues(rnds8);
-    return rnds8;
-  };
-} else {
-  // Math.random()-based (RNG)
-  //
-  // If all else fails, use Math.random().  It's fast, but is of unspecified
-  // quality.
-  var rnds = new Array(16);
-
-  module.exports = function mathRNG() {
-    for (var i = 0, r; i < 16; i++) {
-      if ((i & 0x03) === 0) r = Math.random() * 0x100000000;
-      rnds[i] = r >>> ((i & 0x03) << 3) & 0xff;
-    }
-
-    return rnds;
-  };
-}
-
-},{}],"node_modules/uuid/lib/bytesToUuid.js":[function(require,module,exports) {
-/**
- * Convert array of 16 byte values to UUID string format of the form:
- * XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
- */
-var byteToHex = [];
-for (var i = 0; i < 256; ++i) {
-  byteToHex[i] = (i + 0x100).toString(16).substr(1);
-}
-
-function bytesToUuid(buf, offset) {
-  var i = offset || 0;
-  var bth = byteToHex;
-  // join used to fix memory issue caused by concatenation: https://bugs.chromium.org/p/v8/issues/detail?id=3175#c4
-  return ([
-    bth[buf[i++]], bth[buf[i++]],
-    bth[buf[i++]], bth[buf[i++]], '-',
-    bth[buf[i++]], bth[buf[i++]], '-',
-    bth[buf[i++]], bth[buf[i++]], '-',
-    bth[buf[i++]], bth[buf[i++]], '-',
-    bth[buf[i++]], bth[buf[i++]],
-    bth[buf[i++]], bth[buf[i++]],
-    bth[buf[i++]], bth[buf[i++]]
-  ]).join('');
-}
-
-module.exports = bytesToUuid;
-
-},{}],"node_modules/uuid/v1.js":[function(require,module,exports) {
-var rng = require('./lib/rng');
-var bytesToUuid = require('./lib/bytesToUuid');
-
-// **`v1()` - Generate time-based UUID**
-//
-// Inspired by https://github.com/LiosK/UUID.js
-// and http://docs.python.org/library/uuid.html
-
-var _nodeId;
-var _clockseq;
-
-// Previous uuid creation time
-var _lastMSecs = 0;
-var _lastNSecs = 0;
-
-// See https://github.com/uuidjs/uuid for API details
-function v1(options, buf, offset) {
-  var i = buf && offset || 0;
-  var b = buf || [];
-
-  options = options || {};
-  var node = options.node || _nodeId;
-  var clockseq = options.clockseq !== undefined ? options.clockseq : _clockseq;
-
-  // node and clockseq need to be initialized to random values if they're not
-  // specified.  We do this lazily to minimize issues related to insufficient
-  // system entropy.  See #189
-  if (node == null || clockseq == null) {
-    var seedBytes = rng();
-    if (node == null) {
-      // Per 4.5, create and 48-bit node id, (47 random bits + multicast bit = 1)
-      node = _nodeId = [
-        seedBytes[0] | 0x01,
-        seedBytes[1], seedBytes[2], seedBytes[3], seedBytes[4], seedBytes[5]
-      ];
-    }
-    if (clockseq == null) {
-      // Per 4.2.2, randomize (14 bit) clockseq
-      clockseq = _clockseq = (seedBytes[6] << 8 | seedBytes[7]) & 0x3fff;
-    }
-  }
-
-  // UUID timestamps are 100 nano-second units since the Gregorian epoch,
-  // (1582-10-15 00:00).  JSNumbers aren't precise enough for this, so
-  // time is handled internally as 'msecs' (integer milliseconds) and 'nsecs'
-  // (100-nanoseconds offset from msecs) since unix epoch, 1970-01-01 00:00.
-  var msecs = options.msecs !== undefined ? options.msecs : new Date().getTime();
-
-  // Per 4.2.1.2, use count of uuid's generated during the current clock
-  // cycle to simulate higher resolution clock
-  var nsecs = options.nsecs !== undefined ? options.nsecs : _lastNSecs + 1;
-
-  // Time since last uuid creation (in msecs)
-  var dt = (msecs - _lastMSecs) + (nsecs - _lastNSecs)/10000;
-
-  // Per 4.2.1.2, Bump clockseq on clock regression
-  if (dt < 0 && options.clockseq === undefined) {
-    clockseq = clockseq + 1 & 0x3fff;
-  }
-
-  // Reset nsecs if clock regresses (new clockseq) or we've moved onto a new
-  // time interval
-  if ((dt < 0 || msecs > _lastMSecs) && options.nsecs === undefined) {
-    nsecs = 0;
-  }
-
-  // Per 4.2.1.2 Throw error if too many uuids are requested
-  if (nsecs >= 10000) {
-    throw new Error('uuid.v1(): Can\'t create more than 10M uuids/sec');
-  }
-
-  _lastMSecs = msecs;
-  _lastNSecs = nsecs;
-  _clockseq = clockseq;
-
-  // Per 4.1.4 - Convert from unix epoch to Gregorian epoch
-  msecs += 12219292800000;
-
-  // `time_low`
-  var tl = ((msecs & 0xfffffff) * 10000 + nsecs) % 0x100000000;
-  b[i++] = tl >>> 24 & 0xff;
-  b[i++] = tl >>> 16 & 0xff;
-  b[i++] = tl >>> 8 & 0xff;
-  b[i++] = tl & 0xff;
-
-  // `time_mid`
-  var tmh = (msecs / 0x100000000 * 10000) & 0xfffffff;
-  b[i++] = tmh >>> 8 & 0xff;
-  b[i++] = tmh & 0xff;
-
-  // `time_high_and_version`
-  b[i++] = tmh >>> 24 & 0xf | 0x10; // include version
-  b[i++] = tmh >>> 16 & 0xff;
-
-  // `clock_seq_hi_and_reserved` (Per 4.2.2 - include variant)
-  b[i++] = clockseq >>> 8 | 0x80;
-
-  // `clock_seq_low`
-  b[i++] = clockseq & 0xff;
-
-  // `node`
-  for (var n = 0; n < 6; ++n) {
-    b[i + n] = node[n];
-  }
-
-  return buf ? buf : bytesToUuid(b);
-}
-
-module.exports = v1;
-
-},{"./lib/rng":"node_modules/uuid/lib/rng-browser.js","./lib/bytesToUuid":"node_modules/uuid/lib/bytesToUuid.js"}],"node_modules/uuid/v4.js":[function(require,module,exports) {
-var rng = require('./lib/rng');
-var bytesToUuid = require('./lib/bytesToUuid');
-
-function v4(options, buf, offset) {
-  var i = buf && offset || 0;
-
-  if (typeof(options) == 'string') {
-    buf = options === 'binary' ? new Array(16) : null;
-    options = null;
-  }
-  options = options || {};
-
-  var rnds = options.random || (options.rng || rng)();
-
-  // Per 4.4, set bits for version and `clock_seq_hi_and_reserved`
-  rnds[6] = (rnds[6] & 0x0f) | 0x40;
-  rnds[8] = (rnds[8] & 0x3f) | 0x80;
-
-  // Copy bytes to buffer, if provided
-  if (buf) {
-    for (var ii = 0; ii < 16; ++ii) {
-      buf[i + ii] = rnds[ii];
-    }
-  }
-
-  return buf || bytesToUuid(rnds);
-}
-
-module.exports = v4;
-
-},{"./lib/rng":"node_modules/uuid/lib/rng-browser.js","./lib/bytesToUuid":"node_modules/uuid/lib/bytesToUuid.js"}],"node_modules/uuid/index.js":[function(require,module,exports) {
-var v1 = require('./v1');
-var v4 = require('./v4');
-
-var uuid = v4;
-uuid.v1 = v1;
-uuid.v4 = v4;
-
-module.exports = uuid;
-
-},{"./v1":"node_modules/uuid/v1.js","./v4":"node_modules/uuid/v4.js"}],"src/particle/particle.ts":[function(require,module,exports) {
-"use strict";
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
-
-function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); Object.defineProperty(Constructor, "prototype", { writable: false }); return Constructor; }
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-
-var uuid_1 = require("uuid");
-
-var Particle = /*#__PURE__*/function () {
-  function Particle() {
-    _classCallCheck(this, Particle);
-
-    this.uuid = (0, uuid_1.v4)();
-  }
-
-  _createClass(Particle, [{
-    key: "tick",
-    value: function tick() {
-      if (this.lifetime > 0) this.lifetime--;else this.destroy();
-      this.render();
-    }
-  }, {
-    key: "render",
-    value: function render() {}
-  }, {
-    key: "destroy",
-    value: function destroy() {
-      this.manager.remove(this.uuid);
-    }
-  }]);
-
-  return Particle;
-}();
-
-exports.default = Particle;
-},{"uuid":"node_modules/uuid/index.js"}],"src/particle/damage_count.ts":[function(require,module,exports) {
-"use strict";
-
-function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
-
-function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); Object.defineProperty(Constructor, "prototype", { writable: false }); return Constructor; }
-
-function _get() { if (typeof Reflect !== "undefined" && Reflect.get) { _get = Reflect.get; } else { _get = function _get(target, property, receiver) { var base = _superPropBase(target, property); if (!base) return; var desc = Object.getOwnPropertyDescriptor(base, property); if (desc.get) { return desc.get.call(arguments.length < 3 ? target : receiver); } return desc.value; }; } return _get.apply(this, arguments); }
-
-function _superPropBase(object, property) { while (!Object.prototype.hasOwnProperty.call(object, property)) { object = _getPrototypeOf(object); if (object === null) break; } return object; }
-
-function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); Object.defineProperty(subClass, "prototype", { writable: false }); if (superClass) _setPrototypeOf(subClass, superClass); }
-
-function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
-
-function _createSuper(Derived) { var hasNativeReflectConstruct = _isNativeReflectConstruct(); return function _createSuperInternal() { var Super = _getPrototypeOf(Derived), result; if (hasNativeReflectConstruct) { var NewTarget = _getPrototypeOf(this).constructor; result = Reflect.construct(Super, arguments, NewTarget); } else { result = Super.apply(this, arguments); } return _possibleConstructorReturn(this, result); }; }
-
-function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } else if (call !== void 0) { throw new TypeError("Derived constructors may only return object or undefined"); } return _assertThisInitialized(self); }
-
-function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
-
-function _isNativeReflectConstruct() { if (typeof Reflect === "undefined" || !Reflect.construct) return false; if (Reflect.construct.sham) return false; if (typeof Proxy === "function") return true; try { Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function () {})); return true; } catch (e) { return false; } }
-
-function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
-
-var __importDefault = this && this.__importDefault || function (mod) {
-  return mod && mod.__esModule ? mod : {
-    "default": mod
-  };
-};
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-
-var renderer_1 = __importDefault(require("../game/renderer"));
-
-var color_1 = __importDefault(require("../util/color"));
-
-var vec2_1 = __importDefault(require("../util/vec2"));
-
-var particle_1 = __importDefault(require("./particle"));
-
-var DamageCountParticle = /*#__PURE__*/function (_particle_1$default) {
-  _inherits(DamageCountParticle, _particle_1$default);
-
-  var _super = _createSuper(DamageCountParticle);
-
-  function DamageCountParticle(position, damage) {
-    var _this;
-
-    _classCallCheck(this, DamageCountParticle);
-
-    _this = _super.call(this);
-    _this.lifetime = 40;
-    _this.position = position;
-    _this.damage = damage;
-    return _this;
-  }
-
-  _createClass(DamageCountParticle, [{
-    key: "tick",
-    value: function tick() {
-      _get(_getPrototypeOf(DamageCountParticle.prototype), "tick", this).call(this);
-
-      this.position = this.position.add(new vec2_1.default(0, -0.015));
-    }
-  }, {
-    key: "render",
-    value: function render() {
-      renderer_1.default.text(this.position, 13, color_1.default.RGBA(255, 128, 20, this.lifetime * 255 / 30), this.damage.toString());
-    }
-  }]);
-
-  return DamageCountParticle;
-}(particle_1.default);
-
-exports.default = DamageCountParticle;
-},{"../game/renderer":"src/game/renderer.ts","../util/color":"src/util/color.ts","../util/vec2":"src/util/vec2.ts","./particle":"src/particle/particle.ts"}],"src/util/random.ts":[function(require,module,exports) {
-"use strict";
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
-
-function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); Object.defineProperty(Constructor, "prototype", { writable: false }); return Constructor; }
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-
-var Random = /*#__PURE__*/function () {
-  function Random(seed) {
-    _classCallCheck(this, Random);
-
-    this.m = Math.pow(2, 31) - 1;
-    this.a = 1103515245;
-    this.c = 12345;
-    if (!seed) seed = Math.floor(Math.random() * this.m);
-    this.seed = seed;
-    this.state = seed;
-  }
-
-  _createClass(Random, [{
-    key: "next_int",
-    value: function next_int() {
-      this.state = (this.a * this.state + this.c) % this.m;
-      return this.state;
-    }
-  }, {
-    key: "next_float",
-    value: function next_float() {
-      return this.next_int() / this.m;
-    }
-  }, {
-    key: "next_int_ranged",
-    value: function next_int_ranged(start, end) {
-      var range = end - start + 1;
-      var random_under_1 = this.next_int() / this.m;
-      return start + Math.floor(random_under_1 * range);
-    }
-  }, {
-    key: "next_float_ranged",
-    value: function next_float_ranged(start, end) {
-      var range = end - start;
-      return start + this.next_float() * range;
-    }
-  }, {
-    key: "choice",
-    value: function choice(array) {
-      return array[this.next_int_ranged(0, array.length - 1)];
-    }
-  }, {
-    key: "next_sign",
-    value: function next_sign() {
-      return this.choice([1, -1]);
-    }
-  }, {
-    key: "weighted_random",
-    value: function weighted_random(arr) {
-      var entries = [];
-      var accumulated_weight = 0;
-
-      for (var i = 0; i < arr.length; i++) {
-        accumulated_weight += arr[i].weight;
-        entries.push({
-          item: arr[i].item,
-          accumulated_weight: accumulated_weight
-        });
-      }
-
-      for (var i = 0; i < arr.length; i++) {
-        var r = this.next_float() * accumulated_weight;
-        if (entries[i].accumulated_weight >= r) return entries[i].item;
-      }
-    }
-  }]);
-
-  return Random;
-}();
-
-exports.default = Random;
-},{}],"src/entity/effect/status_effect_manager.ts":[function(require,module,exports) {
-"use strict";
-
-function _createForOfIteratorHelper(o, allowArrayLike) { var it = typeof Symbol !== "undefined" && o[Symbol.iterator] || o["@@iterator"]; if (!it) { if (Array.isArray(o) || (it = _unsupportedIterableToArray(o)) || allowArrayLike && o && typeof o.length === "number") { if (it) o = it; var i = 0; var F = function F() {}; return { s: F, n: function n() { if (i >= o.length) return { done: true }; return { done: false, value: o[i++] }; }, e: function e(_e) { throw _e; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var normalCompletion = true, didErr = false, err; return { s: function s() { it = it.call(o); }, n: function n() { var step = it.next(); normalCompletion = step.done; return step; }, e: function e(_e2) { didErr = true; err = _e2; }, f: function f() { try { if (!normalCompletion && it.return != null) it.return(); } finally { if (didErr) throw err; } } }; }
-
-function _toConsumableArray(arr) { return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _unsupportedIterableToArray(arr) || _nonIterableSpread(); }
-
-function _nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
-
-function _unsupportedIterableToArray(o, minLen) { if (!o) return; if (typeof o === "string") return _arrayLikeToArray(o, minLen); var n = Object.prototype.toString.call(o).slice(8, -1); if (n === "Object" && o.constructor) n = o.constructor.name; if (n === "Map" || n === "Set") return Array.from(o); if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray(o, minLen); }
-
-function _iterableToArray(iter) { if (typeof Symbol !== "undefined" && iter[Symbol.iterator] != null || iter["@@iterator"] != null) return Array.from(iter); }
-
-function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) return _arrayLikeToArray(arr); }
-
-function _arrayLikeToArray(arr, len) { if (len == null || len > arr.length) len = arr.length; for (var i = 0, arr2 = new Array(len); i < len; i++) { arr2[i] = arr[i]; } return arr2; }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
-
-function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); Object.defineProperty(Constructor, "prototype", { writable: false }); return Constructor; }
-
-var __importDefault = this && this.__importDefault || function (mod) {
-  return mod && mod.__esModule ? mod : {
-    "default": mod
-  };
-};
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-
-var random_1 = __importDefault(require("../../util/random"));
-
-var StatusEffectManager = /*#__PURE__*/function () {
-  function StatusEffectManager(owner) {
-    _classCallCheck(this, StatusEffectManager);
-
-    this.owner = owner;
-    this.effects = new Map();
-    this.random = new random_1.default();
-  }
-
-  _createClass(StatusEffectManager, [{
-    key: "get",
-    value: function get(uuid) {
-      return this.effects.get(uuid);
-    }
-  }, {
-    key: "find",
-    value: function find(filter) {
-      if (this.size() == 0) return undefined;
-      return _toConsumableArray(this.effects.entries()).find(function (value) {
-        return filter(value[1]);
-      })[1];
-    }
-  }, {
-    key: "apply",
-    value: function apply(StatusEffect) {
-      StatusEffect.manager = this;
-      this.effects.set(StatusEffect.uuid, StatusEffect);
-    }
-  }, {
-    key: "remove",
-    value: function remove(uuid) {
-      this.effects.delete(uuid);
-    }
-  }, {
-    key: "prune",
-    value: function prune(filter) {
-      var _iterator = _createForOfIteratorHelper(_toConsumableArray(this.effects.entries()).filter(function (value) {
-        return filter(value[1]);
-      })),
-          _step;
-
-      try {
-        for (_iterator.s(); !(_step = _iterator.n()).done;) {
-          var entry = _step.value;
-          this.effects.delete(entry[0]);
-        }
-      } catch (err) {
-        _iterator.e(err);
-      } finally {
-        _iterator.f();
-      }
-    }
-  }, {
-    key: "filter",
-    value: function filter(_filter) {
-      return _toConsumableArray(this.effects.entries()).filter(function (value) {
-        return _filter(value[1]);
-      });
-    }
-  }, {
-    key: "size",
-    value: function size() {
-      return this.effects.size;
-    }
-  }, {
-    key: "array",
-    value: function array() {
-      return _toConsumableArray(this.effects.values());
-    }
-  }, {
-    key: "tick",
-    value: function tick() {
-      var _iterator2 = _createForOfIteratorHelper(this.array()),
-          _step2;
-
-      try {
-        for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
-          var effect = _step2.value;
-          effect.tick();
-        }
-      } catch (err) {
-        _iterator2.e(err);
-      } finally {
-        _iterator2.f();
-      }
-    }
-  }]);
-
-  return StatusEffectManager;
-}();
-
-exports.default = StatusEffectManager;
-},{"../../util/random":"src/util/random.ts"}],"src/entity/entity.ts":[function(require,module,exports) {
+},{}],"src/entity/entity.ts":[function(require,module,exports) {
 "use strict";
 
 function _createForOfIteratorHelper(o, allowArrayLike) { var it = typeof Symbol !== "undefined" && o[Symbol.iterator] || o["@@iterator"]; if (!it) { if (Array.isArray(o) || (it = _unsupportedIterableToArray(o)) || allowArrayLike && o && typeof o.length === "number") { if (it) o = it; var i = 0; var F = function F() {}; return { s: F, n: function n() { if (i >= o.length) return { done: true }; return { done: false, value: o[i++] }; }, e: function e(_e) { throw _e; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var normalCompletion = true, didErr = false, err; return { s: function s() { it = it.call(o); }, n: function n() { var step = it.next(); normalCompletion = step.done; return step; }, e: function e(_e2) { didErr = true; err = _e2; }, f: function f() { try { if (!normalCompletion && it.return != null) it.return(); } finally { if (didErr) throw err; } } }; }
@@ -31624,7 +31221,7 @@ var Coin = /*#__PURE__*/function (_entity_1$default) {
 
     _this = _super.call(this);
     _this.value = value;
-    _this.size = new vec2_1.default(0.35, 0.35);
+    _this.size = new vec2_1.default(0.4, 0.4);
     _this.rotation = 0;
     _this.color = color_1.default.RGB(255, 255, 64);
     _this.corner_radius = 1;
@@ -31663,7 +31260,7 @@ var Coin = /*#__PURE__*/function (_entity_1$default) {
     value: function render() {
       _get(_getPrototypeOf(Coin.prototype), "render", this).call(this);
 
-      renderer_1.default.text(this.position.add(new vec2_1.default(-0.05, 0.1)), 10, color_1.default.RGB(32, 32, 32), this.value.toString());
+      renderer_1.default.text(this.position, 9, color_1.default.RGB(32, 32, 32), this.value.toString(), true);
     }
   }]);
 
@@ -32588,7 +32185,7 @@ var Weapons = /*#__PURE__*/function () {
         return new bullet_1.default(owner, owner.weapon.attack_damage);
       }, function () {
         owner.weapon.projectile_speed = 0.25 + owner.intelligence * 0.002;
-        owner.weapon.max_attack_cooldown = Math.floor(Math.max(15, 30 - owner.intelligence * 0.3));
+        owner.weapon.max_attack_cooldown = Math.floor(Math.max(20, 40 - owner.intelligence * 0.3));
         owner.weapon.start_prepare_attack = 1;
       });
     }
@@ -32757,7 +32354,7 @@ var Player = /*#__PURE__*/function (_living_entity_1$defa) {
       if (this.weapon.attack_cooldown > 0) this.weapon.attack_cooldown--;
       if (this.weapon.prepare_attack > -1) this.weapon.prepare_attack--;
       if (this.weapon.prepare_attack == 0) this.attack();
-      if (this.health < 0) this.manager.room.manager.game.stop_caused_by_death();
+      if (this.health <= 0) this.manager.room.manager.game.stop_caused_by_death();
     }
   }, {
     key: "render",
@@ -32841,7 +32438,103 @@ var Player = /*#__PURE__*/function (_living_entity_1$defa) {
 }(living_entity_1.default);
 
 exports.default = Player;
-},{"../game/renderer":"src/game/renderer.ts","../util/color":"src/util/color.ts","../util/vec2":"src/util/vec2.ts","./living_entity":"src/entity/living_entity.ts","./player_class":"src/entity/player_class.ts","./weapon":"src/entity/weapon.ts"}],"src/room/biome.ts":[function(require,module,exports) {
+},{"../game/renderer":"src/game/renderer.ts","../util/color":"src/util/color.ts","../util/vec2":"src/util/vec2.ts","./living_entity":"src/entity/living_entity.ts","./player_class":"src/entity/player_class.ts","./weapon":"src/entity/weapon.ts"}],"src/game/button_manager.ts":[function(require,module,exports) {
+"use strict";
+
+function _createForOfIteratorHelper(o, allowArrayLike) { var it = typeof Symbol !== "undefined" && o[Symbol.iterator] || o["@@iterator"]; if (!it) { if (Array.isArray(o) || (it = _unsupportedIterableToArray(o)) || allowArrayLike && o && typeof o.length === "number") { if (it) o = it; var i = 0; var F = function F() {}; return { s: F, n: function n() { if (i >= o.length) return { done: true }; return { done: false, value: o[i++] }; }, e: function e(_e) { throw _e; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var normalCompletion = true, didErr = false, err; return { s: function s() { it = it.call(o); }, n: function n() { var step = it.next(); normalCompletion = step.done; return step; }, e: function e(_e2) { didErr = true; err = _e2; }, f: function f() { try { if (!normalCompletion && it.return != null) it.return(); } finally { if (didErr) throw err; } } }; }
+
+function _unsupportedIterableToArray(o, minLen) { if (!o) return; if (typeof o === "string") return _arrayLikeToArray(o, minLen); var n = Object.prototype.toString.call(o).slice(8, -1); if (n === "Object" && o.constructor) n = o.constructor.name; if (n === "Map" || n === "Set") return Array.from(o); if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray(o, minLen); }
+
+function _arrayLikeToArray(arr, len) { if (len == null || len > arr.length) len = arr.length; for (var i = 0, arr2 = new Array(len); i < len; i++) { arr2[i] = arr[i]; } return arr2; }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); Object.defineProperty(Constructor, "prototype", { writable: false }); return Constructor; }
+
+var __importDefault = this && this.__importDefault || function (mod) {
+  return mod && mod.__esModule ? mod : {
+    "default": mod
+  };
+};
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var vec2_1 = __importDefault(require("../util/vec2"));
+
+var renderer_1 = __importDefault(require("./renderer"));
+
+var ButtonManager = /*#__PURE__*/function () {
+  function ButtonManager(game) {
+    _classCallCheck(this, ButtonManager);
+
+    this.game = game;
+    this.buttons = new Map();
+  }
+
+  _createClass(ButtonManager, [{
+    key: "tick",
+    value: function tick() {
+      var _iterator = _createForOfIteratorHelper(this.buttons.values()),
+          _step;
+
+      try {
+        for (_iterator.s(); !(_step = _iterator.n()).done;) {
+          var button = _step.value;
+          button.render();
+        }
+      } catch (err) {
+        _iterator.e(err);
+      } finally {
+        _iterator.f();
+      }
+    }
+  }, {
+    key: "get",
+    value: function get(id) {
+      return this.buttons.get(id);
+    }
+  }, {
+    key: "set",
+    value: function set(button) {
+      button.manager = this;
+      this.buttons.set(button.id, button);
+    }
+  }, {
+    key: "click_buttons",
+    value: function click_buttons() {
+      var pos = this.game.mouse_pos;
+
+      var _iterator2 = _createForOfIteratorHelper(this.buttons.values()),
+          _step2;
+
+      try {
+        for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
+          var button = _step2.value;
+
+          if (vec2_1.default.point_inside_rect(renderer_1.default.game_coords(pos), button.position, button.size)) {
+            button.click();
+            return true;
+          }
+        }
+      } catch (err) {
+        _iterator2.e(err);
+      } finally {
+        _iterator2.f();
+      }
+
+      return false;
+    }
+  }]);
+
+  return ButtonManager;
+}();
+
+exports.default = ButtonManager;
+},{"../util/vec2":"src/util/vec2.ts","./renderer":"src/game/renderer.ts"}],"src/room/biome.ts":[function(require,module,exports) {
 "use strict";
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -32990,7 +32683,7 @@ var Archer = /*#__PURE__*/function (_mob_1$default) {
     _this = _super.call(this);
     _this.max_health = 15;
     _this.start_prepare_attack = 20;
-    _this.attack_damage = 5;
+    _this.attack_damage = 4;
     _this.size = new vec2_1.default(0.65, 0.65);
     _this.corner_radius = 0.15;
     _this.color = color_1.default.RGB(16, 255, 192);
@@ -33011,7 +32704,7 @@ var Archer = /*#__PURE__*/function (_mob_1$default) {
         this.random_recharge = this.manager.random.next_int_ranged(0, 45);
       }
 
-      if (this.lifetime % 60 == 0) this.try_attack();
+      if (this.lifetime % 75 == 0) this.try_attack();
     }
   }, {
     key: "attack",
@@ -33300,7 +32993,7 @@ var Turret = /*#__PURE__*/function (_mob_1$default) {
     _this = _super.call(this);
     _this.max_health = 20;
     _this.start_prepare_attack = 30;
-    _this.attack_damage = 4;
+    _this.attack_damage = 3;
     _this.color = color_1.default.RGB(64, 92, 255);
     _this.gold = 10;
     return _this;
@@ -33313,7 +33006,7 @@ var Turret = /*#__PURE__*/function (_mob_1$default) {
 
       this.look(renderer_1.default.canvas_coords(this.manager.room.manager.game.player.position));
       if (this.lifetime % 45 == 0) this.walk();
-      if (this.lifetime % 90 == 0) this.try_attack();
+      if (this.lifetime % 120 == 0) this.try_attack();
     }
   }, {
     key: "attack",
@@ -33667,120 +33360,7 @@ var ParticleManager = /*#__PURE__*/function () {
 }();
 
 exports.default = ParticleManager;
-},{"../util/random":"src/util/random.ts"}],"src/tile/tile.ts":[function(require,module,exports) {
-"use strict";
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
-
-function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); Object.defineProperty(Constructor, "prototype", { writable: false }); return Constructor; }
-
-var __importDefault = this && this.__importDefault || function (mod) {
-  return mod && mod.__esModule ? mod : {
-    "default": mod
-  };
-};
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-
-var renderer_1 = __importDefault(require("../game/renderer"));
-
-var vec2_1 = __importDefault(require("../util/vec2"));
-
-var sat_1 = __importDefault(require("sat"));
-
-var Tile = /*#__PURE__*/function () {
-  function Tile(position, manager) {
-    _classCallCheck(this, Tile);
-
-    this.position = position;
-    this.manager = manager;
-    this.color = this.manager.room.biome.tile_color;
-    this.solid = false;
-  }
-
-  _createClass(Tile, [{
-    key: "tick",
-    value: function tick() {
-      this.render();
-    }
-  }, {
-    key: "render",
-    value: function render() {
-      renderer_1.default.rect(this.position.add(new vec2_1.default(0.5, 0.5)), vec2_1.default.one(), this.color, 0.1);
-    }
-  }, {
-    key: "sat_polygon",
-    value: function sat_polygon() {
-      return new sat_1.default.Polygon(this.position.sat_vector(), [new sat_1.default.Vector(0, 0), new sat_1.default.Vector(1, 0), new sat_1.default.Vector(1, 1), new sat_1.default.Vector(0, 1)]);
-    }
-  }]);
-
-  return Tile;
-}();
-
-exports.default = Tile;
-},{"../game/renderer":"src/game/renderer.ts","../util/vec2":"src/util/vec2.ts","sat":"node_modules/sat/SAT.js"}],"src/tile/wall.ts":[function(require,module,exports) {
-"use strict";
-
-function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
-
-function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
-
-function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); Object.defineProperty(Constructor, "prototype", { writable: false }); return Constructor; }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); Object.defineProperty(subClass, "prototype", { writable: false }); if (superClass) _setPrototypeOf(subClass, superClass); }
-
-function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
-
-function _createSuper(Derived) { var hasNativeReflectConstruct = _isNativeReflectConstruct(); return function _createSuperInternal() { var Super = _getPrototypeOf(Derived), result; if (hasNativeReflectConstruct) { var NewTarget = _getPrototypeOf(this).constructor; result = Reflect.construct(Super, arguments, NewTarget); } else { result = Super.apply(this, arguments); } return _possibleConstructorReturn(this, result); }; }
-
-function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } else if (call !== void 0) { throw new TypeError("Derived constructors may only return object or undefined"); } return _assertThisInitialized(self); }
-
-function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
-
-function _isNativeReflectConstruct() { if (typeof Reflect === "undefined" || !Reflect.construct) return false; if (Reflect.construct.sham) return false; if (typeof Proxy === "function") return true; try { Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function () {})); return true; } catch (e) { return false; } }
-
-function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
-
-var __importDefault = this && this.__importDefault || function (mod) {
-  return mod && mod.__esModule ? mod : {
-    "default": mod
-  };
-};
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-
-var tile_1 = __importDefault(require("./tile"));
-
-var Wall = /*#__PURE__*/function (_tile_1$default) {
-  _inherits(Wall, _tile_1$default);
-
-  var _super = _createSuper(Wall);
-
-  function Wall(position, manager) {
-    var _this;
-
-    _classCallCheck(this, Wall);
-
-    _this = _super.call(this, position, manager);
-    _this.color = _this.manager.room.biome.wall_color;
-    _this.solid = true;
-    return _this;
-  }
-
-  return _createClass(Wall);
-}(tile_1.default);
-
-exports.default = Wall;
-},{"./tile":"src/tile/tile.ts"}],"node_modules/heap/lib/heap.js":[function(require,module,exports) {
+},{"../util/random":"src/util/random.ts"}],"node_modules/heap/lib/heap.js":[function(require,module,exports) {
 // Generated by CoffeeScript 1.8.0
 (function() {
   var Heap, defaultCmp, floor, heapify, heappop, heappush, heappushpop, heapreplace, insort, min, nlargest, nsmallest, updateItem, _siftdown, _siftup;
@@ -36348,7 +35928,105 @@ module.exports = {
 },{"heap":"node_modules/heap/index.js","./core/Node":"node_modules/pathfinding/src/core/Node.js","./core/Grid":"node_modules/pathfinding/src/core/Grid.js","./core/Util":"node_modules/pathfinding/src/core/Util.js","./core/DiagonalMovement":"node_modules/pathfinding/src/core/DiagonalMovement.js","./core/Heuristic":"node_modules/pathfinding/src/core/Heuristic.js","./finders/AStarFinder":"node_modules/pathfinding/src/finders/AStarFinder.js","./finders/BestFirstFinder":"node_modules/pathfinding/src/finders/BestFirstFinder.js","./finders/BreadthFirstFinder":"node_modules/pathfinding/src/finders/BreadthFirstFinder.js","./finders/DijkstraFinder":"node_modules/pathfinding/src/finders/DijkstraFinder.js","./finders/BiAStarFinder":"node_modules/pathfinding/src/finders/BiAStarFinder.js","./finders/BiBestFirstFinder":"node_modules/pathfinding/src/finders/BiBestFirstFinder.js","./finders/BiBreadthFirstFinder":"node_modules/pathfinding/src/finders/BiBreadthFirstFinder.js","./finders/BiDijkstraFinder":"node_modules/pathfinding/src/finders/BiDijkstraFinder.js","./finders/IDAStarFinder":"node_modules/pathfinding/src/finders/IDAStarFinder.js","./finders/JumpPointFinder":"node_modules/pathfinding/src/finders/JumpPointFinder.js"}],"node_modules/pathfinding/index.js":[function(require,module,exports) {
 module.exports = require('./src/PathFinding');
 
-},{"./src/PathFinding":"node_modules/pathfinding/src/PathFinding.js"}],"src/room/tile_manager.ts":[function(require,module,exports) {
+},{"./src/PathFinding":"node_modules/pathfinding/src/PathFinding.js"}],"src/tile/world_tile.ts":[function(require,module,exports) {
+"use strict";
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); Object.defineProperty(Constructor, "prototype", { writable: false }); return Constructor; }
+
+var __importDefault = this && this.__importDefault || function (mod) {
+  return mod && mod.__esModule ? mod : {
+    "default": mod
+  };
+};
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var renderer_1 = __importDefault(require("../game/renderer"));
+
+var vec2_1 = __importDefault(require("../util/vec2"));
+
+var sat_1 = __importDefault(require("sat"));
+
+var WorldTile = /*#__PURE__*/function () {
+  function WorldTile(type, position) {
+    _classCallCheck(this, WorldTile);
+
+    this.tile_type = type;
+    this.position = position;
+  }
+
+  _createClass(WorldTile, [{
+    key: "sat_polygon",
+    value: function sat_polygon() {
+      return new sat_1.default.Polygon(this.position.sat_vector(), [new sat_1.default.Vector(0, 0), new sat_1.default.Vector(1, 0), new sat_1.default.Vector(1, 1), new sat_1.default.Vector(0, 1)]);
+    }
+  }, {
+    key: "tick",
+    value: function tick() {
+      this.render();
+    }
+  }, {
+    key: "render",
+    value: function render() {
+      renderer_1.default.rect(this.position.add(new vec2_1.default(0.5, 0.5)), vec2_1.default.one(), this.tile_type.color, 0.1);
+    }
+  }]);
+
+  return WorldTile;
+}();
+
+exports.default = WorldTile;
+},{"../game/renderer":"src/game/renderer.ts","../util/vec2":"src/util/vec2.ts","sat":"node_modules/sat/SAT.js"}],"src/tile/tile.ts":[function(require,module,exports) {
+"use strict";
+
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); Object.defineProperty(Constructor, "prototype", { writable: false }); return Constructor; }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.TileTypes = void 0;
+
+var Tile = /*#__PURE__*/_createClass(function Tile(solid, color) {
+  _classCallCheck(this, Tile);
+
+  this.color = color;
+  this.solid = solid;
+});
+
+exports.default = Tile;
+
+var TileTypes = /*#__PURE__*/function () {
+  function TileTypes() {
+    _classCallCheck(this, TileTypes);
+  }
+
+  _createClass(TileTypes, null, [{
+    key: "tile",
+    value: function tile(biome) {
+      return new Tile(false, biome.tile_color);
+    }
+  }, {
+    key: "wall",
+    value: function wall(biome) {
+      return new Tile(true, biome.wall_color);
+    }
+  }]);
+
+  return TileTypes;
+}();
+
+exports.TileTypes = TileTypes;
+},{}],"src/room/tile_manager.ts":[function(require,module,exports) {
 "use strict";
 
 function _toConsumableArray(arr) { return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _unsupportedIterableToArray(arr) || _nonIterableSpread(); }
@@ -36383,10 +36061,6 @@ Object.defineProperty(exports, "__esModule", {
 
 var game_1 = __importDefault(require("../game/game"));
 
-var tile_1 = __importDefault(require("../tile/tile"));
-
-var wall_1 = __importDefault(require("../tile/wall"));
-
 var random_1 = __importDefault(require("../util/random"));
 
 var vec2_1 = __importDefault(require("../util/vec2"));
@@ -36394,6 +36068,10 @@ var vec2_1 = __importDefault(require("../util/vec2"));
 var pathfinding_1 = __importDefault(require("pathfinding"));
 
 var sat_1 = __importDefault(require("sat"));
+
+var world_tile_1 = __importDefault(require("../tile/world_tile"));
+
+var tile_1 = require("../tile/tile");
 
 var TileManager = /*#__PURE__*/function () {
   function TileManager(room, data) {
@@ -36421,11 +36099,11 @@ var TileManager = /*#__PURE__*/function () {
 
         switch (entry[1]) {
           case 'tile':
-            this.set(new tile_1.default(pos, this));
+            this.set(new world_tile_1.default(tile_1.TileTypes.tile(this.room.biome), pos));
             break;
 
           case 'wall':
-            this.set(new wall_1.default(pos, this));
+            this.set(new world_tile_1.default(tile_1.TileTypes.wall(this.room.biome), pos));
             break;
         }
       }
@@ -36465,12 +36143,12 @@ var TileManager = /*#__PURE__*/function () {
     value: function set(tile) {
       tile.manager = this;
       this.tiles.set(tile.position.toString(), tile);
-      this.pathfinding_grid.setWalkableAt(tile.position.x, tile.position.y, !tile.solid);
+      this.pathfinding_grid.setWalkableAt(tile.position.x, tile.position.y, !tile.tile_type.solid);
     }
   }, {
     key: "clear",
     value: function clear(position) {
-      this.set(new tile_1.default(position, this));
+      this.set(new world_tile_1.default(tile_1.TileTypes.tile(this.room.biome), position));
     }
   }, {
     key: "get_tiles",
@@ -36480,7 +36158,7 @@ var TileManager = /*#__PURE__*/function () {
   }, {
     key: "solid",
     value: function solid(position) {
-      return this.get(position) && this.get(position).solid;
+      return this.get(position) && this.get(position).tile_type.solid;
     }
   }, {
     key: "passable",
@@ -36547,7 +36225,7 @@ var TileManager = /*#__PURE__*/function () {
 }();
 
 exports.default = TileManager;
-},{"../game/game":"src/game/game.ts","../tile/tile":"src/tile/tile.ts","../tile/wall":"src/tile/wall.ts","../util/random":"src/util/random.ts","../util/vec2":"src/util/vec2.ts","pathfinding":"node_modules/pathfinding/index.js","sat":"node_modules/sat/SAT.js"}],"src/room/room.ts":[function(require,module,exports) {
+},{"../game/game":"src/game/game.ts","../util/random":"src/util/random.ts","../util/vec2":"src/util/vec2.ts","pathfinding":"node_modules/pathfinding/index.js","sat":"node_modules/sat/SAT.js","../tile/world_tile":"src/tile/world_tile.ts","../tile/tile":"src/tile/tile.ts"}],"src/room/room.ts":[function(require,module,exports) {
 "use strict";
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -36747,7 +36425,7 @@ var RoomManager = /*#__PURE__*/function () {
     this.game = game;
     this.rooms = new Map();
     this.random = new random_1.default();
-    this.layouts = JSON.parse("[\r\n\t{\r\n\t\t\"difficulty\": 0,\r\n\t\t\"data\": [\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 1, 1, 1, 1, 1, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 1, 1, 1, 1, 1, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 1, 1, 1, 1, 1, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 1, 1, 1, 1, 1, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2\r\n\t\t],\r\n\t\t\"keys\": {\r\n\t\t\t\"1\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"air\"\r\n\t\t\t},\r\n\t\t\t\"2\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"wall\"\r\n\t\t\t}\r\n\t\t}\r\n\t},\r\n\t{\r\n\t\t\"difficulty\": 0,\r\n\t\t\"data\": [\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 1, 1, 1, 1, 1, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 1, 1, 1, 1, 1, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 3, 1, 3, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 3, 1, 3, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 1, 1, 1, 1, 1, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 1, 1, 1, 1, 1, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2\r\n\t\t],\r\n\t\t\"keys\": {\r\n\t\t\t\"1\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"air\"\r\n\t\t\t},\r\n\t\t\t\"2\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"wall\"\r\n\t\t\t},\r\n\t\t\t\"3\": {\r\n\t\t\t\t\"type\": \"entity\",\r\n\t\t\t\t\"chance\": 0.33\r\n\t\t\t}\r\n\t\t}\r\n\t},\r\n\t{\r\n\t\t\"difficulty\": 0,\r\n\t\t\"data\": [\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 1, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 3, 2, 1, 1, 1, 1, 1, 2, 3, 1, 1, 2,\r\n\t\t\t2, 2, 1, 2, 2, 1, 1, 1, 1, 1, 2, 2, 1, 2, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 1, 2, 2, 1, 1, 1, 1, 1, 2, 2, 1, 2, 2,\r\n\t\t\t2, 1, 1, 3, 2, 1, 1, 1, 1, 1, 2, 3, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2\r\n\t\t],\r\n\t\t\"keys\": {\r\n\t\t\t\"1\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"air\"\r\n\t\t\t},\r\n\t\t\t\"2\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"wall\"\r\n\t\t\t},\r\n\t\t\t\"3\": {\r\n\t\t\t\t\"type\": \"entity\",\r\n\t\t\t\t\"chance\": 0.5\r\n\t\t\t}\r\n\t\t}\r\n\t},\r\n\t{\r\n\t\t\"difficulty\": 0,\r\n\t\t\"data\": [\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 2, 2, 2, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 2, 2, 2, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 2, 2, 2, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 2, 2, 2, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 2, 2, 2, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 2, 2, 2, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 2, 2, 2, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 2, 2, 2, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 2, 2, 2, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2\r\n\t\t],\r\n\t\t\"keys\": {\r\n\t\t\t\"1\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"air\"\r\n\t\t\t},\r\n\t\t\t\"2\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"wall\"\r\n\t\t\t},\r\n\t\t\t\"3\": {\r\n\t\t\t\t\"type\": \"entity\",\r\n\t\t\t\t\"chance\": 0.5\r\n\t\t\t}\r\n\t\t}\r\n\t},\r\n\t{\r\n\t\t\"difficulty\": 0,\r\n\t\t\"data\": [\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 2, 2, 3, 1, 1, 2, 2, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 2, 2, 1, 1, 3, 2, 2, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2\r\n\t\t],\r\n\t\t\"keys\": {\r\n\t\t\t\"1\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"air\"\r\n\t\t\t},\r\n\t\t\t\"2\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"wall\"\r\n\t\t\t},\r\n\t\t\t\"3\": {\r\n\t\t\t\t\"type\": \"entity\",\r\n\t\t\t\t\"chance\": 0.5\r\n\t\t\t}\r\n\t\t}\r\n\t},\r\n\t{\r\n\t\t\"difficulty\": 0,\r\n\t\t\"data\": [\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2,\r\n\t\t\t2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2,\r\n\t\t\t2, 2, 1, 1, 2, 2, 3, 1, 1, 2, 2, 1, 1, 2, 2,\r\n\t\t\t2, 2, 1, 1, 2, 2, 1, 1, 1, 2, 2, 1, 1, 2, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 1, 1, 2, 2, 1, 1, 1, 2, 2, 1, 1, 2, 2,\r\n\t\t\t2, 2, 1, 1, 2, 2, 1, 1, 3, 2, 2, 1, 1, 2, 2,\r\n\t\t\t2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2,\r\n\t\t\t2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2\r\n\t\t],\r\n\t\t\"keys\": {\r\n\t\t\t\"1\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"air\"\r\n\t\t\t},\r\n\t\t\t\"2\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"wall\"\r\n\t\t\t},\r\n\t\t\t\"3\": {\r\n\t\t\t\t\"type\": \"entity\",\r\n\t\t\t\t\"chance\": 0.5\r\n\t\t\t}\r\n\t\t}\r\n\t},\r\n\t{\r\n\t\t\"difficulty\": 0,\r\n\t\t\"data\": [\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 2, 2, 1, 1, 1, 2, 2, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 2, 2, 3, 1, 3, 2, 2, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 2, 2, 1, 1, 1, 2, 2, 2, 1, 2, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 1, 2, 2, 2, 1, 1, 1, 2, 2, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 2, 2, 3, 1, 3, 2, 2, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 2, 2, 1, 1, 1, 2, 2, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2\r\n\t\t],\r\n\t\t\"keys\": {\r\n\t\t\t\"1\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"air\"\r\n\t\t\t},\r\n\t\t\t\"2\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"wall\"\r\n\t\t\t},\r\n\t\t\t\"3\": {\r\n\t\t\t\t\"type\": \"entity\",\r\n\t\t\t\t\"chance\": 0.5\r\n\t\t\t}\r\n\t\t}\r\n\t},\r\n\t{\r\n\t\t\"difficulty\": 0,\r\n\t\t\"data\": [\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 1, 3, 1, 1, 1, 1, 1, 2, 1, 2, 2,\r\n\t\t\t2, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 2,\r\n\t\t\t2, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 2,\r\n\t\t\t2, 2, 1, 2, 1, 1, 1, 1, 1, 3, 1, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2\r\n\t\t],\r\n\t\t\"keys\": {\r\n\t\t\t\"1\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"air\"\r\n\t\t\t},\r\n\t\t\t\"2\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"wall\"\r\n\t\t\t},\r\n\t\t\t\"3\": {\r\n\t\t\t\t\"type\": \"entity\",\r\n\t\t\t\t\"chance\": 0.5\r\n\t\t\t}\r\n\t\t}\r\n\t},\r\n\t{\r\n\t\t\"difficulty\": 0,\r\n\t\t\"data\": [\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 1, 1, 3, 1, 1, 1, 1, 1, 1, 2, 2,\r\n\t\t\t2, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 2,\r\n\t\t\t2, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 2,\r\n\t\t\t2, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 2,\r\n\t\t\t2, 2, 1, 2, 1, 1, 1, 1, 3, 1, 1, 1, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2\r\n\t\t],\r\n\t\t\"keys\": {\r\n\t\t\t\"1\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"air\"\r\n\t\t\t},\r\n\t\t\t\"2\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"wall\"\r\n\t\t\t},\r\n\t\t\t\"3\": {\r\n\t\t\t\t\"type\": \"entity\",\r\n\t\t\t\t\"chance\": 0.5\r\n\t\t\t}\r\n\t\t}\r\n\t},\r\n\t{\r\n\t\t\"difficulty\": 0,\r\n\t\t\"data\": [\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 3, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2\r\n\t\t],\r\n\t\t\"keys\": {\r\n\t\t\t\"1\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"air\"\r\n\t\t\t},\r\n\t\t\t\"2\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"wall\"\r\n\t\t\t},\r\n\t\t\t\"3\": {\r\n\t\t\t\t\"type\": \"entity\",\r\n\t\t\t\t\"chance\": 0.5\r\n\t\t\t}\r\n\t\t}\r\n\t},\r\n\t{\r\n\t\t\"difficulty\": 0,\r\n\t\t\"data\": [\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 2, 1, 1, 1, 1, 1, 2, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 1, 1, 1, 1, 1, 1, 3, 1, 2, 1, 2, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 2,\r\n\t\t\t2, 2, 1, 1, 1, 3, 1, 1, 1, 3, 1, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2\r\n\t\t],\r\n\t\t\"keys\": {\r\n\t\t\t\"1\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"air\"\r\n\t\t\t},\r\n\t\t\t\"2\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"wall\"\r\n\t\t\t},\r\n\t\t\t\"3\": {\r\n\t\t\t\t\"type\": \"entity\",\r\n\t\t\t\t\"chance\": 0.5\r\n\t\t\t}\r\n\t\t}\r\n\t},\r\n\t{\r\n\t\t\"difficulty\": 0,\r\n\t\t\"data\": [\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 2, 1, 1, 1, 1, 1, 2, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 1, 2, 2, 2, 1, 2, 2, 2, 1, 1, 2, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 1, 1, 1, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 1, 1, 1, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 1, 1, 2, 2, 2, 1, 2, 2, 2, 1, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 2, 1, 1, 1, 1, 1, 2, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2\r\n\t\t],\r\n\t\t\"keys\": {\r\n\t\t\t\"1\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"air\"\r\n\t\t\t},\r\n\t\t\t\"2\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"wall\"\r\n\t\t\t},\r\n\t\t\t\"3\": {\r\n\t\t\t\t\"type\": \"entity\",\r\n\t\t\t\t\"chance\": 0.5\r\n\t\t\t}\r\n\t\t}\r\n\t},\r\n\t{\r\n\t\t\"difficulty\": 0,\r\n\t\t\"data\": [\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2,\r\n\t\t\t2, 1, 2, 2, 1, 1, 1, 1, 1, 1, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 1, 1, 1, 1, 1, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 2, 1, 1, 1, 1, 1, 2, 2, 2, 1, 2,\r\n\t\t\t2, 1, 1, 2, 2, 1, 1, 1, 1, 1, 2, 2, 1, 1, 2,\r\n\t\t\t2, 1, 1, 2, 2, 3, 1, 1, 1, 3, 2, 2, 1, 1, 2,\r\n\t\t\t2, 1, 1, 2, 2, 1, 1, 1, 1, 1, 2, 2, 1, 1, 2,\r\n\t\t\t2, 1, 1, 2, 2, 3, 1, 1, 1, 3, 2, 2, 1, 1, 2,\r\n\t\t\t2, 1, 1, 2, 2, 1, 1, 1, 1, 1, 2, 2, 1, 1, 2,\r\n\t\t\t2, 1, 1, 2, 2, 2, 1, 1, 1, 2, 2, 2, 1, 1, 2,\r\n\t\t\t2, 1, 1, 2, 2, 2, 1, 1, 1, 2, 2, 2, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2\r\n\t\t],\r\n\t\t\"keys\": {\r\n\t\t\t\"1\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"air\"\r\n\t\t\t},\r\n\t\t\t\"2\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"wall\"\r\n\t\t\t},\r\n\t\t\t\"3\": {\r\n\t\t\t\t\"type\": \"entity\",\r\n\t\t\t\t\"chance\": 0.5\r\n\t\t\t}\r\n\t\t}\r\n\t},\r\n\t{\r\n\t\t\"difficulty\": 0,\r\n\t\t\"data\": [\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2,\r\n\t\t\t2, 1, 2, 2, 1, 1, 1, 1, 1, 1, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 1, 1, 1, 1, 1, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 2, 1, 1, 1, 1, 1, 2, 2, 2, 1, 2,\r\n\t\t\t2, 1, 1, 2, 2, 1, 1, 1, 1, 1, 2, 2, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 3, 1, 3, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 3, 1, 3, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 2, 2, 1, 1, 1, 1, 1, 2, 2, 1, 1, 2,\r\n\t\t\t2, 1, 1, 2, 2, 2, 1, 1, 1, 2, 2, 2, 1, 1, 2,\r\n\t\t\t2, 1, 1, 2, 2, 2, 1, 1, 1, 2, 2, 2, 1, 1, 2,\r\n\t\t\t2, 1, 2, 2, 2, 2, 1, 1, 1, 2, 2, 2, 2, 1, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2\r\n\t\t],\r\n\t\t\"keys\": {\r\n\t\t\t\"1\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"air\"\r\n\t\t\t},\r\n\t\t\t\"2\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"wall\"\r\n\t\t\t},\r\n\t\t\t\"3\": {\r\n\t\t\t\t\"type\": \"entity\",\r\n\t\t\t\t\"chance\": 0.5\r\n\t\t\t}\r\n\t\t}\r\n\t},\r\n\t{\r\n\t\t\"difficulty\": 0,\r\n\t\t\"data\": [\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 2, 2, 2, 1, 1, 1, 1, 1, 2, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 2, 1, 1, 1, 1, 1, 2, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 2, 1, 1, 1, 1, 1, 2, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 2, 1, 1, 1, 1, 1, 2, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 2, 1, 1, 3, 1, 1, 2, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 2, 1, 1, 1, 1, 1, 2, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 2, 1, 1, 1, 1, 1, 2, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 2, 1, 1, 1, 1, 1, 2, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 2, 1, 1, 1, 1, 1, 2, 2, 2, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2\r\n\t\t],\r\n\t\t\"keys\": {\r\n\t\t\t\"1\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"air\"\r\n\t\t\t},\r\n\t\t\t\"2\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"wall\"\r\n\t\t\t},\r\n\t\t\t\"3\": {\r\n\t\t\t\t\"type\": \"entity\",\r\n\t\t\t\t\"chance\": 0.5\r\n\t\t\t}\r\n\t\t}\r\n\t},\r\n\t{\r\n\t\t\"difficulty\": 0,\r\n\t\t\"data\": [\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 1, 1, 2, 2, 2, 1, 1, 1, 2, 2, 2, 1, 1, 2,\r\n\t\t\t2, 1, 2, 2, 2, 1, 1, 1, 1, 1, 2, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 2, 1, 1, 1, 1, 1, 2, 2, 2, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 2, 2, 2, 1, 1, 1, 1, 1, 2, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 2, 1, 1, 3, 1, 1, 2, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 2, 1, 1, 1, 1, 1, 2, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 2, 1, 1, 3, 1, 1, 2, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 2, 1, 1, 1, 1, 1, 2, 2, 2, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 2, 2, 2, 1, 1, 1, 1, 1, 2, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 2, 1, 1, 1, 1, 1, 2, 2, 2, 1, 2,\r\n\t\t\t2, 1, 1, 2, 2, 2, 1, 1, 1, 2, 2, 2, 1, 1, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2\r\n\t\t],\r\n\t\t\"keys\": {\r\n\t\t\t\"1\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"air\"\r\n\t\t\t},\r\n\t\t\t\"2\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"wall\"\r\n\t\t\t},\r\n\t\t\t\"3\": {\r\n\t\t\t\t\"type\": \"entity\",\r\n\t\t\t\t\"chance\": 0.5\r\n\t\t\t}\r\n\t\t}\r\n\t},\r\n\t{\r\n\t\t\"difficulty\": 0,\r\n\t\t\"data\": [\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 2, 1, 2, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 2, 1, 1, 1, 2, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 2, 1, 1, 1, 2, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 1, 1, 1, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 2, 1, 2, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 1, 1, 1, 1, 1, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 1, 1, 1, 1, 1, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2\r\n\t\t],\r\n\t\t\"keys\": {\r\n\t\t\t\"1\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"air\"\r\n\t\t\t},\r\n\t\t\t\"2\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"wall\"\r\n\t\t\t},\r\n\t\t\t\"3\": {\r\n\t\t\t\t\"type\": \"entity\",\r\n\t\t\t\t\"chance\": 0.5\r\n\t\t\t}\r\n\t\t}\r\n\t},\r\n\t{\r\n\t\t\"difficulty\": 0,\r\n\t\t\"data\": [\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 2, 1, 2, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 2, 1, 1, 1, 2, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 2, 1, 1, 1, 2, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 1, 1, 1, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 2, 1, 2, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 3, 1, 1, 1, 3, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 2, 1, 2, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 1, 1, 1, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 2, 1, 1, 1, 2, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 2, 1, 1, 1, 2, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 2, 1, 2, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2\r\n\t\t],\r\n\t\t\"keys\": {\r\n\t\t\t\"1\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"air\"\r\n\t\t\t},\r\n\t\t\t\"2\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"wall\"\r\n\t\t\t},\r\n\t\t\t\"3\": {\r\n\t\t\t\t\"type\": \"entity\",\r\n\t\t\t\t\"chance\": 0.5\r\n\t\t\t}\r\n\t\t}\r\n\t},\r\n\t{\r\n\t\t\"difficulty\": 0,\r\n\t\t\"data\": [\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 2, 1, 2, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 2, 1, 1, 1, 2, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 2, 1, 1, 1, 1, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 1, 1, 1, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 2, 1, 2, 2, 2, 1, 2, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 1, 1, 1, 2, 3, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 1, 1, 1, 2, 3, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 1, 2, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 1, 1, 1, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 1, 1, 1, 1, 2, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 2, 1, 1, 1, 2, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 2, 1, 2, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2\r\n\t\t],\r\n\t\t\"keys\": {\r\n\t\t\t\"1\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"air\"\r\n\t\t\t},\r\n\t\t\t\"2\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"wall\"\r\n\t\t\t},\r\n\t\t\t\"3\": {\r\n\t\t\t\t\"type\": \"entity\",\r\n\t\t\t\t\"chance\": 0.5\r\n\t\t\t}\r\n\t\t}\r\n\t},\r\n\t{\r\n\t\t\"difficulty\": 0,\r\n\t\t\"data\": [\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 2, 1, 2, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 2, 1, 1, 1, 2, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 2, 1, 1, 1, 1, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 1, 1, 1, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 2, 1, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 1, 1, 1, 2, 3, 1, 3, 2, 1, 1, 1, 2, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 1, 1, 1, 2, 3, 1, 3, 2, 1, 1, 1, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 1, 2, 2, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 1, 1, 1, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 1, 1, 1, 1, 2, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 2, 1, 1, 1, 2, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 2, 1, 2, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2\r\n\t\t],\r\n\t\t\"keys\": {\r\n\t\t\t\"1\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"air\"\r\n\t\t\t},\r\n\t\t\t\"2\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"wall\"\r\n\t\t\t},\r\n\t\t\t\"3\": {\r\n\t\t\t\t\"type\": \"entity\",\r\n\t\t\t\t\"chance\": 0.5\r\n\t\t\t}\r\n\t\t}\r\n\t},\r\n\t{\r\n\t\t\"difficulty\": 0,\r\n\t\t\"data\": [\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 2, 1, 2, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 2, 1, 1, 1, 2, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 2, 1, 1, 1, 2, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 1, 1, 1, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 1, 2, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 1, 1, 1, 2, 1, 1, 1, 3, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 3, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 1, 1, 1, 1, 1, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 1, 1, 1, 1, 1, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2\r\n\t\t],\r\n\t\t\"keys\": {\r\n\t\t\t\"1\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"air\"\r\n\t\t\t},\r\n\t\t\t\"2\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"wall\"\r\n\t\t\t},\r\n\t\t\t\"3\": {\r\n\t\t\t\t\"type\": \"entity\",\r\n\t\t\t\t\"chance\": 0.5\r\n\t\t\t}\r\n\t\t}\r\n\t},\r\n\t{\r\n\t\t\"difficulty\": 0,\r\n\t\t\"data\": [\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3, 1, 2, 2, 2,\r\n\t\t\t2, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2,\r\n\t\t\t2, 1, 2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 1, 2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2,\r\n\t\t\t2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2,\r\n\t\t\t2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 2,\r\n\t\t\t2, 2, 2, 1, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2\r\n\t\t],\r\n\t\t\"keys\": {\r\n\t\t\t\"1\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"air\"\r\n\t\t\t},\r\n\t\t\t\"2\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"wall\"\r\n\t\t\t},\r\n\t\t\t\"3\": {\r\n\t\t\t\t\"type\": \"entity\",\r\n\t\t\t\t\"chance\": 0.75\r\n\t\t\t}\r\n\t\t}\r\n\t}\r\n]\r\n");
+    this.layouts = JSON.parse("[\r\n\t{\r\n\t\t\"difficulty\": 0,\r\n\t\t\"data\": [\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 1, 1, 1, 1, 1, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 1, 1, 1, 1, 1, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 1, 1, 1, 1, 1, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 1, 1, 1, 1, 1, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2\r\n\t\t],\r\n\t\t\"keys\": {\r\n\t\t\t\"1\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"air\"\r\n\t\t\t},\r\n\t\t\t\"2\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"wall\"\r\n\t\t\t}\r\n\t\t}\r\n\t},\r\n\t{\r\n\t\t\"difficulty\": 0,\r\n\t\t\"data\": [\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 1, 1, 1, 1, 1, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 1, 1, 1, 1, 1, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 3, 1, 3, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 3, 1, 3, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 1, 1, 1, 1, 1, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 1, 1, 1, 1, 1, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2\r\n\t\t],\r\n\t\t\"keys\": {\r\n\t\t\t\"1\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"air\"\r\n\t\t\t},\r\n\t\t\t\"2\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"wall\"\r\n\t\t\t},\r\n\t\t\t\"3\": {\r\n\t\t\t\t\"type\": \"entity\",\r\n\t\t\t\t\"chance\": 0.33\r\n\t\t\t}\r\n\t\t}\r\n\t},\r\n\t{\r\n\t\t\"difficulty\": 0,\r\n\t\t\"data\": [\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 1, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 3, 2, 1, 1, 1, 1, 1, 2, 3, 1, 1, 2,\r\n\t\t\t2, 2, 1, 2, 2, 1, 1, 1, 1, 1, 2, 2, 1, 2, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 1, 2, 2, 1, 1, 1, 1, 1, 2, 2, 1, 2, 2,\r\n\t\t\t2, 1, 1, 3, 2, 1, 1, 1, 1, 1, 2, 3, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2\r\n\t\t],\r\n\t\t\"keys\": {\r\n\t\t\t\"1\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"air\"\r\n\t\t\t},\r\n\t\t\t\"2\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"wall\"\r\n\t\t\t},\r\n\t\t\t\"3\": {\r\n\t\t\t\t\"type\": \"entity\",\r\n\t\t\t\t\"chance\": 0.5\r\n\t\t\t}\r\n\t\t}\r\n\t},\r\n\t{\r\n\t\t\"difficulty\": 0,\r\n\t\t\"data\": [\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 2, 2, 2, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 2, 2, 2, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 2, 2, 2, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 2, 2, 2, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 2, 2, 2, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 2, 2, 2, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 2, 2, 2, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 2, 2, 2, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 2, 2, 2, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2\r\n\t\t],\r\n\t\t\"keys\": {\r\n\t\t\t\"1\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"air\"\r\n\t\t\t},\r\n\t\t\t\"2\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"wall\"\r\n\t\t\t},\r\n\t\t\t\"3\": {\r\n\t\t\t\t\"type\": \"entity\",\r\n\t\t\t\t\"chance\": 0.5\r\n\t\t\t}\r\n\t\t}\r\n\t},\r\n\t{\r\n\t\t\"difficulty\": 0,\r\n\t\t\"data\": [\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 2, 2, 3, 1, 1, 2, 2, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 2, 2, 1, 1, 3, 2, 2, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2\r\n\t\t],\r\n\t\t\"keys\": {\r\n\t\t\t\"1\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"air\"\r\n\t\t\t},\r\n\t\t\t\"2\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"wall\"\r\n\t\t\t},\r\n\t\t\t\"3\": {\r\n\t\t\t\t\"type\": \"entity\",\r\n\t\t\t\t\"chance\": 0.5\r\n\t\t\t}\r\n\t\t}\r\n\t},\r\n\t{\r\n\t\t\"difficulty\": 0,\r\n\t\t\"data\": [\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2,\r\n\t\t\t2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2,\r\n\t\t\t2, 2, 1, 1, 2, 2, 3, 1, 1, 2, 2, 1, 1, 2, 2,\r\n\t\t\t2, 2, 1, 1, 2, 2, 1, 1, 1, 2, 2, 1, 1, 2, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 1, 1, 2, 2, 1, 1, 1, 2, 2, 1, 1, 2, 2,\r\n\t\t\t2, 2, 1, 1, 2, 2, 1, 1, 3, 2, 2, 1, 1, 2, 2,\r\n\t\t\t2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2,\r\n\t\t\t2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2\r\n\t\t],\r\n\t\t\"keys\": {\r\n\t\t\t\"1\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"air\"\r\n\t\t\t},\r\n\t\t\t\"2\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"wall\"\r\n\t\t\t},\r\n\t\t\t\"3\": {\r\n\t\t\t\t\"type\": \"entity\",\r\n\t\t\t\t\"chance\": 0.5\r\n\t\t\t}\r\n\t\t}\r\n\t},\r\n\t{\r\n\t\t\"difficulty\": 0,\r\n\t\t\"data\": [\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 2, 2, 1, 1, 1, 2, 2, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 2, 2, 3, 1, 3, 2, 2, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 2, 2, 1, 1, 1, 2, 2, 2, 1, 2, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 1, 2, 2, 2, 1, 1, 1, 2, 2, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 2, 2, 3, 1, 3, 2, 2, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 2, 2, 1, 1, 1, 2, 2, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2\r\n\t\t],\r\n\t\t\"keys\": {\r\n\t\t\t\"1\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"air\"\r\n\t\t\t},\r\n\t\t\t\"2\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"wall\"\r\n\t\t\t},\r\n\t\t\t\"3\": {\r\n\t\t\t\t\"type\": \"entity\",\r\n\t\t\t\t\"chance\": 0.5\r\n\t\t\t}\r\n\t\t}\r\n\t},\r\n\t{\r\n\t\t\"difficulty\": 0,\r\n\t\t\"data\": [\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 1, 3, 1, 1, 1, 1, 1, 2, 1, 2, 2,\r\n\t\t\t2, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 2,\r\n\t\t\t2, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 2,\r\n\t\t\t2, 2, 1, 2, 1, 1, 1, 1, 1, 3, 1, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2\r\n\t\t],\r\n\t\t\"keys\": {\r\n\t\t\t\"1\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"air\"\r\n\t\t\t},\r\n\t\t\t\"2\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"wall\"\r\n\t\t\t},\r\n\t\t\t\"3\": {\r\n\t\t\t\t\"type\": \"entity\",\r\n\t\t\t\t\"chance\": 0.5\r\n\t\t\t}\r\n\t\t}\r\n\t},\r\n\t{\r\n\t\t\"difficulty\": 0,\r\n\t\t\"data\": [\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 1, 1, 3, 1, 1, 1, 1, 1, 1, 2, 2,\r\n\t\t\t2, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 2,\r\n\t\t\t2, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 2,\r\n\t\t\t2, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 2,\r\n\t\t\t2, 2, 1, 2, 1, 1, 1, 1, 3, 1, 1, 1, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2\r\n\t\t],\r\n\t\t\"keys\": {\r\n\t\t\t\"1\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"air\"\r\n\t\t\t},\r\n\t\t\t\"2\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"wall\"\r\n\t\t\t},\r\n\t\t\t\"3\": {\r\n\t\t\t\t\"type\": \"entity\",\r\n\t\t\t\t\"chance\": 0.5\r\n\t\t\t}\r\n\t\t}\r\n\t},\r\n\t{\r\n\t\t\"difficulty\": 0,\r\n\t\t\"data\": [\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 3, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2\r\n\t\t],\r\n\t\t\"keys\": {\r\n\t\t\t\"1\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"air\"\r\n\t\t\t},\r\n\t\t\t\"2\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"wall\"\r\n\t\t\t},\r\n\t\t\t\"3\": {\r\n\t\t\t\t\"type\": \"entity\",\r\n\t\t\t\t\"chance\": 0.5\r\n\t\t\t}\r\n\t\t}\r\n\t},\r\n\t{\r\n\t\t\"difficulty\": 0,\r\n\t\t\"data\": [\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 2, 1, 1, 1, 1, 1, 2, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 1, 1, 1, 1, 1, 1, 3, 1, 2, 1, 2, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 2,\r\n\t\t\t2, 2, 1, 1, 1, 3, 1, 1, 1, 3, 1, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2\r\n\t\t],\r\n\t\t\"keys\": {\r\n\t\t\t\"1\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"air\"\r\n\t\t\t},\r\n\t\t\t\"2\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"wall\"\r\n\t\t\t},\r\n\t\t\t\"3\": {\r\n\t\t\t\t\"type\": \"entity\",\r\n\t\t\t\t\"chance\": 0.5\r\n\t\t\t}\r\n\t\t}\r\n\t},\r\n\t{\r\n\t\t\"difficulty\": 0,\r\n\t\t\"data\": [\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 2, 1, 1, 1, 1, 1, 2, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 1, 2, 2, 2, 1, 2, 2, 2, 1, 1, 2, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 1, 1, 1, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 1, 1, 1, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 1, 1, 2, 2, 2, 1, 2, 2, 2, 1, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 2, 2, 1, 1, 1, 1, 1, 2, 2, 1, 2, 2,\r\n\t\t\t2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2\r\n\t\t],\r\n\t\t\"keys\": {\r\n\t\t\t\"1\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"air\"\r\n\t\t\t},\r\n\t\t\t\"2\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"wall\"\r\n\t\t\t},\r\n\t\t\t\"3\": {\r\n\t\t\t\t\"type\": \"entity\",\r\n\t\t\t\t\"chance\": 0.5\r\n\t\t\t}\r\n\t\t}\r\n\t},\r\n\t{\r\n\t\t\"difficulty\": 0,\r\n\t\t\"data\": [\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 2, 2, 2, 1, 1, 1, 1, 1, 2, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 2, 1, 1, 1, 1, 1, 2, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 2, 1, 1, 1, 1, 1, 2, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 2, 1, 1, 1, 1, 1, 2, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 2, 1, 1, 3, 1, 1, 2, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 2, 1, 1, 1, 1, 1, 2, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 2, 1, 1, 1, 1, 1, 2, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 2, 1, 1, 1, 1, 1, 2, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 2, 1, 1, 1, 1, 1, 2, 2, 2, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2\r\n\t\t],\r\n\t\t\"keys\": {\r\n\t\t\t\"1\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"air\"\r\n\t\t\t},\r\n\t\t\t\"2\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"wall\"\r\n\t\t\t},\r\n\t\t\t\"3\": {\r\n\t\t\t\t\"type\": \"entity\",\r\n\t\t\t\t\"chance\": 0.5\r\n\t\t\t}\r\n\t\t}\r\n\t},\r\n\t{\r\n\t\t\"difficulty\": 0,\r\n\t\t\"data\": [\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 1, 1, 2, 2, 2, 1, 1, 1, 2, 2, 2, 1, 1, 2,\r\n\t\t\t2, 1, 2, 2, 2, 1, 1, 1, 1, 1, 2, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 2, 1, 1, 1, 1, 1, 2, 2, 2, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 2, 2, 2, 1, 1, 1, 1, 1, 2, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 2, 1, 1, 3, 1, 1, 2, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 2, 1, 1, 1, 1, 1, 2, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 2, 1, 1, 3, 1, 1, 2, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 2, 1, 1, 1, 1, 1, 2, 2, 2, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 2, 2, 2, 1, 1, 1, 1, 1, 2, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 2, 1, 1, 1, 1, 1, 2, 2, 2, 1, 2,\r\n\t\t\t2, 1, 1, 2, 2, 2, 1, 1, 1, 2, 2, 2, 1, 1, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2\r\n\t\t],\r\n\t\t\"keys\": {\r\n\t\t\t\"1\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"air\"\r\n\t\t\t},\r\n\t\t\t\"2\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"wall\"\r\n\t\t\t},\r\n\t\t\t\"3\": {\r\n\t\t\t\t\"type\": \"entity\",\r\n\t\t\t\t\"chance\": 0.5\r\n\t\t\t}\r\n\t\t}\r\n\t},\r\n\t{\r\n\t\t\"difficulty\": 0,\r\n\t\t\"data\": [\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 2, 1, 2, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 2, 1, 1, 1, 2, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 2, 1, 1, 1, 2, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 1, 1, 1, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 2, 2, 1, 2, 2, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 1, 1, 1, 1, 1, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 2, 2, 1, 1, 1, 1, 1, 1, 1, 2, 2, 1, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2\r\n\t\t],\r\n\t\t\"keys\": {\r\n\t\t\t\"1\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"air\"\r\n\t\t\t},\r\n\t\t\t\"2\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"wall\"\r\n\t\t\t},\r\n\t\t\t\"3\": {\r\n\t\t\t\t\"type\": \"entity\",\r\n\t\t\t\t\"chance\": 0.5\r\n\t\t\t}\r\n\t\t}\r\n\t},\r\n\t{\r\n\t\t\"difficulty\": 0,\r\n\t\t\"data\": [\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2,\r\n\t\t\t2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3, 1, 2, 2, 2,\r\n\t\t\t2, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2,\r\n\t\t\t2, 1, 2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 1, 2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2,\r\n\t\t\t2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2,\r\n\t\t\t2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 2,\r\n\t\t\t2, 2, 2, 1, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 2,\r\n\t\t\t2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2\r\n\t\t],\r\n\t\t\"keys\": {\r\n\t\t\t\"1\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"air\"\r\n\t\t\t},\r\n\t\t\t\"2\": {\r\n\t\t\t\t\"type\": \"tile\",\r\n\t\t\t\t\"id\": \"wall\"\r\n\t\t\t},\r\n\t\t\t\"3\": {\r\n\t\t\t\t\"type\": \"entity\",\r\n\t\t\t\t\"chance\": 0.75\r\n\t\t\t}\r\n\t\t}\r\n\t}\r\n]\r\n");
     this.set(new room_1.default(vec2_1.default.zero(), this, biome_1.default.DEFAULT, 0, this.layouts[0]));
 
     for (var thread = 0; thread < 10; thread++) {
@@ -36993,6 +36671,8 @@ var random_1 = __importDefault(require("../util/random"));
 
 var vec2_1 = __importDefault(require("../util/vec2"));
 
+var button_manager_1 = __importDefault(require("./button_manager"));
+
 var renderer_1 = __importDefault(require("./renderer"));
 
 var room_manager_1 = __importDefault(require("./room_manager"));
@@ -37013,6 +36693,7 @@ var Game = /*#__PURE__*/function () {
 
     this.random = new random_1.default();
     this.room_manager = new room_manager_1.default(this);
+    this.button_manager = new button_manager_1.default(this);
     this.time = 0;
     this.player_class = player_class;
     this.player = new player_1.default(this, player_class);
@@ -37061,7 +36742,7 @@ var Game = /*#__PURE__*/function () {
   }, {
     key: "mousedown",
     value: function mousedown(e) {
-      this.player.mousedown(e);
+      if (!this.button_manager.click_buttons()) this.player.mousedown(e);
     }
   }, {
     key: "mouseup",
@@ -37084,6 +36765,7 @@ var Game = /*#__PURE__*/function () {
       this.player.position = this.player.position.modulus_room();
       this.player.manager = this.room_manager.current_room.entities;
       this.room_manager.tick();
+      this.button_manager.tick();
       this.player.look(this.mouse_pos);
       this.player.tick();
       this.time++;
@@ -37138,7 +36820,492 @@ exports.default = Game;
 _a = Game;
 Game.width = 15;
 Game.center = _a.width / 2;
-},{"../entity/player":"src/entity/player.ts","../util/random":"src/util/random.ts","../util/vec2":"src/util/vec2.ts","./renderer":"src/game/renderer.ts","./room_manager":"src/game/room_manager.ts"}],"src/main.ts":[function(require,module,exports) {
+},{"../entity/player":"src/entity/player.ts","../util/random":"src/util/random.ts","../util/vec2":"src/util/vec2.ts","./button_manager":"src/game/button_manager.ts","./renderer":"src/game/renderer.ts","./room_manager":"src/game/room_manager.ts"}],"src/util/vec2.ts":[function(require,module,exports) {
+"use strict";
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); Object.defineProperty(Constructor, "prototype", { writable: false }); return Constructor; }
+
+var __importDefault = this && this.__importDefault || function (mod) {
+  return mod && mod.__esModule ? mod : {
+    "default": mod
+  };
+};
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var game_1 = __importDefault(require("../game/game"));
+
+var sat_1 = __importDefault(require("sat"));
+
+var Vec2 = /*#__PURE__*/function () {
+  function Vec2(x, y) {
+    _classCallCheck(this, Vec2);
+
+    this.x = x !== null && x !== void 0 ? x : 0;
+    this.y = y !== null && y !== void 0 ? y : 0;
+  }
+
+  _createClass(Vec2, [{
+    key: "set",
+    value: function set(x, y) {
+      this.x = x;
+      this.y = y;
+    }
+  }, {
+    key: "copy",
+    value: function copy(vec) {
+      this.x = vec.x;
+      this.y = vec.y;
+    }
+  }, {
+    key: "clone",
+    value: function clone() {
+      return new Vec2(this.x, this.y);
+    }
+  }, {
+    key: "add",
+    value: function add(vec) {
+      return new Vec2(this.x + vec.x, this.y + vec.y);
+    }
+  }, {
+    key: "subtract",
+    value: function subtract(vec) {
+      return new Vec2(this.x - vec.x, this.y - vec.y);
+    }
+  }, {
+    key: "multiply",
+    value: function multiply(n) {
+      return new Vec2(this.x * n, this.y * n);
+    }
+  }, {
+    key: "multiply_vector",
+    value: function multiply_vector(vec) {
+      return new Vec2(this.x * vec.x, this.y * vec.y);
+    }
+  }, {
+    key: "toString",
+    value: function toString() {
+      return "".concat(this.x, ",").concat(this.y);
+    }
+  }, {
+    key: "modulus_room",
+    value: function modulus_room() {
+      var w = game_1.default.width;
+      return new Vec2(this.x >= 0 ? this.x % w : (w - Math.abs(this.x) % w) % w, this.y >= 0 ? this.y % w : (w - Math.abs(this.y) % w) % w);
+    }
+  }, {
+    key: "to",
+    value: function to(vec) {
+      return new Vec2(vec.x - this.x, vec.y - this.y);
+    }
+  }, {
+    key: "step_to",
+    value: function step_to(vec) {
+      return Vec2.step(this.to(vec));
+    }
+  }, {
+    key: "round",
+    value: function round() {
+      return new Vec2(Math.round(this.x), Math.round(this.y));
+    }
+  }, {
+    key: "length",
+    get: function get() {
+      return Math.sqrt(this.x * this.x + this.y * this.y);
+    }
+  }, {
+    key: "normalize",
+    value: function normalize() {
+      return new Vec2(this.x / this.length, this.y / this.length);
+    }
+  }, {
+    key: "equals",
+    value: function equals(vec) {
+      return this.x == vec.x && this.y == vec.y;
+    }
+  }, {
+    key: "floor",
+    value: function floor() {
+      return new Vec2(Math.floor(this.x), Math.floor(this.y));
+    }
+  }, {
+    key: "constrain_room",
+    value: function constrain_room() {
+      var vec = this.clone();
+      if (vec.x < 0) vec.x = 0;
+      if (vec.y < 0) vec.y = 0;
+      if (vec.x > game_1.default.width - 1) vec.x = game_1.default.width - 1;
+      if (vec.y > game_1.default.width - 1) vec.y = game_1.default.width - 1;
+      return vec;
+    }
+  }, {
+    key: "rotate",
+    value: function rotate(angle) {
+      var rad = angle * Math.PI / 180;
+      return new Vec2(Math.cos(rad * this.x) - Math.sin(rad * this.y), Math.cos(rad * this.x) + Math.sin(rad * this.y));
+    }
+  }, {
+    key: "left",
+    value: function left() {
+      return new Vec2(this.x - 1, this.y);
+    }
+  }, {
+    key: "right",
+    value: function right() {
+      return new Vec2(this.x + 1, this.y);
+    }
+  }, {
+    key: "up",
+    value: function up() {
+      return new Vec2(this.x, this.y - 1);
+    }
+  }, {
+    key: "down",
+    value: function down() {
+      return new Vec2(this.x, this.y + 1);
+    }
+  }, {
+    key: "sat_vector",
+    value: function sat_vector() {
+      return new sat_1.default.Vector(this.x, this.y);
+    }
+  }, {
+    key: "rotation",
+    get: function get() {
+      return Math.atan2(this.y, this.x) * 180 / Math.PI;
+    }
+  }, {
+    key: "is_effectively_zero",
+    value: function is_effectively_zero() {
+      return Math.abs(this.x) < 0.001 && Math.abs(this.y) < 0.001;
+    }
+  }], [{
+    key: "zero",
+    value: function zero() {
+      return new Vec2(0, 0);
+    }
+  }, {
+    key: "i",
+    value: function i() {
+      return new Vec2(1, 0);
+    }
+  }, {
+    key: "j",
+    value: function j() {
+      return new Vec2(0, 1);
+    }
+  }, {
+    key: "one",
+    value: function one() {
+      return new Vec2(1, 1);
+    }
+  }, {
+    key: "parse",
+    value: function parse(str) {
+      return new Vec2(parseInt(str.split(',')[0]), parseInt(str.split(',')[1]));
+    }
+  }, {
+    key: "step",
+    value: function step(vec) {
+      var new_vec = vec;
+      if (new_vec.x > 0) new_vec.x = 1;
+      if (new_vec.x < 0) new_vec.x = -1;
+      if (new_vec.y > 0) new_vec.y = 1;
+      if (new_vec.y < 0) new_vec.y = -1;
+      return new_vec;
+    }
+  }, {
+    key: "from_angle",
+    value: function from_angle(angle) {
+      return new Vec2(Math.cos(angle * Math.PI / 180), Math.sin(angle * Math.PI / 180));
+    }
+  }, {
+    key: "from_direction",
+    value: function from_direction(direction) {
+      switch (direction) {
+        case 'left':
+          return new Vec2(-1, 0);
+
+        case 'right':
+          return new Vec2(1, 0);
+
+        case 'up':
+          return new Vec2(0, -1);
+
+        case 'down':
+          return new Vec2(0, 1);
+      }
+    }
+  }, {
+    key: "point_inside_rect",
+    value: function point_inside_rect(point, pos, size) {
+      return point.x > pos.x - size.x / 2 && point.x < pos.x + size.x / 2 && point.y > pos.y - size.y / 2 && point.y < pos.y + size.y / 2;
+    }
+  }]);
+
+  return Vec2;
+}();
+
+exports.default = Vec2;
+},{"../game/game":"src/game/game.ts","sat":"node_modules/sat/SAT.js"}],"src/game/renderer.ts":[function(require,module,exports) {
+"use strict";
+
+function _createForOfIteratorHelper(o, allowArrayLike) { var it = typeof Symbol !== "undefined" && o[Symbol.iterator] || o["@@iterator"]; if (!it) { if (Array.isArray(o) || (it = _unsupportedIterableToArray(o)) || allowArrayLike && o && typeof o.length === "number") { if (it) o = it; var i = 0; var F = function F() {}; return { s: F, n: function n() { if (i >= o.length) return { done: true }; return { done: false, value: o[i++] }; }, e: function e(_e) { throw _e; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var normalCompletion = true, didErr = false, err; return { s: function s() { it = it.call(o); }, n: function n() { var step = it.next(); normalCompletion = step.done; return step; }, e: function e(_e2) { didErr = true; err = _e2; }, f: function f() { try { if (!normalCompletion && it.return != null) it.return(); } finally { if (didErr) throw err; } } }; }
+
+function _unsupportedIterableToArray(o, minLen) { if (!o) return; if (typeof o === "string") return _arrayLikeToArray(o, minLen); var n = Object.prototype.toString.call(o).slice(8, -1); if (n === "Object" && o.constructor) n = o.constructor.name; if (n === "Map" || n === "Set") return Array.from(o); if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray(o, minLen); }
+
+function _arrayLikeToArray(arr, len) { if (len == null || len > arr.length) len = arr.length; for (var i = 0, arr2 = new Array(len); i < len; i++) { arr2[i] = arr[i]; } return arr2; }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); Object.defineProperty(Constructor, "prototype", { writable: false }); return Constructor; }
+
+var __importDefault = this && this.__importDefault || function (mod) {
+  return mod && mod.__esModule ? mod : {
+    "default": mod
+  };
+};
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var color_1 = __importDefault(require("../util/color"));
+
+var vec2_1 = __importDefault(require("../util/vec2"));
+
+var Renderer = /*#__PURE__*/function () {
+  function Renderer() {
+    _classCallCheck(this, Renderer);
+  }
+
+  _createClass(Renderer, null, [{
+    key: "canvas_coords",
+    value: function canvas_coords(vec) {
+      return new vec2_1.default(vec.x * this.scale + 450, vec.y * this.scale);
+    }
+  }, {
+    key: "game_coords",
+    value: function game_coords(vec) {
+      return new vec2_1.default((vec.x - 450) / this.scale, vec.y / this.scale);
+    }
+  }, {
+    key: "rect",
+    value: function rect(position, size, color, corner_radius) {
+      var options = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : {
+        scale: 0.95,
+        rotation: 0
+      };
+      this.p5.push();
+      this.p5.fill(color.red, color.green, color.blue, color.alpha);
+      this.p5.translate(this.canvas_coords(position).x, this.canvas_coords(position).y);
+      this.p5.rotate(options.rotation);
+      this.p5.rect(0, 0, size.x * this.scale * options.scale, size.y * this.scale * options.scale, corner_radius * this.scale);
+      this.p5.pop();
+    }
+  }, {
+    key: "pointer",
+    value: function pointer(entity) {
+      var canvas_pos = this.canvas_coords(entity.position);
+      this.p5.push();
+      this.p5.stroke(255, 255, 255, 64 + (entity.scale - 1) * 128 * 5);
+      this.p5.strokeWeight(5 + (entity.scale - 1) * 20);
+      this.p5.translate(canvas_pos.x, canvas_pos.y);
+      this.p5.rotate(entity.facing);
+      this.p5.line(30 * (entity.size.x + entity.size.y) / 2, 0, 40 * (entity.size.x + entity.size.y) / 2, 0);
+      this.p5.pop();
+    }
+  }, {
+    key: "health_bar",
+    value: function health_bar(position, size, ratio) {
+      this.p5.push();
+      this.p5.rectMode('corner');
+      Renderer.rect(new vec2_1.default(position.x - size.x * 0.5, position.y - size.y * 0.75), new vec2_1.default(size.x, 0.1), color_1.default.RGBA(128, 128, 128, 128), 0.1, {
+        scale: 1,
+        rotation: 0
+      });
+      Renderer.rect(new vec2_1.default(position.x - size.x * 0.5, position.y - size.y * 0.75), new vec2_1.default(size.x * ratio, 0.1), color_1.default.RGB(255, 50, 50), 0.1, {
+        scale: 1,
+        rotation: 0
+      });
+      this.p5.pop();
+    }
+  }, {
+    key: "text",
+    value: function text(position, size, color, _text) {
+      var centered = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : false;
+      this.p5.push();
+      if (centered) this.p5.textAlign('center', 'center');
+      this.p5.textSize(size);
+      this.p5.fill(color.red, color.green, color.blue, color.alpha);
+      this.p5.text(_text, this.canvas_coords(position).x, this.canvas_coords(position).y);
+      this.p5.pop();
+    }
+  }, {
+    key: "map",
+    value: function map() {
+      this.p5.push();
+      this.p5.translate(210, 300);
+      this.p5.rectMode('corner');
+
+      var _iterator = _createForOfIteratorHelper(this.game.room_manager.array()),
+          _step;
+
+      try {
+        for (_iterator.s(); !(_step = _iterator.n()).done;) {
+          var room = _step.value;
+          var color = void 0;
+          color = room.biome.map_color;
+          this.p5.fill(color.red, color.green, color.blue, room.visited ? 255 : 140);
+          this.p5.rect(room.position.x * 20, room.position.y * 20, 15, 15);
+          this.p5.fill(64, 64, 64);
+          this.p5.rect(room.position.x * 20 + 2, room.position.y * 20 + 2, 11, 11);
+
+          if (room.cleared) {
+            this.p5.fill(64, 220, 64);
+            this.p5.rect(room.position.x * 20 + 2, room.position.y * 20 + 2, 11, 11);
+          }
+
+          this.p5.fill(110, 110, 110);
+          if (!room.visited) this.p5.fill(85, 85, 85);
+          if (room.has_door('left')) this.p5.rect(room.position.x * 20 - 2.5, room.position.y * 20 + 5, 2.5, 5);
+          if (room.has_door('right')) this.p5.rect(room.position.x * 20 + 15, room.position.y * 20 + 5, 2.5, 5);
+          if (room.has_door('up')) this.p5.rect(room.position.x * 20 + 5, room.position.y * 20 - 2.5, 5, 2.5);
+          if (room.has_door('down')) this.p5.rect(room.position.x * 20 + 5, room.position.y * 20 + 15, 5, 2.5);
+        }
+      } catch (err) {
+        _iterator.e(err);
+      } finally {
+        _iterator.f();
+      }
+
+      this.p5.fill(0, 0, 0, 0);
+      this.p5.stroke(255, 255, 255);
+      this.p5.strokeWeight(2);
+      this.p5.rect(this.game.room_manager.current_room.position.x * 20 - 1, this.game.room_manager.current_room.position.y * 20 - 1, 17, 17);
+      this.p5.pop();
+    }
+  }, {
+    key: "sword",
+    value: function sword(position, size, color, corner_radius) {
+      var options = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : {
+        scale: 1,
+        rotation: 0
+      };
+      this.p5.push();
+      this.p5.translate(this.canvas_coords(position).x, this.canvas_coords(position).y);
+      this.p5.rotate(options.rotation);
+      var size_scaled = size.multiply(this.scale).multiply(options.scale);
+      this.p5.fill(128, 128, 128);
+      this.p5.rect(0, 0, size_scaled.x, size_scaled.y * 0.4, corner_radius * this.scale);
+      this.p5.fill(color.red, color.green, color.blue, color.alpha);
+      this.p5.rect(size_scaled.x * 0.1, 0, size_scaled.x * 0.8, size_scaled.y, corner_radius * this.scale);
+      this.p5.fill(128, 128, 128);
+      this.p5.rect(-size_scaled.x * 0.3, 0, size_scaled.x * 0.05, size_scaled.y * 2, corner_radius * this.scale);
+      this.p5.pop();
+    }
+  }, {
+    key: "arrow",
+    value: function arrow(position, size, color, corner_radius) {
+      var options = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : {
+        scale: 1,
+        rotation: 0
+      };
+      this.p5.push();
+      this.p5.translate(this.canvas_coords(position).x, this.canvas_coords(position).y);
+      this.p5.rotate(options.rotation);
+      var size_scaled = size.multiply(this.scale).multiply(options.scale);
+      this.p5.fill(128, 128, 128);
+      this.p5.rect(0, 0, size_scaled.x, size_scaled.y * 0.5, corner_radius * this.scale);
+      this.p5.fill(color.red, color.green, color.blue, color.alpha);
+      this.p5.rect(size_scaled.x * 0.5, 0, size_scaled.x * 0.3, size_scaled.y, corner_radius * this.scale);
+      this.p5.pop();
+    }
+  }]);
+
+  return Renderer;
+}();
+
+exports.default = Renderer;
+},{"../util/color":"src/util/color.ts","../util/vec2":"src/util/vec2.ts"}],"src/game/button.ts":[function(require,module,exports) {
+"use strict";
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); Object.defineProperty(Constructor, "prototype", { writable: false }); return Constructor; }
+
+var __importDefault = this && this.__importDefault || function (mod) {
+  return mod && mod.__esModule ? mod : {
+    "default": mod
+  };
+};
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var color_1 = __importDefault(require("../util/color"));
+
+var renderer_1 = __importDefault(require("./renderer"));
+
+var Button = /*#__PURE__*/function () {
+  function Button(id, position, size, text, color, text_color, enabled, on_clicked) {
+    _classCallCheck(this, Button);
+
+    this.id = id;
+    this.position = position;
+    this.size = size;
+    this.text = text;
+    this.color = color;
+    this.text_color = text_color;
+    this.scale = 1;
+    this.enabled = enabled;
+    this.on_clicked = on_clicked;
+  }
+
+  _createClass(Button, [{
+    key: "click",
+    value: function click() {
+      if (!this.enabled()) return;
+      this.on_clicked();
+      this.scale = 1.1;
+    }
+  }, {
+    key: "render",
+    value: function render() {
+      if (this.scale > 1) this.scale -= 0.005;else this.scale = 1;
+
+      if (this.enabled()) {
+        renderer_1.default.rect(this.position, this.size, this.color, 0.1, {
+          scale: this.scale,
+          rotation: 0
+        });
+        renderer_1.default.text(this.position, this.scale * 700 * this.size.x / renderer_1.default.p5.textWidth(this.text), this.text_color, this.text, true);
+      } else {
+        renderer_1.default.rect(this.position, this.size, color_1.default.RGB(128, 128, 128), 0.1, {
+          scale: this.scale,
+          rotation: 0
+        });
+        renderer_1.default.text(this.position, this.scale * 700 * this.size.x / renderer_1.default.p5.textWidth(this.text), color_1.default.RGB(255, 255, 255), this.text, true);
+      }
+    }
+  }]);
+
+  return Button;
+}();
+
+exports.default = Button;
+},{"../util/color":"src/util/color.ts","./renderer":"src/game/renderer.ts"}],"src/main.ts":[function(require,module,exports) {
 "use strict";
 
 var __createBinding = this && this.__createBinding || (Object.create ? function (o, m, k, k2) {
@@ -37187,9 +37354,13 @@ Object.defineProperty(exports, "__esModule", {
 
 var p5_1 = __importDefault(require("p5"));
 
+var button_1 = __importDefault(require("./game/button"));
+
 var game_1 = __importStar(require("./game/game"));
 
 var color_1 = __importDefault(require("./util/color"));
+
+var vec2_1 = __importDefault(require("./util/vec2"));
 
 var sketch = function sketch(p5) {
   var game;
@@ -37227,7 +37398,7 @@ var sketch = function sketch(p5) {
         p5.fill(64, 128, 64);
         p5.rect(15, 5, 100 + game.player.max_health / 2, 40);
         p5.fill(64, 256, 64);
-        p5.rect(20, 10, (100 + game.player.max_health / 2) * game.player.health / game.player.max_health - 10, 30);
+        p5.rect(20, 10, (90 + game.player.max_health / 2) * game.player.health / game.player.max_health, 30);
         p5.fill(0, 0, 0);
         p5.text("".concat(game.player.health, " / ").concat(game.player.max_health), 30, 32);
         p5.fill(255, 255, 64);
@@ -37235,9 +37406,9 @@ var sketch = function sketch(p5) {
         p5.fill(255, 255, 255);
         p5.text(game.player.gold, 55, 70);
         p5.textSize(15);
-        p5.text("vitality: ".concat(game.player.vitality), 20, 210);
-        p5.text("strength: ".concat(game.player.strength), 20, 240);
-        p5.text("intelligence: ".concat(game.player.intelligence), 20, 270);
+        p5.text("vitality: ".concat(game.player.vitality), 20, 180);
+        p5.text("strength: ".concat(game.player.strength), 20, 210);
+        p5.text("intelligence: ".concat(game.player.intelligence), 20, 240);
         p5.pop();
         state = game.state;
         break;
@@ -37252,25 +37423,25 @@ var sketch = function sketch(p5) {
           menu.remove();
           state = game_1.GameStates.RUNNING;
           p5.loop();
-          var upgrade_health_button = p5.createButton('+1 vitality & heal 20% ($5)').style('font-family', 'Montserrat').style('font-weight', '600').style('color', '#33ff33').style('background', '#5c4baa').position(1130, 200).mousePressed(function () {
-            if (game.player.gold >= 3) {
-              game.player.gold -= 3;
-              game.player.set_vitality(game.player.vitality + 1);
-              game.player.health += game.player.max_health * 0.2;
-            }
-          });
-          var upgrade_damage_button = p5.createButton('+1 strength ($3)').style('font-family', 'Montserrat').style('font-weight', '600').style('color', '#33ff33').style('background', '#5c4baa').position(1130, 230).mousePressed(function () {
-            if (game.player.gold >= 3) {
-              game.player.gold -= 3;
-              game.player.strength++;
-            }
-          });
-          var upgrade_intelligence_button = p5.createButton('+1 intelligence ($3)').style('font-family', 'Montserrat').style('font-weight', '600').style('color', '#33ff33').style('background', '#5c4baa').position(1130, 260).mousePressed(function () {
-            if (game.player.gold >= 3) {
-              game.player.gold -= 3;
-              game.player.intelligence++;
-            }
-          });
+          game.button_manager.set(new button_1.default('upgrade_vitality', new vec2_1.default(17.5, 3), new vec2_1.default(2, 1), '+vit $50', color_1.default.RGB(64, 255, 64), color_1.default.RGB(0, 0, 0), function () {
+            return game.player.gold >= 50;
+          }, function () {
+            game.player.gold -= 50;
+            game.player.set_vitality(game.player.vitality + 1);
+            game.player.health += game.player.max_health * 0.2;
+          }));
+          game.button_manager.set(new button_1.default('upgrade_strength', new vec2_1.default(19.7, 3), new vec2_1.default(2, 1), '+str $30', color_1.default.RGB(255, 64, 64), color_1.default.RGB(0, 0, 0), function () {
+            return game.player.gold >= 30;
+          }, function () {
+            game.player.gold -= 30;
+            game.player.strength++;
+          }));
+          game.button_manager.set(new button_1.default('upgrade_intelligence', new vec2_1.default(21.9, 3), new vec2_1.default(2, 1), '+int $30', color_1.default.RGB(64, 64, 255), color_1.default.RGB(0, 0, 0), function () {
+            return game.player.gold >= 30;
+          }, function () {
+            game.player.gold -= 30;
+            game.player.intelligence++;
+          }));
         });
         menu = p5.createDiv().child(select_text_class).child(selector).child(start_button).center();
         break;
@@ -37283,7 +37454,7 @@ var sketch = function sketch(p5) {
 };
 
 new p5_1.default(sketch);
-},{"p5":"node_modules/p5/lib/p5.min.js","./game/game":"src/game/game.ts","./util/color":"src/util/color.ts"}],"node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
+},{"p5":"node_modules/p5/lib/p5.min.js","./game/button":"src/game/button.ts","./game/game":"src/game/game.ts","./util/color":"src/util/color.ts","./util/vec2":"src/util/vec2.ts"}],"node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 var OldModule = module.bundle.Module;
@@ -37311,7 +37482,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "58805" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "63340" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
