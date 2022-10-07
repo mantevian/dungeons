@@ -5,6 +5,7 @@ import Vec2 from "../util/vec2";
 import { v4 as uuid } from "uuid";
 import Game from "../game/game";
 import SAT from 'sat';
+import Health from "./util/health";
 
 export default class Entity {
 	manager: EntityManager;
@@ -13,8 +14,7 @@ export default class Entity {
 	position: Vec2;
 	noclip: boolean;
 
-	health: number;
-	max_health: number;
+	health: Health;
 
 	size: Vec2;
 	rotation: number;
@@ -42,6 +42,8 @@ export default class Entity {
 		this.scale = 1;
 		this.scale_time = 0;
 		this.scale_per_tick = 0;
+
+		this.health = new Health(1, this);
 
 		this.lifetime = 0;
 
@@ -98,7 +100,9 @@ export default class Entity {
 		if (this.anchored)
 			this.follow();
 		
-		if (this.health <= 0)
+		this.health.tick();
+		
+		if (!this.health.alive)
 			this.destroy();
 	}
 

@@ -10,7 +10,8 @@ export default class Archer extends Mob {
 	constructor() {
 		super();
 
-		this.max_health = 15;
+		this.health.reset(15);
+		
 		this.start_prepare_attack = 20;
 		this.attack_damage = 4;
 

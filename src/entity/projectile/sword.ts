@@ -23,8 +23,7 @@ export default class Sword extends Projectile {
 		this.color = Color.RGB(220, 220, 220);
 		this.corner_radius = 0.9;
 
-		this.max_health = 8;
-		this.health = 8;
+		this.health.reset(8);
 
 		this.follow();
 	}
@@ -42,7 +41,7 @@ export default class Sword extends Projectile {
 		super.tick();
 
 		if (this.rotation > this.ending_rotation)
-			this.health--;
+			this.health.damage(1, 0);
 		else {
 			this.rotation += this.rotation_speed;
 			this.rotation_speed += 0.5;

@@ -12,7 +12,7 @@ export default class Swordsman extends Mob {
 		this.size = new Vec2(0.85, 0.85);
 		this.corner_radius = 0.1;
 
-		this.max_health = 30;
+		this.health.reset(30);
 
 		this.start_prepare_attack = 10;
 		this.attack_damage = 6;

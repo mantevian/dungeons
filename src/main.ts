@@ -43,13 +43,13 @@ const sketch = (p5: P5) => {
 				p5.rectMode('corner');
 
 				p5.fill(64, 128, 64);
-				p5.rect(15, 5, 100 + game.player.max_health / 2, 40);
+				p5.rect(15, 5, 100 + game.player.health.max / 2, 40);
 
 				p5.fill(64, 256, 64);
-				p5.rect(20, 10, (90 + game.player.max_health / 2) * game.player.health / game.player.max_health, 30);
+				p5.rect(20, 10, (90 + game.player.health.max / 2) * game.player.health.ratio, 30);
 
 				p5.fill(0, 0, 0);
-				p5.text(`${game.player.health} / ${game.player.max_health}`, 30, 32);
+				p5.text(`${game.player.health.value} / ${game.player.health.max}`, 30, 32);
 
 				p5.fill(255, 255, 64);
 				p5.rect(20, 50, 25, 25, 25);
@@ -97,7 +97,7 @@ const sketch = (p5: P5) => {
 							() => {
 								game.player.gold -= 50;
 								game.player.set_vitality(game.player.vitality + 1);
-								game.player.health += game.player.max_health * 0.2;
+								game.player.health.heal(game.player.health.max * 0.2);
 							}));
 
 						game.button_manager.set(new Button('upgrade_strength', new Vec2(19.7, 3), new Vec2(2, 1), '+str $30', Color.RGB(255, 64, 64), Color.RGB(0, 0, 0),

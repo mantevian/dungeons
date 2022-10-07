@@ -14,10 +14,6 @@ export default class LivingEntity extends Entity {
 	max_move_timeout: number;
 	moving: Vec2;
 
-	last_taken_damage: number;
-	damage_invincibility_timer: number;
-	max_damage_invincibility_timer: number;
-
 	last_attacker: Entity;
 
 	effects: StatusEffectManager;
@@ -33,12 +29,6 @@ export default class LivingEntity extends Entity {
 		this.max_move_timeout = 10;
 		this.moving = Vec2.zero();
 
-		this.health = 50;
-		this.max_health = 50;
-
-		this.max_damage_invincibility_timer = 20;
-		this.damage_invincibility_timer = 0;
-
 		this.last_attacker = null;
 
 		this.effects = new StatusEffectManager(this);
@@ -49,11 +39,6 @@ export default class LivingEntity extends Entity {
 
 		this.effects.tick();
 
-		if (this.damage_invincibility_timer > 0)
-			this.damage_invincibility_timer--;
-		else
-			this.last_taken_damage = 0;
-
 		if (this.move_timeout > 0) {
 			this.move_timeout--;
 			this.set_position(this.position.add(this.moving));
@@ -61,10 +46,9 @@ export default class LivingEntity extends Entity {
 		else
 			this.moving = Vec2.zero();
 
-		if (this.health > this.max_health)
-			this.health = this.max_health;
+		this.health.tick();
 
-		if (this.health < 1)
+		if (!this.health.alive)
 			this.destroy(this.last_attacker);
 
 		this.render();
@@ -109,13 +93,11 @@ export default class LivingEntity extends Entity {
 
 	}
 
-	damage(damage: number, source?: Entity, timer = this.max_damage_invincibility_timer): void {
-		damage = Math.floor(damage);
-		let actual_damage = damage - this.last_taken_damage;
-
-		this.health -= actual_damage;
-		this.max_damage_invincibility_timer = timer;
-		this.damage_invincibility_timer = timer;
+	damage(damage: number, source?: Entity, timer?: number): void {
+		damage = this.health.damage(damage, timer);
+		
+		if (damage == 0)
+			return;
 
 		this.manager.room.particles.spawn(new DamageCountParticle(this.position.add(new Vec2(0, this.size.y * -0.5)), damage));
 
@@ -133,7 +115,7 @@ export default class LivingEntity extends Entity {
 			this.scale_per_tick = 0;
 		}
 
-		Renderer.rect(this.position, this.size, this.color.lighten(this.damage_invincibility_timer / this.max_damage_invincibility_timer), this.corner_radius, { scale: this.scale, rotation: this.rotation });
+		Renderer.rect(this.position, this.size, this.color.lighten(this.health.invincibility_timer_ratio), this.corner_radius, { scale: this.scale, rotation: this.rotation });
 	}
 
 	apply_status_effect(effect: StatusEffect): void {

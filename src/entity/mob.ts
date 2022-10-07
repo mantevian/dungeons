@@ -22,7 +22,6 @@ export default class Mob extends LivingEntity {
 		this.size = new Vec2(0.7, 0.7);
 		this.corner_radius = 0.15;
 
-		this.max_health = 1;
 		this.start_prepare_attack = 1;
 		this.attack_damage = 1;
 
@@ -45,8 +44,8 @@ export default class Mob extends LivingEntity {
 	render(): void {
 		super.render();
 		Renderer.pointer(this);
-		if (this.health < this.max_health)
-			Renderer.health_bar(this.position, this.size, this.health / this.max_health);
+		if (!this.health.full)
+			Renderer.health_bar(this.position, this.size, this.health.ratio);
 	}
 
 	update_path(): void {

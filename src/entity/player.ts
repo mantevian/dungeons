@@ -25,6 +25,7 @@ export default class Player extends LivingEntity {
 		this.color = Color.RGB(40, 255, 40);
 		this.corner_radius = 0.35;
 
+		this.health.reset(50);
 		this.vitality = 5;
 		this.strength = 1;
 		this.intelligence = 1;
@@ -49,7 +50,7 @@ export default class Player extends LivingEntity {
 
 	set_vitality(vitality: number) {
 		this.vitality = vitality;
-		this.max_health = Math.floor(this.vitality * this.class.vitality_multiplier);
+		this.health.max = Math.floor(this.vitality * this.class.vitality_multiplier);
 	}
 
 	tick(): void {
@@ -66,7 +67,7 @@ export default class Player extends LivingEntity {
 		if (this.weapon.prepare_attack == 0)
 			this.attack();
 
-		if (this.health <= 0)
+		if (!this.health.alive)
 			this.manager.room.manager.game.stop_caused_by_death();
 	}
 
@@ -84,8 +85,8 @@ export default class Player extends LivingEntity {
 
 		Renderer.pointer(this);
 
-		if (this.damage_invincibility_timer > 0)
-			Renderer.rect(new Vec2(0, 0), new Vec2(100, 100), Color.RGBA(255, 100, 0, 32 * this.damage_invincibility_timer / this.max_damage_invincibility_timer), 0);
+		if (this.health.invincibility_timer_ratio > 0)
+			Renderer.rect(new Vec2(0, 0), new Vec2(100, 100), Color.RGBA(255, 100, 0, 32 * this.health.invincibility_timer_ratio), 0);
 	}
 
 	try_attack(): void {
