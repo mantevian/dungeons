@@ -30541,6 +30541,139 @@ var define;
   return SAT;
 }));
 
+},{}],"src/entity/util/health.ts":[function(require,module,exports) {
+"use strict";
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); Object.defineProperty(Constructor, "prototype", { writable: false }); return Constructor; }
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var Health = /*#__PURE__*/function () {
+  function Health(max_health, entity) {
+    var invincibility_timer = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 20;
+
+    _classCallCheck(this, Health);
+
+    this._max = max_health;
+    this._value = max_health;
+    this.entity = entity;
+    this.invincibility_timer = new InvincibilityTimer(invincibility_timer);
+  }
+
+  _createClass(Health, [{
+    key: "tick",
+    value: function tick() {
+      this.invincibility_timer.tick();
+    }
+  }, {
+    key: "value",
+    get: function get() {
+      return this._value;
+    }
+  }, {
+    key: "max",
+    get: function get() {
+      return this._max;
+    },
+    set: function set(value) {
+      if (value > 0) this._max = value;
+    }
+  }, {
+    key: "alive",
+    get: function get() {
+      return this._value >= 0;
+    }
+  }, {
+    key: "full",
+    get: function get() {
+      return this._value == this._max;
+    }
+  }, {
+    key: "ratio",
+    get: function get() {
+      return this._value / this._max;
+    }
+  }, {
+    key: "invincibility_timer_ratio",
+    get: function get() {
+      return this.invincibility_timer.value / this.invincibility_timer.max_value;
+    }
+    /**
+     * @returns `Math.floor(value)`
+     */
+
+  }, {
+    key: "damage",
+    value: function damage(value, invincibility_timer) {
+      if (value <= 0) return;
+      value = Math.floor(value);
+      value -= this.invincibility_timer.last_taken_damage;
+      this._value -= value;
+
+      if (this.invincibility_timer.ready) {
+        this.invincibility_timer.last_taken_damage = value;
+        this.invincibility_timer.update(invincibility_timer !== null && invincibility_timer !== void 0 ? invincibility_timer : 20);
+      }
+
+      return value;
+    }
+  }, {
+    key: "heal",
+    value: function heal(value) {
+      if (this._value + value > this._max) this._value = this._max;
+      this._value += value;
+    }
+  }, {
+    key: "reset",
+    value: function reset(value) {
+      this._value = value;
+      this._max = value;
+    }
+  }]);
+
+  return Health;
+}();
+
+exports.default = Health;
+
+var InvincibilityTimer = /*#__PURE__*/function () {
+  function InvincibilityTimer(value) {
+    _classCallCheck(this, InvincibilityTimer);
+
+    this.value = 0;
+    this.max_value = value;
+    this.last_taken_damage = 0;
+  }
+
+  _createClass(InvincibilityTimer, [{
+    key: "update",
+    value: function update(value) {
+      if (value > 0) {
+        this.value = value;
+        this.max_value = value;
+      }
+    }
+  }, {
+    key: "tick",
+    value: function tick() {
+      if (this.value > 0) this.value--;
+      if (this.ready) this.last_taken_damage = 0;
+    }
+  }, {
+    key: "ready",
+    get: function get() {
+      return this.value == 0;
+    }
+  }]);
+
+  return InvincibilityTimer;
+}();
 },{}],"src/entity/entity.ts":[function(require,module,exports) {
 "use strict";
 
@@ -30578,6 +30711,8 @@ var game_1 = __importDefault(require("../game/game"));
 
 var sat_1 = __importDefault(require("sat"));
 
+var health_1 = __importDefault(require("./util/health"));
+
 var Entity = /*#__PURE__*/function () {
   function Entity(parent) {
     _classCallCheck(this, Entity);
@@ -30592,6 +30727,7 @@ var Entity = /*#__PURE__*/function () {
     this.scale = 1;
     this.scale_time = 0;
     this.scale_per_tick = 0;
+    this.health = new health_1.default(1, this);
     this.lifetime = 0;
     this.parent = parent;
     this.anchored = false;
@@ -30654,7 +30790,8 @@ var Entity = /*#__PURE__*/function () {
       if (!this.can_go_through(this.position) && !this.noclip) this.on_tile_collision();
       this.render();
       if (this.anchored) this.follow();
-      if (this.health <= 0) this.destroy();
+      this.health.tick();
+      if (!this.health.alive) this.destroy();
     }
   }, {
     key: "sat_polygon",
@@ -30751,7 +30888,7 @@ var Entity = /*#__PURE__*/function () {
 }();
 
 exports.default = Entity;
-},{"../game/renderer":"src/game/renderer.ts","../util/color":"src/util/color.ts","../util/vec2":"src/util/vec2.ts","uuid":"node_modules/uuid/index.js","../game/game":"src/game/game.ts","sat":"node_modules/sat/SAT.js"}],"src/entity/living_entity.ts":[function(require,module,exports) {
+},{"../game/renderer":"src/game/renderer.ts","../util/color":"src/util/color.ts","../util/vec2":"src/util/vec2.ts","uuid":"node_modules/uuid/index.js","../game/game":"src/game/game.ts","sat":"node_modules/sat/SAT.js","./util/health":"src/entity/util/health.ts"}],"src/entity/living_entity.ts":[function(require,module,exports) {
 "use strict";
 
 function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
@@ -30816,10 +30953,6 @@ var LivingEntity = /*#__PURE__*/function (_entity_1$default) {
     _this.move_timeout = 0;
     _this.max_move_timeout = 10;
     _this.moving = vec2_1.default.zero();
-    _this.health = 50;
-    _this.max_health = 50;
-    _this.max_damage_invincibility_timer = 20;
-    _this.damage_invincibility_timer = 0;
     _this.last_attacker = null;
     _this.effects = new status_effect_manager_1.default(_assertThisInitialized(_this));
     return _this;
@@ -30830,15 +30963,14 @@ var LivingEntity = /*#__PURE__*/function (_entity_1$default) {
     value: function tick() {
       this.lifetime++;
       this.effects.tick();
-      if (this.damage_invincibility_timer > 0) this.damage_invincibility_timer--;else this.last_taken_damage = 0;
 
       if (this.move_timeout > 0) {
         this.move_timeout--;
         this.set_position(this.position.add(this.moving));
       } else this.moving = vec2_1.default.zero();
 
-      if (this.health > this.max_health) this.health = this.max_health;
-      if (this.health < 1) this.destroy(this.last_attacker);
+      this.health.tick();
+      if (!this.health.alive) this.destroy(this.last_attacker);
       this.render();
     }
   }, {
@@ -30874,13 +31006,9 @@ var LivingEntity = /*#__PURE__*/function (_entity_1$default) {
     value: function attack() {}
   }, {
     key: "damage",
-    value: function damage(_damage, source) {
-      var timer = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : this.max_damage_invincibility_timer;
-      _damage = Math.floor(_damage);
-      var actual_damage = _damage - this.last_taken_damage;
-      this.health -= actual_damage;
-      this.max_damage_invincibility_timer = timer;
-      this.damage_invincibility_timer = timer;
+    value: function damage(_damage, source, timer) {
+      _damage = this.health.damage(_damage, timer);
+      if (_damage == 0) return;
       this.manager.room.particles.spawn(new damage_count_1.default(this.position.add(new vec2_1.default(0, this.size.y * -0.5)), _damage));
       if (source) this.last_attacker = source;
     }
@@ -30895,7 +31023,7 @@ var LivingEntity = /*#__PURE__*/function (_entity_1$default) {
         this.scale_per_tick = 0;
       }
 
-      renderer_1.default.rect(this.position, this.size, this.color.lighten(this.damage_invincibility_timer / this.max_damage_invincibility_timer), this.corner_radius, {
+      renderer_1.default.rect(this.position, this.size, this.color.lighten(this.health.invincibility_timer_ratio), this.corner_radius, {
         scale: this.scale,
         rotation: this.rotation
       });
@@ -31331,7 +31459,6 @@ var Mob = /*#__PURE__*/function (_living_entity_1$defa) {
     _this.color = color_1.default.RGB(255, 80, 30);
     _this.size = new vec2_1.default(0.7, 0.7);
     _this.corner_radius = 0.15;
-    _this.max_health = 1;
     _this.start_prepare_attack = 1;
     _this.attack_damage = 1;
     _this.path = new Array();
@@ -31354,7 +31481,7 @@ var Mob = /*#__PURE__*/function (_living_entity_1$defa) {
       _get(_getPrototypeOf(Mob.prototype), "render", this).call(this);
 
       renderer_1.default.pointer(this);
-      if (this.health < this.max_health) renderer_1.default.health_bar(this.position, this.size, this.health / this.max_health);
+      if (!this.health.full) renderer_1.default.health_bar(this.position, this.size, this.health.ratio);
     }
   }, {
     key: "update_path",
@@ -32069,8 +32196,8 @@ var Sword = /*#__PURE__*/function (_projectile_1$default) {
     _this.size = new vec2_1.default(2.5, 0.2);
     _this.color = color_1.default.RGB(220, 220, 220);
     _this.corner_radius = 0.9;
-    _this.max_health = 8;
-    _this.health = 8;
+
+    _this.health.reset(8);
 
     _this.follow();
 
@@ -32091,7 +32218,7 @@ var Sword = /*#__PURE__*/function (_projectile_1$default) {
     value: function tick() {
       _get(_getPrototypeOf(Sword.prototype), "tick", this).call(this);
 
-      if (this.rotation > this.ending_rotation) this.health--;else {
+      if (this.rotation > this.ending_rotation) this.health.damage(1, 0);else {
         this.rotation += this.rotation_speed;
         this.rotation_speed += 0.5;
       }
@@ -32317,6 +32444,9 @@ var Player = /*#__PURE__*/function (_living_entity_1$defa) {
     _this.size = new vec2_1.default(0.8, 0.8);
     _this.color = color_1.default.RGB(40, 255, 40);
     _this.corner_radius = 0.35;
+
+    _this.health.reset(50);
+
     _this.vitality = 5;
     _this.strength = 1;
     _this.intelligence = 1;
@@ -32343,7 +32473,7 @@ var Player = /*#__PURE__*/function (_living_entity_1$defa) {
     key: "set_vitality",
     value: function set_vitality(vitality) {
       this.vitality = vitality;
-      this.max_health = Math.floor(this.vitality * this.class.vitality_multiplier);
+      this.health.max = Math.floor(this.vitality * this.class.vitality_multiplier);
     }
   }, {
     key: "tick",
@@ -32354,7 +32484,7 @@ var Player = /*#__PURE__*/function (_living_entity_1$defa) {
       if (this.weapon.attack_cooldown > 0) this.weapon.attack_cooldown--;
       if (this.weapon.prepare_attack > -1) this.weapon.prepare_attack--;
       if (this.weapon.prepare_attack == 0) this.attack();
-      if (this.health <= 0) this.manager.room.manager.game.stop_caused_by_death();
+      if (!this.health.alive) this.manager.room.manager.game.stop_caused_by_death();
     }
   }, {
     key: "render",
@@ -32372,7 +32502,7 @@ var Player = /*#__PURE__*/function (_living_entity_1$defa) {
         rotation: this.rotation
       });
       renderer_1.default.pointer(this);
-      if (this.damage_invincibility_timer > 0) renderer_1.default.rect(new vec2_1.default(0, 0), new vec2_1.default(100, 100), color_1.default.RGBA(255, 100, 0, 32 * this.damage_invincibility_timer / this.max_damage_invincibility_timer), 0);
+      if (this.health.invincibility_timer_ratio > 0) renderer_1.default.rect(new vec2_1.default(0, 0), new vec2_1.default(100, 100), color_1.default.RGBA(255, 100, 0, 32 * this.health.invincibility_timer_ratio), 0);
     }
   }, {
     key: "try_attack",
@@ -32681,7 +32811,9 @@ var Archer = /*#__PURE__*/function (_mob_1$default) {
     _classCallCheck(this, Archer);
 
     _this = _super.call(this);
-    _this.max_health = 15;
+
+    _this.health.reset(15);
+
     _this.start_prepare_attack = 20;
     _this.attack_damage = 4;
     _this.size = new vec2_1.default(0.65, 0.65);
@@ -32788,7 +32920,9 @@ var Mage = /*#__PURE__*/function (_mob_1$default) {
     _classCallCheck(this, Mage);
 
     _this = _super.call(this);
-    _this.max_health = 20;
+
+    _this.health.reset(20);
+
     _this.start_prepare_attack = 40;
     _this.attack_damage = 0;
     _this.corner_radius = 0.3;
@@ -32894,7 +33028,9 @@ var Swordsman = /*#__PURE__*/function (_mob_1$default) {
     _this.color = color_1.default.RGB(210, 160, 120);
     _this.size = new vec2_1.default(0.85, 0.85);
     _this.corner_radius = 0.1;
-    _this.max_health = 30;
+
+    _this.health.reset(30);
+
     _this.start_prepare_attack = 10;
     _this.attack_damage = 6;
     _this.gold = 25;
@@ -32991,7 +33127,9 @@ var Turret = /*#__PURE__*/function (_mob_1$default) {
     _classCallCheck(this, Turret);
 
     _this = _super.call(this);
-    _this.max_health = 20;
+
+    _this.health.reset(20);
+
     _this.start_prepare_attack = 30;
     _this.attack_damage = 3;
     _this.color = color_1.default.RGB(64, 92, 255);
@@ -37396,11 +37534,11 @@ var sketch = function sketch(p5) {
         p5.translate(1100, 0);
         p5.rectMode('corner');
         p5.fill(64, 128, 64);
-        p5.rect(15, 5, 100 + game.player.max_health / 2, 40);
+        p5.rect(15, 5, 100 + game.player.health.max / 2, 40);
         p5.fill(64, 256, 64);
-        p5.rect(20, 10, (90 + game.player.max_health / 2) * game.player.health / game.player.max_health, 30);
+        p5.rect(20, 10, (90 + game.player.health.max / 2) * game.player.health.ratio, 30);
         p5.fill(0, 0, 0);
-        p5.text("".concat(game.player.health, " / ").concat(game.player.max_health), 30, 32);
+        p5.text("".concat(game.player.health.value, " / ").concat(game.player.health.max), 30, 32);
         p5.fill(255, 255, 64);
         p5.rect(20, 50, 25, 25, 25);
         p5.fill(255, 255, 255);
@@ -37428,7 +37566,7 @@ var sketch = function sketch(p5) {
           }, function () {
             game.player.gold -= 50;
             game.player.set_vitality(game.player.vitality + 1);
-            game.player.health += game.player.max_health * 0.2;
+            game.player.health.heal(game.player.health.max * 0.2);
           }));
           game.button_manager.set(new button_1.default('upgrade_strength', new vec2_1.default(19.7, 3), new vec2_1.default(2, 1), '+str $30', color_1.default.RGB(255, 64, 64), color_1.default.RGB(0, 0, 0), function () {
             return game.player.gold >= 30;
@@ -37482,7 +37620,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "63340" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "56792" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
