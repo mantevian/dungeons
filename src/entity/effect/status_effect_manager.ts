@@ -17,26 +17,26 @@ export default class StatusEffectManager {
 		return this.effects.get(uuid);
 	}
 
-	find(filter: (StatusEffect: StatusEffect) => boolean): StatusEffect {
+	find(filter: (effect: StatusEffect) => boolean): StatusEffect {
 		if (this.size() == 0) return undefined;
 		return [...this.effects.entries()].find((value: [string, StatusEffect]) => filter(value[1]))[1];
 	}
 
-	apply(StatusEffect: StatusEffect): void {
-		StatusEffect.manager = this;
-		this.effects.set(StatusEffect.uuid, StatusEffect);
+	apply(effect: StatusEffect): void {
+		effect.manager = this;
+		this.effects.set(effect.uuid, effect);
 	}
 
 	remove(uuid: string): void {
 		this.effects.delete(uuid);
 	}
 
-	prune(filter: (StatusEffect: StatusEffect) => boolean): void {
+	prune(filter: (effect: StatusEffect) => boolean): void {
 		for (let entry of [...this.effects.entries()].filter((value: [string, StatusEffect]) => filter(value[1])))
 			this.effects.delete(entry[0]);
 	}
 
-	filter(filter: (StatusEffect: StatusEffect) => boolean): [string, StatusEffect][] {
+	filter(filter: (effect: StatusEffect) => boolean): [string, StatusEffect][] {
 		return [...this.effects.entries()].filter((value: [string, StatusEffect]) => filter(value[1]));
 	}
 
