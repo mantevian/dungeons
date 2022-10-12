@@ -29412,9 +29412,9 @@ var StatusEffectManager = /*#__PURE__*/function () {
     }
   }, {
     key: "apply",
-    value: function apply(StatusEffect) {
-      StatusEffect.manager = this;
-      this.effects.set(StatusEffect.uuid, StatusEffect);
+    value: function apply(effect) {
+      effect.manager = this;
+      this.effects.set(effect.uuid, effect);
     }
   }, {
     key: "remove",
@@ -30570,6 +30570,7 @@ var Health = /*#__PURE__*/function () {
     key: "tick",
     value: function tick() {
       this.invincibility_timer.tick();
+      if (!this.alive) this.entity.destroy();
     }
   }, {
     key: "value",
@@ -30714,7 +30715,7 @@ var sat_1 = __importDefault(require("sat"));
 var health_1 = __importDefault(require("./util/health"));
 
 var Entity = /*#__PURE__*/function () {
-  function Entity(parent) {
+  function Entity() {
     _classCallCheck(this, Entity);
 
     this.uuid = (0, uuid_1.v4)();
@@ -30729,8 +30730,6 @@ var Entity = /*#__PURE__*/function () {
     this.scale_per_tick = 0;
     this.health = new health_1.default(1, this);
     this.lifetime = 0;
-    this.parent = parent;
-    this.anchored = false;
   }
 
   _createClass(Entity, [{
@@ -30773,12 +30772,7 @@ var Entity = /*#__PURE__*/function () {
         try {
           for (_iterator.s(); !(_step = _iterator.n()).done;) {
             var entity = _step.value;
-
-            if (this.parent) {
-              if (this.collides_with_entity(entity) && !entity.equals(this.parent)) this.on_entity_collision(entity);
-            } else {
-              if (this.collides_with_entity(entity)) this.on_entity_collision(entity);
-            }
+            if (this.collides_with_entity(entity)) this.on_entity_collision(entity);
           }
         } catch (err) {
           _iterator.e(err);
@@ -30789,9 +30783,7 @@ var Entity = /*#__PURE__*/function () {
 
       if (!this.can_go_through(this.position) && !this.noclip) this.on_tile_collision();
       this.render();
-      if (this.anchored) this.follow();
       this.health.tick();
-      if (!this.health.alive) this.destroy();
     }
   }, {
     key: "sat_polygon",
@@ -30817,9 +30809,9 @@ var Entity = /*#__PURE__*/function () {
     }
   }, {
     key: "destroy",
-    value: function destroy(source) {
+    value: function destroy() {
+      console.log(this);
       this.manager.remove(this.uuid);
-      if (source) source.on_kill(this);
     }
   }, {
     key: "on_kill",
@@ -30848,7 +30840,7 @@ var Entity = /*#__PURE__*/function () {
   }, {
     key: "set_position",
     value: function set_position(position) {
-      if (this.parent && this.anchored) this.position.copy(position.add(this.parent.position));else this.position.copy(position);
+      this.position.copy(position);
     }
   }, {
     key: "scale_over_time",
@@ -30856,9 +30848,6 @@ var Entity = /*#__PURE__*/function () {
       this.scale_per_tick = (scale - this.scale) / time;
       this.scale_time = time;
     }
-  }, {
-    key: "follow",
-    value: function follow() {}
   }, {
     key: "trace_tiles",
     value: function trace_tiles(angle) {
@@ -30898,6 +30887,10 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
 
 function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); Object.defineProperty(Constructor, "prototype", { writable: false }); return Constructor; }
+
+function _get() { if (typeof Reflect !== "undefined" && Reflect.get) { _get = Reflect.get; } else { _get = function _get(target, property, receiver) { var base = _superPropBase(target, property); if (!base) return; var desc = Object.getOwnPropertyDescriptor(base, property); if (desc.get) { return desc.get.call(arguments.length < 3 ? target : receiver); } return desc.value; }; } return _get.apply(this, arguments); }
+
+function _superPropBase(object, property) { while (!Object.prototype.hasOwnProperty.call(object, property)) { object = _getPrototypeOf(object); if (object === null) break; } return object; }
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); Object.defineProperty(subClass, "prototype", { writable: false }); if (superClass) _setPrototypeOf(subClass, superClass); }
 
@@ -30942,12 +30935,12 @@ var LivingEntity = /*#__PURE__*/function (_entity_1$default) {
 
   var _super = _createSuper(LivingEntity);
 
-  function LivingEntity(anchor) {
+  function LivingEntity() {
     var _this;
 
     _classCallCheck(this, LivingEntity);
 
-    _this = _super.call(this, anchor);
+    _this = _super.call(this);
     _this.noclip = false;
     _this.facing = 0;
     _this.move_timeout = 0;
@@ -30970,7 +30963,6 @@ var LivingEntity = /*#__PURE__*/function (_entity_1$default) {
       } else this.moving = vec2_1.default.zero();
 
       this.health.tick();
-      if (!this.health.alive) this.destroy(this.last_attacker);
       this.render();
     }
   }, {
@@ -31011,6 +31003,13 @@ var LivingEntity = /*#__PURE__*/function (_entity_1$default) {
       if (_damage == 0) return;
       this.manager.room.particles.spawn(new damage_count_1.default(this.position.add(new vec2_1.default(0, this.size.y * -0.5)), _damage));
       if (source) this.last_attacker = source;
+    }
+  }, {
+    key: "destroy",
+    value: function destroy() {
+      _get(_getPrototypeOf(LivingEntity.prototype), "destroy", this).call(this);
+
+      if (this.last_attacker) this.last_attacker.on_kill(this);
     }
   }, {
     key: "render",
@@ -31515,12 +31514,12 @@ var Mob = /*#__PURE__*/function (_living_entity_1$defa) {
     }
   }, {
     key: "destroy",
-    value: function destroy(source) {
+    value: function destroy() {
       var coin = new coin_1.default(this.gold);
       coin.set_position(this.position);
       this.manager.spawn(coin);
 
-      _get(_getPrototypeOf(Mob.prototype), "destroy", this).call(this, source);
+      _get(_getPrototypeOf(Mob.prototype), "destroy", this).call(this);
     }
   }]);
 
@@ -31582,25 +31581,25 @@ var Projectile = /*#__PURE__*/function (_entity_1$default) {
 
   var _super = _createSuper(Projectile);
 
-  function Projectile(parent) {
+  function Projectile(owner) {
     var _this;
 
     var damage = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 5;
 
     _classCallCheck(this, Projectile);
 
-    _this = _super.call(this, parent);
+    _this = _super.call(this);
     _this.noclip = false;
     _this.size = new vec2_1.default(0.2, 0.2);
     _this.color = color_1.default.RGB(255, 128, 0);
     _this.corner_radius = 0.3;
-    _this.parent = parent;
+    _this.owner = owner;
     _this.attack_damage = damage;
     _this.velocity = vec2_1.default.zero();
     _this.scale = 1;
     _this.scale_per_tick = 0;
     _this.scale_time = 0;
-    _this.player_friendly = parent instanceof player_1.default;
+    _this.player_friendly = owner instanceof player_1.default;
     return _this;
   }
 
@@ -31617,17 +31616,18 @@ var Projectile = /*#__PURE__*/function (_entity_1$default) {
   }, {
     key: "on_entity_collision",
     value: function on_entity_collision(entity) {
+      if (entity.equals(this.owner)) return;
       if (this.player_friendly && entity instanceof mob_1.default) this.on_enemy_collision(entity);else if (entity instanceof player_1.default) this.on_enemy_collision(entity);
     }
   }, {
     key: "on_enemy_collision",
     value: function on_enemy_collision(entity) {
-      entity.damage(this.attack_damage, this.parent);
+      entity.damage(this.attack_damage, this.owner);
     }
   }, {
     key: "on_kill",
     value: function on_kill(target) {
-      this.parent.on_kill(target);
+      this.owner.on_kill(target);
     }
   }]);
 
@@ -31687,16 +31687,17 @@ var Arrow = /*#__PURE__*/function (_projectile_1$default) {
 
   var _super = _createSuper(Arrow);
 
-  function Arrow(parent) {
+  function Arrow(owner) {
     var _this;
 
     var damage = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 9;
 
     _classCallCheck(this, Arrow);
 
-    _this = _super.call(this, parent, damage);
-    _this.max_health = 20;
-    _this.health = 20;
+    _this = _super.call(this, owner, damage);
+
+    _this.health.reset(20);
+
     _this.size = new vec2_1.default(0.5, 0.2);
     _this.color = color_1.default.RGB(64, 255, 192);
     _this.corner_radius = 0.3;
@@ -31720,7 +31721,7 @@ var Arrow = /*#__PURE__*/function (_projectile_1$default) {
   }, {
     key: "on_tile_collision",
     value: function on_tile_collision() {
-      this.health--;
+      this.health.damage(1);
     }
   }, {
     key: "render",
@@ -31786,14 +31787,14 @@ var Bullet = /*#__PURE__*/function (_projectile_1$default) {
 
   var _super = _createSuper(Bullet);
 
-  function Bullet(parent) {
+  function Bullet(owner) {
     var _this;
 
     var damage = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 5;
 
     _classCallCheck(this, Bullet);
 
-    _this = _super.call(this, parent, damage);
+    _this = _super.call(this, owner, damage);
     _this.size = new vec2_1.default(0.2, 0.2);
     _this.color = color_1.default.RGB(96, 192, 255);
     _this.corner_radius = 0.3;
@@ -32076,7 +32077,7 @@ var Fireball = /*#__PURE__*/function (_projectile_1$default) {
 
   var _super = _createSuper(Fireball);
 
-  function Fireball(parent) {
+  function Fireball(owner) {
     var _this;
 
     var damage = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 5;
@@ -32085,7 +32086,7 @@ var Fireball = /*#__PURE__*/function (_projectile_1$default) {
 
     _classCallCheck(this, Fireball);
 
-    _this = _super.call(this, parent, damage);
+    _this = _super.call(this, owner, damage);
     _this.size = new vec2_1.default(0.35, 0.35);
     _this.color = color_1.default.RGB(255, 192, 0);
     _this.corner_radius = 0.5;
@@ -32114,8 +32115,8 @@ var Fireball = /*#__PURE__*/function (_projectile_1$default) {
     }
   }, {
     key: "destroy",
-    value: function destroy(source) {
-      _get(_getPrototypeOf(Fireball.prototype), "destroy", this).call(this, source);
+    value: function destroy() {
+      _get(_getPrototypeOf(Fireball.prototype), "destroy", this).call(this);
 
       for (var i = 0; i < this.manager.random.next_int_ranged(4, 6); i++) {
         this.manager.room.particles.spawn(new flame_1.default(this.position, 0.1, this.manager.room.particles));
@@ -32179,7 +32180,7 @@ var Sword = /*#__PURE__*/function (_projectile_1$default) {
 
   var _super = _createSuper(Sword);
 
-  function Sword(parent) {
+  function Sword(owner) {
     var _this;
 
     var damage = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 5;
@@ -32187,15 +32188,15 @@ var Sword = /*#__PURE__*/function (_projectile_1$default) {
 
     _classCallCheck(this, Sword);
 
-    _this = _super.call(this, parent, damage);
-    _this.starting_rotation = parent.facing - angle;
-    _this.ending_rotation = parent.facing + angle;
+    _this = _super.call(this, owner, damage);
+    _this.starting_rotation = owner.facing - angle;
+    _this.ending_rotation = owner.facing + angle;
     _this.rotation_speed = 0.5;
     _this.rotation = _this.starting_rotation;
-    _this.anchored = true;
     _this.size = new vec2_1.default(2.5, 0.2);
     _this.color = color_1.default.RGB(220, 220, 220);
     _this.corner_radius = 0.9;
+    _this.anchor_entity = _this.owner;
 
     _this.health.reset(8);
 
@@ -32207,11 +32208,11 @@ var Sword = /*#__PURE__*/function (_projectile_1$default) {
   _createClass(Sword, [{
     key: "on_enemy_collision",
     value: function on_enemy_collision(entity) {
-      if (this.parent.trace_tiles(this.rotation) < this.parent.distance_to(entity)) return;
+      if (this.owner.trace_tiles(this.rotation) < this.owner.distance_to(entity)) return;
 
       _get(_getPrototypeOf(Sword.prototype), "on_enemy_collision", this).call(this, entity);
 
-      entity.move(vec2_1.default.step(entity.position.subtract(this.parent.position)));
+      entity.move(vec2_1.default.step(entity.position.subtract(this.owner.position)));
     }
   }, {
     key: "tick",
@@ -32222,11 +32223,7 @@ var Sword = /*#__PURE__*/function (_projectile_1$default) {
         this.rotation += this.rotation_speed;
         this.rotation_speed += 0.5;
       }
-    }
-  }, {
-    key: "follow",
-    value: function follow() {
-      this.set_position(vec2_1.default.from_angle(this.rotation).multiply(2));
+      this.follow();
     }
   }, {
     key: "render",
@@ -32235,6 +32232,16 @@ var Sword = /*#__PURE__*/function (_projectile_1$default) {
         scale: this.scale,
         rotation: this.rotation
       });
+    }
+  }, {
+    key: "set_position",
+    value: function set_position(position) {
+      this.position.copy(position.add(this.anchor_entity.position));
+    }
+  }, {
+    key: "follow",
+    value: function follow() {
+      this.set_position(vec2_1.default.from_angle(this.rotation).multiply(2));
     }
   }, {
     key: "on_tile_collision",
@@ -33297,7 +33304,7 @@ var EntityManager = /*#__PURE__*/function () {
         var mob = mobs_1.default.from_id(entry[1]);
         if (!entry[1]) mob = mobs_1.default.from_id(this.room.biome.next_mob());
         mob.set_position(pos.add(new vec2_1.default(0.5, 0.5)));
-        mob.max_health = Math.floor(mob.max_health * (1 + this.room.difficulty / 10));
+        mob.health.reset(Math.floor(mob.health.max * (1 + this.room.difficulty / 10)));
         mob.attack_damage = Math.floor(mob.attack_damage * (1 + this.room.difficulty / 10));
         this.spawn(mob);
       }
@@ -37620,7 +37627,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "56792" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "65458" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
