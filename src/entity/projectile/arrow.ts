@@ -6,11 +6,10 @@ import LivingEntity from "../living_entity";
 import Projectile from "../projectile";
 
 export default class Arrow extends Projectile {
-	constructor(parent: Entity, damage = 9) {
-		super(parent, damage);
+	constructor(owner: Entity, damage = 9) {
+		super(owner, damage);
 
-		this.max_health = 20;
-		this.health = 20;
+		this.health.reset(20);
 
 		this.size = new Vec2(0.5, 0.2);
 		this.color = Color.RGB(64, 255, 192);
@@ -29,7 +28,7 @@ export default class Arrow extends Projectile {
 	}
 
 	on_tile_collision(): void {
-		this.health--;
+		this.health.damage(1);
 	}
 
 	render(): void {

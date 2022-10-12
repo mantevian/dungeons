@@ -18,9 +18,9 @@ export default class LivingEntity extends Entity {
 
 	effects: StatusEffectManager;
 
-	constructor(anchor?: Entity) {
-		super(anchor);
-
+	constructor() {
+		super();
+		
 		this.noclip = false;
 
 		this.facing = 0;
@@ -47,9 +47,6 @@ export default class LivingEntity extends Entity {
 			this.moving = Vec2.zero();
 
 		this.health.tick();
-
-		if (!this.health.alive)
-			this.destroy(this.last_attacker);
 
 		this.render();
 	}
@@ -103,6 +100,12 @@ export default class LivingEntity extends Entity {
 
 		if (source)
 			this.last_attacker = source;
+	}
+
+	destroy(): void {
+		super.destroy();
+		if (this.last_attacker)
+			this.last_attacker.on_kill(this);
 	}
 
 	render(): void {

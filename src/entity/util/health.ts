@@ -15,6 +15,9 @@ export default class Health {
 
 	public tick(): void {
 		this.invincibility_timer.tick();
+
+		if (!this.alive)
+			this.entity.destroy();
 	}
 
 	public get value() {

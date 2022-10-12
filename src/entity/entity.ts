@@ -26,10 +26,7 @@ export default class Entity {
 
 	lifetime: number;
 
-	parent: Entity;
-	anchored: boolean;
-
-	constructor(parent?: Entity) {
+	constructor() {
 		this.uuid = uuid();
 
 		this.position = Vec2.zero();
@@ -46,9 +43,6 @@ export default class Entity {
 		this.health = new Health(1, this);
 
 		this.lifetime = 0;
-
-		this.parent = parent;
-		this.anchored = false;
 	}
 
 	move(vec: Vec2): void {
@@ -80,16 +74,9 @@ export default class Entity {
 		this.lifetime++;
 
 		if (!this.noclip) {
-			for (let entity of this.manager.with_player().filter(e => !e.noclip)) {
-				if (this.parent) {
-					if (this.collides_with_entity(entity) && !entity.equals(this.parent))
-						this.on_entity_collision(entity);
-				}
-				else {
-					if (this.collides_with_entity(entity))
-						this.on_entity_collision(entity);
-				}
-			}
+			for (let entity of this.manager.with_player().filter(e => !e.noclip))
+				if (this.collides_with_entity(entity))
+					this.on_entity_collision(entity);
 		}
 
 		if (!this.can_go_through(this.position) && !this.noclip)
@@ -97,13 +84,7 @@ export default class Entity {
 
 		this.render();
 
-		if (this.anchored)
-			this.follow();
-		
 		this.health.tick();
-		
-		if (!this.health.alive)
-			this.destroy();
 	}
 
 	sat_polygon(): SAT.Polygon {
@@ -130,11 +111,9 @@ export default class Entity {
 		return this.manager.room.tiles.passable(polygon);
 	}
 
-	destroy(source?: Entity): void {
+	destroy(): void {
+		console.log(this)
 		this.manager.remove(this.uuid);
-
-		if (source)
-			source.on_kill(this);
 	}
 
 	on_kill(target: Entity): void {
@@ -159,19 +138,12 @@ export default class Entity {
 	}
 
 	set_position(position: Vec2): void {
-		if (this.parent && this.anchored)
-			this.position.copy(position.add(this.parent.position));
-		else
-			this.position.copy(position);
+		this.position.copy(position);
 	}
 
 	scale_over_time(scale: number, time: number): void {
 		this.scale_per_tick = (scale - this.scale) / time;
 		this.scale_time = time;
-	}
-
-	follow(): void {
-
 	}
 
 	trace_tiles(angle: number, max_distance = 10, step = 0.05): number {

@@ -5,8 +5,8 @@ import LivingEntity from "../living_entity";
 import Projectile from "../projectile";
 
 export default class Bullet extends Projectile {
-	constructor(parent: Entity, damage = 5) {
-		super(parent, damage);
+	constructor(owner: Entity, damage = 5) {
+		super(owner, damage);
 
 		this.size = new Vec2(0.2, 0.2);
 		this.color = Color.RGB(96, 192, 255);

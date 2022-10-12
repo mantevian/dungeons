@@ -10,9 +10,10 @@ export default class Projectile extends Entity {
 	velocity: Vec2;
 
 	player_friendly: boolean;
+	owner: Entity;
 
-	constructor(parent: Entity, damage = 5) {
-		super(parent);
+	constructor(owner: Entity, damage = 5) {
+		super();
 
 		this.noclip = false;
 
@@ -20,7 +21,7 @@ export default class Projectile extends Entity {
 		this.color = Color.RGB(255, 128, 0);
 		this.corner_radius = 0.3;
 
-		this.parent = parent;
+		this.owner = owner;
 
 		this.attack_damage = damage;
 
@@ -30,7 +31,7 @@ export default class Projectile extends Entity {
 		this.scale_per_tick = 0;
 		this.scale_time = 0;
 
-		this.player_friendly = parent instanceof Player;
+		this.player_friendly = owner instanceof Player;
 	}
 
 	tick(): void {
@@ -42,6 +43,9 @@ export default class Projectile extends Entity {
 	}
 
 	on_entity_collision(entity: Entity): void {
+		if (entity.equals(this.owner))
+			return;
+
 		if (this.player_friendly && entity instanceof Mob)
 			this.on_enemy_collision(entity);
 		else
@@ -50,10 +54,10 @@ export default class Projectile extends Entity {
 	}
 
 	on_enemy_collision(entity: LivingEntity): void {
-		entity.damage(this.attack_damage, this.parent);
+		entity.damage(this.attack_damage, this.owner);
 	}
 
 	on_kill(target: Entity): void {
-		this.parent.on_kill(target);
+		this.owner.on_kill(target);
 	}
 }

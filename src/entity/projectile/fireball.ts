@@ -11,8 +11,8 @@ export default class Fireball extends Projectile {
 	burn_level: number;
 	burn_speed: number;
 
-	constructor(parent: Entity, damage = 5, burn_duration = 180, burn_speed = 30) {
-		super(parent, damage);
+	constructor(owner: Entity, damage = 5, burn_duration = 180, burn_speed = 30) {
+		super(owner, damage);
 
 		this.size = new Vec2(0.35, 0.35);
 		this.color = Color.RGB(255, 192, 0);
@@ -40,8 +40,8 @@ export default class Fireball extends Projectile {
 		this.destroy();
 	}
 
-	destroy(source?: Entity): void {
-		super.destroy(source);
+	destroy(): void {
+		super.destroy();
 
 		for (let i = 0; i < this.manager.random.next_int_ranged(4, 6); i++)
 			this.manager.room.particles.spawn(new FlameParticle(this.position, 0.1, this.manager.room.particles));

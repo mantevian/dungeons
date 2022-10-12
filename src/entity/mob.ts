@@ -2,7 +2,6 @@ import Renderer from "../game/renderer";
 import Color from "../util/color";
 import Vec2 from "../util/vec2";
 import Coin from "./coin";
-import entity from "./entity";
 import LivingEntity from "./living_entity";
 
 export default class Mob extends LivingEntity {
@@ -78,11 +77,11 @@ export default class Mob extends LivingEntity {
 			this.current_path_progress = 0;
 	}
 
-	destroy(source?: entity): void {
+	destroy(): void {
 		let coin = new Coin(this.gold);
 		coin.set_position(this.position);
 		this.manager.spawn(coin);
 
-		super.destroy(source);
+		super.destroy();
 	}
 }
